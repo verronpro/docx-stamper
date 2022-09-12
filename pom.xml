@@ -248,7 +248,7 @@
         <dependency>
             <groupId>org.docx4j</groupId>
             <artifactId>docx4j-JAXB-MOXy</artifactId>
-            <version>11.2.9</version>
+            <version>11.4.8</version>
         </dependency>
 
         <!-- Required when running with a recent JRE as jaxb has been dropped from Java 9 -->
