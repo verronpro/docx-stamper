@@ -210,7 +210,7 @@ public class CommentUtil {
             if (isCommentMalformed(comment)) {
                 logger.error(
                         "Skipping malformed comment, missing range start and/or range end : {}",
-                        comment.getComment().getContent().stream().map(TextUtils::getText).collect(Collectors.joining(""))
+                        getCommentContent(comment)
                 );
             } else {
                 filteredCommentEntries.put(key, comment);
@@ -226,7 +226,7 @@ public class CommentUtil {
             if (isCommentMalformed(comment)) {
                 logger.error(
                         "Skipping malformed comment, missing range start and/or range end : {}",
-                        comment.getComment().getContent().stream().map(TextUtils::getText).collect(Collectors.joining(""))
+                        getCommentContent(comment)
                 );
                 return false;
             }
@@ -235,8 +235,14 @@ public class CommentUtil {
         }).collect(Collectors.toSet());
     }
 
+    private static String getCommentContent(CommentWrapper comment) {
+        return comment.getComment() != null
+                ? comment.getComment().getContent().stream().map(TextUtils::getText).collect(Collectors.joining(""))
+                : "<no content>";
+    }
+
     private static boolean isCommentMalformed(CommentWrapper comment) {
-        return comment.getCommentRangeStart() == null || comment.getCommentRangeEnd() == null;
+        return comment.getCommentRangeStart() == null || comment.getCommentRangeEnd() == null || comment.getComment() == null;
     }
 
     private static void collectCommentRanges(
