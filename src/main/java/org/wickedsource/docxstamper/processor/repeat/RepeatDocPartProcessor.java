@@ -13,6 +13,7 @@ import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.util.CommentUtil;
 import org.wickedsource.docxstamper.util.CommentWrapper;
+import org.wickedsource.docxstamper.util.DocumentUtil;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
 
 import java.io.ByteArrayInputStream;
@@ -28,6 +29,8 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     private Map<CommentWrapper, WordprocessingMLPackage> subTemplates = new HashMap<>();
     private Map<CommentWrapper, ContentAccessor> gcpMap = new HashMap<>();
     private Map<CommentWrapper, Integer> insertIndex = new HashMap<>();
+
+    private int counter = 1;
 
     private final ObjectFactory objectFactory;
 
@@ -73,8 +76,6 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         for (CommentWrapper commentWrapper : subContexts.keySet()) {
             List<Object> expressionContexts = subContexts.get(commentWrapper);
 
-            List<Object> changes = new ArrayList<>();
-
             Integer index = insertIndex.get(commentWrapper);
 
             if (expressionContexts != null) {
@@ -84,20 +85,27 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                         DocxStamper<Object> stamper = new DocxStamper<>(config);
                         ByteArrayOutputStream output = new ByteArrayOutputStream();
                         stamper.stamp(subTemplate, subContext, output);
+                        // subTemplate.save(new File("suboutput-" + counter + ".docx"));
+                        counter++;
                         WordprocessingMLPackage subDocument = WordprocessingMLPackage.load(new ByteArrayInputStream(output.toByteArray()));
-                        changes.addAll(subDocument.getMainDocumentPart().getContent());
+                        try {
+                            List<Object> changes = DocumentUtil.prepareDocumentForInsert(subDocument, document);
+                            document.getMainDocumentPart().getContent().addAll(index, changes);
+                            index += changes.size();
+                        } catch (Exception e) {
+                            throw new RuntimeException("SHIIIIT !!!", e);
+                        }
                     } catch (Docx4JException e) {
                         throw new RuntimeException(e);
                     }
                 }
             } else if (config.isReplaceNullValues() && config.getNullValuesDefault() != null) {
-                changes.add(ParagraphUtil.create(config.getNullValuesDefault()));
+                document.getMainDocumentPart().getContent().add(index++, ParagraphUtil.create(config.getNullValuesDefault()));
             }
 
             ContentAccessor gcp = gcpMap.get(commentWrapper);
             CommentUtil.deleteComment(commentWrapper);
             gcp.getContent().removeAll(repeatElementsMap.get(commentWrapper));
-            gcp.getContent().addAll(index, changes);
         }
     }
 
