@@ -17,11 +17,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DocumentUtil {
+    /**
+     * Recursively walk through the content accessor to replace embedded images and import the matching
+     * files to the destination document before importing content.
+     *
+     * @param sourceDocument document to import.
+     * @param destDocument   document to add the source document content to.
+     * @return the whole content of the source document with imported images replaced.
+     * @throws Exception
+     */
     public static List<Object> prepareDocumentForInsert(WordprocessingMLPackage sourceDocument, WordprocessingMLPackage destDocument) throws Exception {
-        return walkObjects(sourceDocument.getMainDocumentPart(), sourceDocument, destDocument, destDocument.getMainDocumentPart());
+        return walkObjects(sourceDocument.getMainDocumentPart(), sourceDocument, destDocument);
     }
 
-    private static List<Object> walkObjects(ContentAccessor sourceContainer, WordprocessingMLPackage sourceDocument, WordprocessingMLPackage destDocument, ContentAccessor destContainer) throws Exception {
+    /**
+     * Recursively walk through the content accessor to replace embedded images and import the matching
+     * files to the destination document.
+     *
+     * @param sourceContainer source container to walk.
+     * @param sourceDocument  source document containing image files.
+     * @param destDocument    destination document to add image files to.
+     * @return the list of imported objects from the source container.
+     * @throws Exception
+     */
+    private static List<Object> walkObjects(ContentAccessor sourceContainer, WordprocessingMLPackage sourceDocument, WordprocessingMLPackage destDocument) throws Exception {
         List<Object> result = new ArrayList<>();
         for (Object obj : sourceContainer.getContent()) {
             if (obj instanceof R && isImageRun((R) obj)) {
@@ -29,7 +48,10 @@ public class DocumentUtil {
                 // TODO : retrieve filename, altText and width from source document
                 result.add(ImageResolver.createRunWithImage(destDocument, imageData, null, null, null));
             } else if (obj instanceof ContentAccessor) {
-                result.addAll(walkObjects((ContentAccessor) obj, sourceDocument, destDocument, (ContentAccessor) obj));
+                List<Object> importedChildren = walkObjects((ContentAccessor) obj, sourceDocument, destDocument);
+                ((ContentAccessor) obj).getContent().clear();
+                ((ContentAccessor) obj).getContent().addAll(importedChildren);
+                result.add(obj);
             } else {
                 result.add(obj);
             }
@@ -37,8 +59,17 @@ public class DocumentUtil {
         return result;
     }
 
-    private static byte[] getRunDrawingData(R obj, WordprocessingMLPackage document) throws Docx4JException, IOException {
-        for (Object runElement : obj.getContent()) {
+    /**
+     * Extract an image bytes from an embedded image run.
+     *
+     * @param run      run containing the embedded drawing.
+     * @param document document to read the file from.
+     * @return
+     * @throws Docx4JException
+     * @throws IOException
+     */
+    private static byte[] getRunDrawingData(R run, WordprocessingMLPackage document) throws Docx4JException, IOException {
+        for (Object runElement : run.getContent()) {
             if (runElement instanceof JAXBElement && ((JAXBElement) runElement).getValue() instanceof Drawing) {
                 Drawing drawing = (Drawing) ((JAXBElement) runElement).getValue();
                 byte[] imageData = getImageData(document, drawing);
@@ -48,6 +79,15 @@ public class DocumentUtil {
         throw new RuntimeException("Run drawing not found !");
     }
 
+    /**
+     * Retrieve an image bytes from the document part store.
+     *
+     * @param document document to read the file from.
+     * @param drawing  drawing embedding the image.
+     * @return
+     * @throws IOException
+     * @throws Docx4JException
+     */
     private static byte[] getImageData(WordprocessingMLPackage document, Drawing drawing) throws IOException, Docx4JException {
         String imageRelId = getImageRelationshipId(drawing);
         Part imageRelPart = document.getMainDocumentPart().getRelationshipsPart().getPart(imageRelId);
@@ -60,8 +100,14 @@ public class DocumentUtil {
         return imageData;
     }
 
-    private static boolean isImageRun(R obj) {
-        for (Object runElement : obj.getContent()) {
+    /**
+     * Check if a run contains an embedded image.
+     *
+     * @param run
+     * @return true if the run contains an image, false otherwise.
+     */
+    private static boolean isImageRun(R run) {
+        for (Object runElement : run.getContent()) {
             if (runElement instanceof JAXBElement && ((JAXBElement) runElement).getValue() instanceof Drawing) {
                 return true;
             }
@@ -69,11 +115,23 @@ public class DocumentUtil {
         return false;
     }
 
+    /**
+     * Retrieve an embedded drawing relationship id.
+     *
+     * @param drawing the drawing to get the relationship id.
+     * @return
+     */
     private static String getImageRelationshipId(Drawing drawing) {
         Graphic graphic = getInlineGraphic(drawing);
         return graphic.getGraphicData().getPic().getBlipFill().getBlip().getEmbed();
     }
 
+    /**
+     * Extract an inline graphic from a drawing.
+     *
+     * @param drawing the drawing containing the graphic.
+     * @return
+     */
     private static Graphic getInlineGraphic(Drawing drawing) {
         if (drawing.getAnchorOrInline().isEmpty()) {
             throw new RuntimeException("Anchor or Inline is empty !");
@@ -87,6 +145,14 @@ public class DocumentUtil {
         }
     }
 
+    /**
+     * Converts an InputStream to byte array.
+     *
+     * @param size expected size of the byte array.
+     * @param is   input stream to read data from.
+     * @return the data from the input stream.
+     * @throws IOException
+     */
     private static byte[] streamToByteArray(long size, InputStream is) throws IOException {
         if (size > Integer.MAX_VALUE) {
             throw new RuntimeException("Image size exceeds maximum allowed (2GB)");

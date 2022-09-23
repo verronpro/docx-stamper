@@ -28,10 +28,6 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     private Map<CommentWrapper, List<Object>> repeatElementsMap = new HashMap<>();
     private Map<CommentWrapper, WordprocessingMLPackage> subTemplates = new HashMap<>();
     private Map<CommentWrapper, ContentAccessor> gcpMap = new HashMap<>();
-    private Map<CommentWrapper, Integer> insertIndex = new HashMap<>();
-
-    private int counter = 1;
-
     private final ObjectFactory objectFactory;
 
     public RepeatDocPartProcessor(DocxStamperConfiguration config) {
@@ -57,7 +53,6 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                 subContexts.put(currentCommentWrapper, contexts);
                 subTemplates.put(currentCommentWrapper, extractSubTemplate(currentCommentWrapper, repeatElements));
                 gcpMap.put(currentCommentWrapper, gcp);
-                insertIndex.put(currentCommentWrapper, gcp.getContent().indexOf(repeatElements.get(0)));
                 repeatElementsMap.put(currentCommentWrapper, repeatElements);
             } catch (InvalidFormatException e) {
                 throw new RuntimeException(e);
@@ -76,7 +71,8 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         for (CommentWrapper commentWrapper : subContexts.keySet()) {
             List<Object> expressionContexts = subContexts.get(commentWrapper);
 
-            Integer index = insertIndex.get(commentWrapper);
+            // index changes after each replacement so we need to get the insert index at the right moment.
+            Integer index = gcpMap.get(commentWrapper).getContent().indexOf(repeatElementsMap.get(commentWrapper).get(0));
 
             if (expressionContexts != null) {
                 for (Object subContext : expressionContexts) {
@@ -85,22 +81,20 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                         DocxStamper<Object> stamper = new DocxStamper<>(config);
                         ByteArrayOutputStream output = new ByteArrayOutputStream();
                         stamper.stamp(subTemplate, subContext, output);
-                        // subTemplate.save(new File("suboutput-" + counter + ".docx"));
-                        counter++;
                         WordprocessingMLPackage subDocument = WordprocessingMLPackage.load(new ByteArrayInputStream(output.toByteArray()));
                         try {
                             List<Object> changes = DocumentUtil.prepareDocumentForInsert(subDocument, document);
                             document.getMainDocumentPart().getContent().addAll(index, changes);
                             index += changes.size();
                         } catch (Exception e) {
-                            throw new RuntimeException("SHIIIIT !!!", e);
+                            throw new RuntimeException("Unexpected error occured ! Skipping this comment", e);
                         }
                     } catch (Docx4JException e) {
                         throw new RuntimeException(e);
                     }
                 }
             } else if (config.isReplaceNullValues() && config.getNullValuesDefault() != null) {
-                document.getMainDocumentPart().getContent().add(index++, ParagraphUtil.create(config.getNullValuesDefault()));
+                document.getMainDocumentPart().getContent().add(index, ParagraphUtil.create(config.getNullValuesDefault()));
             }
 
             ContentAccessor gcp = gcpMap.get(commentWrapper);
@@ -113,7 +107,6 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     public void reset() {
         subContexts = new HashMap<>();
         subTemplates = new HashMap<>();
-        insertIndex = new HashMap<>();
         gcpMap = new HashMap<>();
         repeatElementsMap = new HashMap<>();
     }

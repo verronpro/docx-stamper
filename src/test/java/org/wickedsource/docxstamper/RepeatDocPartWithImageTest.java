@@ -2,12 +2,12 @@ package org.wickedsource.docxstamper;
 
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.wickedsource.docxstamper.replace.typeresolver.image.Image;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class RepeatDocPartWithImageTest extends AbstractDocx4jTest {
     @Test
-    public void test() throws Docx4JException, IOException {
+    public void shouldImportImageDataInTheMainDocument() throws Docx4JException, IOException {
         List<Image> images = new ArrayList<>();
         images.add(new Image(getClass().getResourceAsStream("butterfly.png")));
         images.add(new Image(getClass().getResourceAsStream("map.jpg")));
@@ -41,9 +41,8 @@ public class RepeatDocPartWithImageTest extends AbstractDocx4jTest {
         InputStream template = getClass().getResourceAsStream("RepeatDocPartWithImageTest.docx");
         WordprocessingMLPackage document = stampAndLoad(template, context, config);
 
-        document.save(new File("output.docx"));
-
-        // List<Object> documentContent = document.getMainDocumentPart().getContent();
+        Assert.assertEquals(images.get(0).getImageBytes().length, document.getSourcePartStore().getPartSize("word/media/document_image_rId11.png"));
+        Assert.assertEquals(images.get(1).getImageBytes().length, document.getSourcePartStore().getPartSize("word/media/document_image_rId12.jpeg"));
+        Assert.assertEquals(images.get(0).getImageBytes().length, document.getSourcePartStore().getPartSize("word/media/document_image_rId13.png"));
     }
-
 }
