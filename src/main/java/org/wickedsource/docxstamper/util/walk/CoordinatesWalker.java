@@ -12,7 +12,6 @@ import org.wickedsource.docxstamper.util.DocumentUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 public abstract class CoordinatesWalker {
 
@@ -36,8 +35,7 @@ public abstract class CoordinatesWalker {
         // Creating a copy of the content helps avoid a concurrent modification exception
         List<Object> content = new ArrayList<>(paragraph.getContent());
 
-        for (ListIterator<Object> it = content.listIterator(); it.hasNext();){
-            Object contentElement = it.next();
+        for (Object contentElement : content) {
             if (XmlUtils.unwrap(contentElement) instanceof R) {
                 R run = (R) contentElement;
                 RunCoordinates runCoordinates = new RunCoordinates(run, rowIndex);
