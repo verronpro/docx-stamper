@@ -47,6 +47,6 @@ public class ConditionalDisplayOfTableRowsTest extends AbstractDocx4jTest {
     private String getTextFromCell(Tc tc) {
         List<P> paragraphsFromObject = DocumentUtil.extractElements(tc, P.class);
         Assert.assertEquals(1, paragraphsFromObject.size());
-        return paragraphsFromObject.get(0).toString();
+        return TextUtils.getText(paragraphsFromObject.get(0));
     }
 }
