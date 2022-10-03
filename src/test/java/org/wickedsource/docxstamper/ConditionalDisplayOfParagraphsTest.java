@@ -20,8 +20,7 @@ public class ConditionalDisplayOfParagraphsTest extends AbstractDocx4jTest {
 
     @Test
     public void processorExpressionsInCommentsAreResolved() throws Docx4JException, IOException {
-        NameContext context = new NameContext();
-        context.setName("Homer");
+        NameContext context = new NameContext("Homer");
         InputStream template = getClass().getResourceAsStream("ConditionalDisplayOfParagraphsTest.docx");
         WordprocessingMLPackage document = stampAndLoad(template, context);
         globalParagraphsAreRemoved(document);
@@ -31,8 +30,7 @@ public class ConditionalDisplayOfParagraphsTest extends AbstractDocx4jTest {
 
     @Test
     public void inlineProcessorExpressionsAreResolved() throws Docx4JException, IOException {
-        NameContext context = new NameContext();
-        context.setName("Homer");
+        NameContext context = new NameContext("Homer");
         InputStream template = getClass().getResourceAsStream("ConditionalDisplayOfParagraphsWithoutCommentTest.docx");
         WordprocessingMLPackage document = stampAndLoad(template, context);
         globalParagraphsAreRemoved(document);
@@ -42,8 +40,7 @@ public class ConditionalDisplayOfParagraphsTest extends AbstractDocx4jTest {
 
     @Test
     public void unresolvedInlineProcessorExpressionsAreRemoved() throws Docx4JException, IOException {
-        NameContext context = new NameContext();
-        context.setName("Bart");
+        NameContext context = new NameContext("Bart");
         InputStream template = getClass().getResourceAsStream("ConditionalDisplayOfParagraphsWithoutCommentTest.docx");
         WordprocessingMLPackage document = stampAndLoad(template, context);
         globalInlineProcessorExpressionIsRemoved(document);

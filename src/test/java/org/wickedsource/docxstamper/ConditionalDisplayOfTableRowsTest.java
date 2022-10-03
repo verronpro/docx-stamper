@@ -1,5 +1,6 @@
 package org.wickedsource.docxstamper;
 
+import org.docx4j.TextUtils;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.P;
@@ -19,8 +20,7 @@ public class ConditionalDisplayOfTableRowsTest extends AbstractDocx4jTest {
 
     @Test
     public void test() throws Docx4JException, IOException {
-        NameContext context = new NameContext();
-        context.setName("Homer");
+        NameContext context = new NameContext("Homer");
         InputStream template = getClass().getResourceAsStream("ConditionalDisplayOfTableRowsTest.docx");
         WordprocessingMLPackage document = stampAndLoad(template, context);
 
