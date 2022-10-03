@@ -47,7 +47,7 @@ public class DocxImageExtractor {
      * @param size expected size of the byte array.
      * @param is   input stream to read data from.
      * @return the data from the input stream.
-     * @throws IOException
+     *
      */
     private static byte[] streamToByteArray(long size, InputStream is) throws IOException {
         if (size > Integer.MAX_VALUE) {
