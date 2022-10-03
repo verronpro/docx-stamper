@@ -72,7 +72,7 @@ public class ConditionalDisplayOfParagraphsTest extends AbstractDocx4jTest {
 
     private void paragraphsInNestedTablesAreRemoved(WordprocessingMLPackage document) {
 
-        final Tbl nestedTable = DocumentUtil.getTableFromObject(DocumentUtil.getTableFromObject(document).get(0)).get(0);
+        final Tbl nestedTable = DocumentUtil.extractElements(DocumentUtil.extractElements(document, Tbl.class).get(0), Tbl.class).get(0);
         Tc cell = (Tc) ((JAXBElement<?>) ((Tr) nestedTable.getContent().get(1)).getContent().get(0)).getValue();
         P p1 = (P) cell.getContent().get(0);
 

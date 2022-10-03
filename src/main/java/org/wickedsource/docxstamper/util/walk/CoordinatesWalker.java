@@ -16,7 +16,7 @@ import java.util.ListIterator;
 
 public abstract class CoordinatesWalker {
 
-    private WordprocessingMLPackage document;
+    private final WordprocessingMLPackage document;
 
     public CoordinatesWalker(WordprocessingMLPackage document) {
         this.document = document;
@@ -24,7 +24,7 @@ public abstract class CoordinatesWalker {
 
     public void walk() {
 
-        List<P> paragraphs = DocumentUtil.getParagraphsFromObject(document);
+        List<P> paragraphs = DocumentUtil.extractElements(document, P.class);
         for (P paragraph: paragraphs) {
             walkParagraph(paragraph);
         }

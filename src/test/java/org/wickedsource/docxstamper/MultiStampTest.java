@@ -37,10 +37,10 @@ public class MultiStampTest extends AbstractDocx4jTest {
 	}
 
 	private void assertTableRows(WordprocessingMLPackage document) {
-		final List<Tbl> tablesFromObject = DocumentUtil.getTableFromObject(document);
+		final List<Tbl> tablesFromObject = DocumentUtil.extractElements(document, Tbl.class);
 		Assert.assertEquals(1, tablesFromObject.size());
 
-		final List<Tr> tableRows = DocumentUtil.getTableRowsFromObject(tablesFromObject.get(0));
+		final List<Tr> tableRows = DocumentUtil.extractElements(tablesFromObject.get(0), Tr.class);
 		Assert.assertEquals(5, tableRows.size());
 	}
 
