@@ -112,7 +112,7 @@ public class DocxStamperConfiguration {
      *                       within the expression language. Must implement the interface above.
      */
 
-    public <T> DocxStamperConfiguration exposeInterfaceToExpressionLanguage(Class<T> interfaceClass, T implementation) {
+    @CanIgnoreReturnValue
         this.expressionFunctions.put(interfaceClass, implementation);
         return this;
     }
