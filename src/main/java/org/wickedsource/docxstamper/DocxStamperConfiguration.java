@@ -1,5 +1,6 @@
 package org.wickedsource.docxstamper;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
@@ -113,6 +114,7 @@ public class DocxStamperConfiguration {
      */
 
     @CanIgnoreReturnValue
+    public <T> DocxStamperConfiguration exposeInterfaceToExpressionLanguage(Class<T> interfaceClass, T implementation) {
         this.expressionFunctions.put(interfaceClass, implementation);
         return this;
     }
