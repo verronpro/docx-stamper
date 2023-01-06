@@ -60,7 +60,7 @@ public class DocxStamper<T> {
         }
 
         ExpressionResolver expressionResolver = new ExpressionResolver(config.getEvaluationContextConfigurer());
-        placeholderReplacer = new PlaceholderReplacer<>(typeResolverRegistry, config.getLineBreakPlaceholder());
+        placeholderReplacer = new PlaceholderReplacer<>(typeResolverRegistry, config.getLineBreakPlaceholder(), config.isFailOnUnresolvedExpression());
         placeholderReplacer.setExpressionResolver(expressionResolver);
         placeholderReplacer.setLeaveEmptyOnExpressionError(config.isLeaveEmptyOnExpressionError());
         placeholderReplacer.setReplaceNullValues(config.isReplaceNullValues());

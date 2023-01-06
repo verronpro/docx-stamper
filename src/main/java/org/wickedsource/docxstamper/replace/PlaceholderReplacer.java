@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.expression.spel.SpelEvaluationException;
 import org.springframework.expression.spel.SpelParseException;
 import org.wickedsource.docxstamper.api.DocxStamperException;
+import org.wickedsource.docxstamper.api.UnresolvedExpressionException;
 import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
@@ -26,15 +27,17 @@ import java.util.List;
 
 public class PlaceholderReplacer<T> {
 
-    private Logger logger = LoggerFactory.getLogger(PlaceholderReplacer.class);
+    private final Logger logger = LoggerFactory.getLogger(PlaceholderReplacer.class);
 
-    private ExpressionUtil expressionUtil = new ExpressionUtil();
+    private final ExpressionUtil expressionUtil = new ExpressionUtil();
 
     private ExpressionResolver expressionResolver = new ExpressionResolver();
 
-    private TypeResolverRegistry typeResolverRegistry;
+    private final TypeResolverRegistry typeResolverRegistry;
 
     private String lineBreakPlaceholder;
+
+    private boolean failOnInvalidExpression = true;
 
     private boolean leaveEmptyOnExpressionError = false;
 
@@ -50,9 +53,10 @@ public class PlaceholderReplacer<T> {
         this.typeResolverRegistry = typeResolverRegistry;
     }
 
-    public PlaceholderReplacer(TypeResolverRegistry typeResolverRegistry, String lineBreakPlaceholder) {
+    public PlaceholderReplacer(TypeResolverRegistry typeResolverRegistry, String lineBreakPlaceholder, boolean failOnInvalidExpression) {
         this.typeResolverRegistry = typeResolverRegistry;
         this.lineBreakPlaceholder = lineBreakPlaceholder;
+        this.failOnInvalidExpression = failOnInvalidExpression;
     }
 
     public boolean isLeaveEmptyOnExpressionError() {
@@ -129,15 +133,21 @@ public class PlaceholderReplacer<T> {
                     logger.debug(String.format("Replaced expression '%s' with value provided by TypeResolver %s", placeholder, resolver.getClass()));
                 }
             } catch (SpelEvaluationException | SpelParseException e) {
-                logger.warn(String.format(
-                        "Expression %s could not be resolved against context root of type %s. Reason: %s. Set log level to TRACE to view Stacktrace.",
-                        placeholder, expressionContext.getClass(), e.getMessage()));
-                logger.trace("Reason for skipping expression:", e);
+                if (failOnInvalidExpression) {
+                    throw new UnresolvedExpressionException(
+                            String.format("Expression %s could not be resolved against context root of type %s. Reason: %s. Set log level to TRACE to view Stacktrace.", placeholder, expressionContext.getClass(), e.getMessage()),
+                            e);
+                } else {
+                    logger.warn(String.format(
+                            "Expression %s could not be resolved against context root of type %s. Reason: %s. Set log level to TRACE to view Stacktrace.",
+                            placeholder, expressionContext.getClass(), e.getMessage()));
+                    logger.trace("Reason for skipping expression:", e);
 
-                if (isLeaveEmptyOnExpressionError()) {
-                    replace(paragraphWrapper, placeholder, null);
-                } else if (isReplaceUnresolvedExpressions()) {
-                    replace(paragraphWrapper, placeholder, unresolvedExpressionsDefaultValue);
+                    if (isLeaveEmptyOnExpressionError()) {
+                        replace(paragraphWrapper, placeholder, null);
+                    } else if (isReplaceUnresolvedExpressions()) {
+                        replace(paragraphWrapper, placeholder, unresolvedExpressionsDefaultValue);
+                    }
                 }
             }
         }
