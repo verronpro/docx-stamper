@@ -30,11 +30,11 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 
     private Map<ParagraphCoordinates, ParagraphsToRepeat> pToRepeat = new HashMap<>();
 
-    private PlaceholderReplacer<Object> placeholderReplacer;
+    private final PlaceholderReplacer<Object> placeholderReplacer;
     private final DocxStamperConfiguration config;
 
     public ParagraphRepeatProcessor(TypeResolverRegistry typeResolverRegistry, ExpressionResolver expressionResolver, DocxStamperConfiguration config) {
-        this.placeholderReplacer = new PlaceholderReplacer<>(typeResolverRegistry);
+        this.placeholderReplacer = new PlaceholderReplacer<>(typeResolverRegistry, config.getLineBreakPlaceholder(), config.isFailOnUnresolvedExpression());
         this.config = config;
         this.placeholderReplacer.setExpressionResolver(expressionResolver);
     }

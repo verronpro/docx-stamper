@@ -35,7 +35,7 @@ public class PlaceholderReplacer<T> {
 
     private final TypeResolverRegistry typeResolverRegistry;
 
-    private String lineBreakPlaceholder;
+    private final String lineBreakPlaceholder;
 
     private boolean failOnInvalidExpression = true;
 
@@ -48,10 +48,6 @@ public class PlaceholderReplacer<T> {
     private boolean replaceUnresolvedExpressions = false;
 
     private String unresolvedExpressionsDefaultValue = null;
-
-    public PlaceholderReplacer(TypeResolverRegistry typeResolverRegistry) {
-        this.typeResolverRegistry = typeResolverRegistry;
-    }
 
     public PlaceholderReplacer(TypeResolverRegistry typeResolverRegistry, String lineBreakPlaceholder, boolean failOnInvalidExpression) {
         this.typeResolverRegistry = typeResolverRegistry;
