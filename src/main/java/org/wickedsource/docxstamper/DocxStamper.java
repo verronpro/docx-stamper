@@ -63,7 +63,7 @@ public class DocxStamper<T> {
         config.getCommentProcessors().put(IRepeatProcessor.class, new RepeatProcessor(typeResolverRegistry, config));
         config.getCommentProcessors().put(IParagraphRepeatProcessor.class, new ParagraphRepeatProcessor(typeResolverRegistry, config));
         config.getCommentProcessors().put(IRepeatDocPartProcessor.class, new RepeatDocPartProcessor(config));
-        config.getCommentProcessors().put(IDisplayIfProcessor.class, new DisplayIfProcessor(config));
+        config.getCommentProcessors().put(IDisplayIfProcessor.class, new DisplayIfProcessor());
         config.getCommentProcessors().put(IReplaceWithProcessor.class, new ReplaceWithProcessor(config));
 
         commentProcessorRegistry = new CommentProcessorRegistry(placeholderReplacer, config);
