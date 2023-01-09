@@ -176,7 +176,7 @@ public class DocxStamperConfiguration {
         return new DocxStamper(this);
     }
 
-    EvaluationContextConfigurer getEvaluationContextConfigurer() {
+    public EvaluationContextConfigurer getEvaluationContextConfigurer() {
         return evaluationContextConfigurer;
     }
 
@@ -184,7 +184,7 @@ public class DocxStamperConfiguration {
         return failOnUnresolvedExpression;
     }
 
-    Map<Class<?>, ICommentProcessor> getCommentProcessors() {
+    public Map<Class<?>, ICommentProcessor> getCommentProcessors() {
         return commentProcessors;
     }
 

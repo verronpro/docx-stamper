@@ -29,7 +29,7 @@ public class MapAccessorAndReflectivePropertyAccessorTest extends AbstractDocx4j
         listProp.add(new Container("second value"));
 
         Map<String, Object> context = new HashMap<>();
-        context.put("FLAT_STRINGs", "Flat string has been resolved");
+        context.put("FLAT_STRING", "Flat string has been resolved");
         context.put("OBJECT_LIST_PROP", listProp);
 
         DocxStamperConfiguration config = new DocxStamperConfiguration()
