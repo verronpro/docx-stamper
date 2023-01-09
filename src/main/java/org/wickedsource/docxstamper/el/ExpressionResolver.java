@@ -28,7 +28,7 @@ public class ExpressionResolver {
         }
         ExpressionParser parser = new SpelExpressionParser();
         StandardEvaluationContext evaluationContext = new StandardEvaluationContext(contextRoot);
-        evaluationContext.addMethodResolver(new CommentProcessorMethodResolver(configuration.getCommentProcessors(), configuration.getExpressionFunctions()));
+        evaluationContext.addMethodResolver(new StandardMethodResolver(configuration));
         configuration.getEvaluationContextConfigurer().configureEvaluationContext(evaluationContext);
         Expression expression = parser.parseExpression(expressionString);
         return expression.getValue(evaluationContext);

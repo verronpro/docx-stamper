@@ -82,8 +82,8 @@ public class CommentProcessorRegistry {
         };
         walker.walk();
 
-        for (ICommentProcessor processor : configuration.getCommentProcessors().values()) {
-            processor.commitChanges(document);
+        for (Object processor : configuration.getCommentProcessors().values()) {
+            ((ICommentProcessor) processor).commitChanges(document);
         }
         for (CommentWrapper commentWrapper : proceedComments) {
             CommentUtil.deleteComment(commentWrapper);
@@ -109,8 +109,8 @@ public class CommentProcessorRegistry {
         for (String processorExpression : processorExpressions) {
             String strippedExpression = expressionUtil.stripExpression(processorExpression);
 
-            for (final ICommentProcessor processor : configuration.getCommentProcessors().values()) {
-                processor.setCurrentParagraphCoordinates(paragraphCoordinates);
+            for (final Object processor : configuration.getCommentProcessors().values()) {
+                ((ICommentProcessor) processor).setCurrentParagraphCoordinates(paragraphCoordinates);
             }
 
             try {
@@ -174,10 +174,10 @@ public class CommentProcessorRegistry {
 
         String commentString = CommentUtil.getCommentString(comment);
 
-        for (final ICommentProcessor processor : configuration.getCommentProcessors().values()) {
-            processor.setCurrentParagraphCoordinates(paragraphCoordinates);
-            processor.setCurrentRunCoordinates(runCoordinates);
-            processor.setCurrentCommentWrapper(commentWrapper);
+        for (final Object processor : configuration.getCommentProcessors().values()) {
+            ((ICommentProcessor) processor).setCurrentParagraphCoordinates(paragraphCoordinates);
+            ((ICommentProcessor) processor).setCurrentRunCoordinates(runCoordinates);
+            ((ICommentProcessor) processor).setCurrentCommentWrapper(commentWrapper);
         }
 
         try {
@@ -201,8 +201,8 @@ public class CommentProcessorRegistry {
     }
 
     public void reset() {
-        for (ICommentProcessor processor : configuration.getCommentProcessors().values()) {
-            processor.reset();
+        for (Object processor : configuration.getCommentProcessors().values()) {
+            ((ICommentProcessor) processor).reset();
         }
     }
 }

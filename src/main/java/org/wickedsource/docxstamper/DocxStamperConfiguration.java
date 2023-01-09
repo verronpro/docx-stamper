@@ -30,7 +30,7 @@ public class DocxStamperConfiguration {
 
     private String nullValuesDefault = null;
 
-    private final Map<Class<?>, ICommentProcessor> commentProcessors = new HashMap<>();
+    private final Map<Class<?>, Object> commentProcessors = new HashMap<>();
 
     private final Map<Class<?>, ITypeResolver> typeResolvers = new HashMap<>();
 
@@ -184,7 +184,7 @@ public class DocxStamperConfiguration {
         return failOnUnresolvedExpression;
     }
 
-    public Map<Class<?>, ICommentProcessor> getCommentProcessors() {
+    public Map<Class<?>, Object> getCommentProcessors() {
         return commentProcessors;
     }
 
