@@ -10,10 +10,10 @@ import org.jvnet.jaxb2_commons.ppp.Child;
 import org.wickedsource.docxstamper.DocxStamper;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
-import org.wickedsource.docxstamper.util.CommentUtil;
 import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.DocumentUtil;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
+import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,14 +24,14 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     private final DocxStamperConfiguration config;
 
     private Map<CommentWrapper, List<Object>> subContexts = new HashMap<>();
-    private Map<CommentWrapper, List<Object>> repeatElementsMap = new HashMap<>();
+    private Map<CommentWrapper, ContentAccessor> repeatElementsMap = new HashMap<>();
     private Map<CommentWrapper, WordprocessingMLPackage> subTemplates = new HashMap<>();
     private Map<CommentWrapper, ContentAccessor> gcpMap = new HashMap<>();
-    private final ObjectFactory objectFactory;
+
+    private static ObjectFactory objectFactory = null;
 
     public RepeatDocPartProcessor(DocxStamperConfiguration config) {
         this.config = config;
-        this.objectFactory = Context.getWmlObjectFactory();
     }
 
     @Override
@@ -45,18 +45,25 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                 currentCommentWrapper.getCommentRangeEnd().getParent(),
                 (ContentAccessor) currentCommentWrapper.getCommentRangeStart().getParent()
         );
-        List<Object> repeatElements = getRepeatElements(currentCommentWrapper, gcp);
+        ContentAccessor repeatElements = getRepeatElements(currentCommentWrapper, gcp);
 
-        if (repeatElements.size() > 0) {
+        if (!repeatElements.getContent().isEmpty()) {
             try {
                 subContexts.put(currentCommentWrapper, contexts);
-                subTemplates.put(currentCommentWrapper, extractSubTemplate(currentCommentWrapper, repeatElements));
+                subTemplates.put(currentCommentWrapper, extractSubTemplate(currentCommentWrapper, repeatElements, getOrCreateObjectFactory()));
                 gcpMap.put(currentCommentWrapper, gcp);
                 repeatElementsMap.put(currentCommentWrapper, repeatElements);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private static ObjectFactory getOrCreateObjectFactory() {
+        if (objectFactory == null) {
+            objectFactory = Context.getWmlObjectFactory();
+        }
+        return objectFactory;
     }
 
     private WordprocessingMLPackage copyTemplate(WordprocessingMLPackage doc) throws Docx4JException {
@@ -72,7 +79,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 
             // index changes after each replacement so we need to get the insert index at the right moment.
             ContentAccessor insertParentContentAccessor = gcpMap.get(commentWrapper);
-            Integer index = insertParentContentAccessor.getContent().indexOf(repeatElementsMap.get(commentWrapper).get(0));
+            Integer index = insertParentContentAccessor.getContent().indexOf(repeatElementsMap.get(commentWrapper).getContent().get(0));
 
             if (expressionContexts != null) {
                 for (Object subContext : expressionContexts) {
@@ -97,8 +104,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                 insertParentContentAccessor.getContent().add(index, ParagraphUtil.create(config.getNullValuesDefault()));
             }
 
-            CommentUtil.deleteComment(commentWrapper);
-            insertParentContentAccessor.getContent().removeAll(repeatElementsMap.get(commentWrapper));
+            insertParentContentAccessor.getContent().removeAll(repeatElementsMap.get(commentWrapper).getContent());
         }
     }
 
@@ -110,19 +116,20 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         repeatElementsMap = new HashMap<>();
     }
 
-    private WordprocessingMLPackage extractSubTemplate(CommentWrapper commentWrapper, List<Object> repeatElements) throws Exception {
+    private WordprocessingMLPackage extractSubTemplate(CommentWrapper commentWrapper, ContentAccessor repeatElements, ObjectFactory objectFactory) throws Exception {
         WordprocessingMLPackage document = getDocument();
-
-        CommentUtil.deleteComment(commentWrapper); // for deep copy without comment
-
         WordprocessingMLPackage subDocument = WordprocessingMLPackage.createPackage();
 
         CommentsPart commentsPart = new CommentsPart();
         subDocument.getMainDocumentPart().addTargetPart(commentsPart);
 
-        subDocument.getMainDocumentPart().getContent().addAll(repeatElements);
+        // copy the elements to repeat without comment range anchors
+        List<Object> finalRepeatElements = XmlUtils.deepCopy(repeatElements.getContent());
+        removeCommentAnchorsFromFinalElements(commentWrapper, finalRepeatElements);
+        subDocument.getMainDocumentPart().getContent().addAll(finalRepeatElements);
 
-        DocumentUtil.walkObjectsAndImportImages(() -> repeatElements, document, subDocument);
+        // copy the images from parent document using the original repeat elements
+        DocumentUtil.walkObjectsAndImportImages(repeatElements, document, subDocument);
 
         Comments comments = objectFactory.createComments();
         commentWrapper.getChildren().forEach(comment -> comments.getComment().add(comment.getComment()));
@@ -131,8 +138,39 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         return subDocument;
     }
 
-    private static List<Object> getRepeatElements(CommentWrapper commentWrapper, ContentAccessor greatestCommonParent) {
-        List<Object> repeatElements = new ArrayList<>();
+    private static void removeCommentAnchorsFromFinalElements(CommentWrapper commentWrapper, List<Object> finalRepeatElements) {
+        List<Object> commentsToRemove = new ArrayList<>();
+        new BaseDocumentWalker(() -> finalRepeatElements) {
+            @Override
+            protected void onCommentRangeStart(CommentRangeStart commentRangeStart) {
+                if (commentRangeStart.getId().equals(commentWrapper.getComment().getId())) {
+                    commentsToRemove.add(commentRangeStart);
+                }
+            }
+
+            @Override
+            protected void onCommentRangeEnd(CommentRangeEnd commentRangeEnd) {
+                if (commentRangeEnd.getId().equals(commentWrapper.getComment().getId())) {
+                    commentsToRemove.add(commentRangeEnd);
+                }
+            }
+        };
+
+        for (Object commentAnchorToRemove : commentsToRemove) {
+            if (commentAnchorToRemove instanceof CommentRangeStart) {
+                ContentAccessor parent = ((ContentAccessor) ((CommentRangeStart) commentAnchorToRemove).getParent());
+                parent.getContent().remove(commentAnchorToRemove);
+            } else if (commentAnchorToRemove instanceof CommentRangeEnd) {
+                ContentAccessor parent = ((ContentAccessor) ((CommentRangeEnd) commentAnchorToRemove).getParent());
+                parent.getContent().remove(commentAnchorToRemove);
+            } else {
+                throw new RuntimeException("Unknown comment anchor type given to remove !");
+            }
+        }
+    }
+
+    private static ContentAccessor getRepeatElements(CommentWrapper commentWrapper, ContentAccessor greatestCommonParent) {
+        ContentAccessor repeatElements = getOrCreateObjectFactory().createP();
         boolean startFound = false;
         for (Object element : greatestCommonParent.getContent()) {
             if (!startFound
@@ -140,7 +178,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                 startFound = true;
             }
             if (startFound) {
-                repeatElements.add(element);
+                repeatElements.getContent().add(element);
                 if (depthElementSearch(commentWrapper.getCommentRangeEnd(), element)) {
                     break;
                 }

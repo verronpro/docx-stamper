@@ -165,7 +165,6 @@ public class CommentUtil {
             deleteCommentReference(commentRangeStartParent,
                     comment.getCommentRangeStart().getId());
         }
-        // TODO: also delete comment from comments.xml
     }
 
     private static boolean deleteCommentReference(ContentAccessor parent,
