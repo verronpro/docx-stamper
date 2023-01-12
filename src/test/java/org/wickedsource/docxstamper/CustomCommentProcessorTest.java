@@ -26,7 +26,7 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
         Assert.assertEquals(2, processor.getVisitedParagraphs().size());
     }
 
-    static class EmptyContext{
+    static class EmptyContext {
 
     }
 
@@ -36,9 +36,9 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
 
     }
 
-    public static class CustomCommentProcessor implements ICommentProcessor, ICustomCommentProcessor{
+    public static class CustomCommentProcessor implements ICommentProcessor, ICustomCommentProcessor {
 
-        private List<ParagraphCoordinates> visitedParagraphs = new ArrayList<>();
+        private final List<ParagraphCoordinates> visitedParagraphs = new ArrayList<>();
 
         private ParagraphCoordinates currentParagraph;
 
@@ -59,6 +59,11 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
 
         @Override
         public void setCurrentCommentWrapper(CommentWrapper commentWrapper) {
+
+        }
+
+        @Override
+        public void setDocument(WordprocessingMLPackage document) {
 
         }
 

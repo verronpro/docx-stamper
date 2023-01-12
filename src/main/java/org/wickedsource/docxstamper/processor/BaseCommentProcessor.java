@@ -1,5 +1,6 @@
 package org.wickedsource.docxstamper.processor;
 
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
 import org.wickedsource.docxstamper.api.coordinates.RunCoordinates;
@@ -14,6 +15,8 @@ public abstract class BaseCommentProcessor implements ICommentProcessor {
 	private RunCoordinates currentRunCoordinates;
 
 	private CommentWrapper currentCommentWrapper;
+
+	private WordprocessingMLPackage document;
 
 	public RunCoordinates getCurrentRunCoordinates() {
 		return currentRunCoordinates;
@@ -42,5 +45,14 @@ public abstract class BaseCommentProcessor implements ICommentProcessor {
 
 	public CommentWrapper getCurrentCommentWrapper() {
 		return currentCommentWrapper;
+	}
+
+	@Override
+	public void setDocument(WordprocessingMLPackage document) {
+		this.document = document;
+	}
+
+	public WordprocessingMLPackage getDocument() {
+		return document;
 	}
 }

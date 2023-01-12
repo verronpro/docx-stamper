@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 public class CommentUtil {
 
-    private static Logger logger = LoggerFactory.getLogger(CommentUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(CommentUtil.class);
 
     private CommentUtil() {
 
@@ -41,7 +41,7 @@ public class CommentUtil {
                                                     WordprocessingMLPackage document) {
         try {
             if (run instanceof Child) {
-                Child child = (Child) run;
+                Child child = run;
                 ContentAccessor parent = (ContentAccessor) child.getParent();
                 if (parent == null)
                     return null;
@@ -271,14 +271,14 @@ public class CommentUtil {
             protected void onCommentRangeEnd(CommentRangeEnd commentRangeEnd) {
                 CommentWrapper commentWrapper = allComments.get(commentRangeEnd.getId());
                 if (commentWrapper == null) {
-                    throw new RuntimeException("UNEXPECTED !");
+                    throw new RuntimeException("Found a comment range end before the comment range start !");
                 }
                 commentWrapper.setCommentRangeEnd(commentRangeEnd);
                 if (!stack.isEmpty()) {
                     if (stack.peek().equals(commentWrapper)) {
                         stack.pop();
                     } else {
-                        throw new RuntimeException("UNEXPECTED 2 !");
+                        throw new RuntimeException("Cannot figure which comment contains the other !");
                     }
                 }
             }

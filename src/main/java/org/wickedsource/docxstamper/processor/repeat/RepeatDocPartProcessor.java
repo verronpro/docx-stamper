@@ -3,7 +3,6 @@ package org.wickedsource.docxstamper.processor.repeat;
 import org.docx4j.XmlUtils;
 import org.docx4j.jaxb.Context;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
-import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.CommentsPart;
 import org.docx4j.wml.*;
@@ -54,7 +53,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                 subTemplates.put(currentCommentWrapper, extractSubTemplate(currentCommentWrapper, repeatElements));
                 gcpMap.put(currentCommentWrapper, gcp);
                 repeatElementsMap.put(currentCommentWrapper, repeatElements);
-            } catch (InvalidFormatException e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
@@ -111,21 +110,25 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         repeatElementsMap = new HashMap<>();
     }
 
-    private WordprocessingMLPackage extractSubTemplate(CommentWrapper commentWrapper, List<Object> repeatElements) throws InvalidFormatException {
+    private WordprocessingMLPackage extractSubTemplate(CommentWrapper commentWrapper, List<Object> repeatElements) throws Exception {
+        WordprocessingMLPackage document = getDocument();
+
         CommentUtil.deleteComment(commentWrapper); // for deep copy without comment
 
-        WordprocessingMLPackage document = WordprocessingMLPackage.createPackage();
+        WordprocessingMLPackage subDocument = WordprocessingMLPackage.createPackage();
 
         CommentsPart commentsPart = new CommentsPart();
-        document.getMainDocumentPart().addTargetPart(commentsPart);
+        subDocument.getMainDocumentPart().addTargetPart(commentsPart);
 
-        document.getMainDocumentPart().getContent().addAll(repeatElements);
+        subDocument.getMainDocumentPart().getContent().addAll(repeatElements);
+
+        DocumentUtil.walkObjectsAndImportImages(() -> repeatElements, document, subDocument);
 
         Comments comments = objectFactory.createComments();
         commentWrapper.getChildren().forEach(comment -> comments.getComment().add(comment.getComment()));
         commentsPart.setContents(comments);
 
-        return document;
+        return subDocument;
     }
 
     private static List<Object> getRepeatElements(CommentWrapper commentWrapper, ContentAccessor greatestCommonParent) {
