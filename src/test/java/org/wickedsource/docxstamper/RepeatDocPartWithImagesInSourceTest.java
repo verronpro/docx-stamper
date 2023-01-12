@@ -12,7 +12,6 @@ import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.wickedsource.docxstamper.util.DocumentUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -64,7 +63,5 @@ public class RepeatDocPartWithImagesInSourceTest extends AbstractDocx4jTest {
 
         Assert.assertNotEquals(document.getSourcePartStore().getPartSize(image1RelPart.getPartName().getName().substring(1)), 0);
         Assert.assertNotEquals(document.getSourcePartStore().getPartSize(image2RelPart.getPartName().getName().substring(1)), 0);
-
-        document.save(new File("RESULTAAAT.docx"));
     }
 }
