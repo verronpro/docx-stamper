@@ -82,7 +82,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                 for (Object subContext : expressionContexts) {
                     try {
                         WordprocessingMLPackage subTemplate = copyTemplate(subTemplates.get(commentWrapper));
-                        DocxStamper<Object> stamper = new DocxStamper<>(config);
+                        DocxStamper<Object> stamper = new DocxStamper<>(config.copy());
                         ByteArrayOutputStream output = new ByteArrayOutputStream();
                         stamper.stamp(subTemplate, subContext, output);
                         WordprocessingMLPackage subDocument = WordprocessingMLPackage.load(new ByteArrayInputStream(output.toByteArray()));

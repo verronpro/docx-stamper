@@ -16,10 +16,7 @@ import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
 import org.wickedsource.docxstamper.util.walk.DocumentWalker;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CommentUtil {
@@ -166,6 +163,32 @@ public class CommentUtil {
                     comment.getCommentRangeStart().getId());
         }
     }
+
+    public static void deleteCommentFromElement(ContentAccessor element, BigInteger commentId) {
+        List<Object> elementsToRemove = new ArrayList<>();
+
+        for (Object obj : element.getContent()) {
+            Object unwrapped = XmlUtils.unwrap(obj);
+            if (unwrapped instanceof CommentRangeStart) {
+                if (((CommentRangeStart) unwrapped).getId().equals(commentId)) {
+                    elementsToRemove.add(obj);
+                }
+            } else if (unwrapped instanceof CommentRangeEnd) {
+                if (((CommentRangeEnd) unwrapped).getId().equals(commentId)) {
+                    elementsToRemove.add(obj);
+                }
+            } else if (unwrapped instanceof R.CommentReference) {
+                if (((R.CommentReference) unwrapped).getId().equals(commentId)) {
+                    elementsToRemove.add(obj);
+                }
+            } else if (unwrapped instanceof ContentAccessor) {
+                deleteCommentFromElement((ContentAccessor) unwrapped, commentId);
+            }
+        }
+
+        element.getContent().removeAll(elementsToRemove);
+    }
+
 
     private static boolean deleteCommentReference(ContentAccessor parent,
                                                   BigInteger commentId) {

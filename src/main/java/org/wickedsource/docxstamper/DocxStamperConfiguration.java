@@ -6,6 +6,8 @@ import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
 import org.wickedsource.docxstamper.el.NoOpEvaluationContextConfigurer;
 import org.wickedsource.docxstamper.replace.typeresolver.FallbackResolver;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +39,41 @@ public class DocxStamperConfiguration {
     private ITypeResolver defaultTypeResolver = new FallbackResolver();
 
     private final Map<Class<?>, Object> expressionFunctions = new HashMap<>();
+
+    /**
+     * Copy operator for the whole DocxStamperConfiguration, including creating self comment processors instances
+     * to avoid unexpected resets, since comment processors are stateful their instances cannot be shared over
+     * multiple stampings.
+     *
+     * @return copied DocxStamperConfiguration.
+     */
+    public DocxStamperConfiguration copy() {
+        DocxStamperConfiguration newConfig = new DocxStamperConfiguration()
+                .setLineBreakPlaceholder(lineBreakPlaceholder)
+                .setEvaluationContextConfigurer(evaluationContextConfigurer)
+                .setFailOnUnresolvedExpression(failOnUnresolvedExpression)
+                .leaveEmptyOnExpressionError(leaveEmptyOnExpressionError)
+                .replaceUnresolvedExpressions(replaceUnresolvedExpressions)
+                .unresolvedExpressionsDefaultValue(unresolvedExpressionsDefaultValue)
+                .replaceNullValues(replaceNullValues)
+                .nullValuesDefault(nullValuesDefault)
+                .setDefaultTypeResolver(defaultTypeResolver);
+
+        typeResolvers.entrySet().forEach(entry -> newConfig.addTypeResolver(entry.getKey(), entry.getValue()));
+        expressionFunctions.entrySet().forEach(entry -> newConfig.exposeInterfaceToExpressionLanguage(entry.getKey(), entry.getValue()));
+        commentProcessors.entrySet().forEach(entry -> {
+            try {
+                Constructor<?> constructor = entry.getValue().getClass().getDeclaredConstructor();
+                newConfig.addCommentProcessor(entry.getKey(), (ICommentProcessor) constructor.newInstance());
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("Cannot find no args constructor for CommentProcessor !", e);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException("Cannot instantiate CommentProcessor copy !", e);
+            }
+        });
+
+        return newConfig;
+    }
 
     /**
      * The String provided as lineBreakPlaceholder will be replaces with a line break
