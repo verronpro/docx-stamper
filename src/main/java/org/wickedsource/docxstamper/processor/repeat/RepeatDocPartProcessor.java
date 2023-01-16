@@ -159,7 +159,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         for (Object commentAnchorToRemove : commentsToRemove) {
             if (commentAnchorToRemove instanceof CommentRangeStart) {
                 ContentAccessor parent = ((ContentAccessor) ((CommentRangeStart) commentAnchorToRemove).getParent());
-                parent.getContent().removeAll(parent.getContent().subList(0, parent.getContent().indexOf(commentAnchorToRemove)));
+                parent.getContent().removeAll(parent.getContent().subList(0, parent.getContent().indexOf(commentAnchorToRemove) + 1));
             } else if (commentAnchorToRemove instanceof CommentRangeEnd) {
                 ContentAccessor parent = ((ContentAccessor) ((CommentRangeEnd) commentAnchorToRemove).getParent());
                 parent.getContent().removeAll(parent.getContent().subList(parent.getContent().indexOf(commentAnchorToRemove), parent.getContent().size()));
