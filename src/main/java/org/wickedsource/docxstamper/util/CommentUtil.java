@@ -175,20 +175,26 @@ public class CommentUtil {
                 if (deleteCommentReference((ContentAccessor) contentObject, commentId)) {
                     return true;
                 }
-            }
-            if (contentObject instanceof R) {
+            } else if (contentObject instanceof R) {
                 for (Object runContentObject : ((R) contentObject).getContent()) {
                     Object unwrapped = XmlUtils.unwrap(runContentObject);
-                    if (unwrapped instanceof R.CommentReference) {
-                        BigInteger foundCommentId = ((R.CommentReference) unwrapped)
-                                .getId();
-                        if (foundCommentId.equals(commentId)) {
-                            parent.getContent().remove(i);
-                            return true;
-                        }
-                    }
+                    if (unwrapped instanceof R.CommentReference && removeCommentReference(parent, commentId, i, (R.CommentReference) unwrapped))
+                        return true;
                 }
+            } else if (contentObject instanceof R.CommentReference) {
+                if (removeCommentReference(parent, commentId, i, (R.CommentReference) contentObject))
+                    return true;
             }
+        }
+        return false;
+    }
+
+    private static boolean removeCommentReference(ContentAccessor parent, BigInteger commentId, int i, R.CommentReference contentObject) {
+        BigInteger foundCommentId = contentObject
+                .getId();
+        if (foundCommentId.equals(commentId)) {
+            parent.getContent().remove(i);
+            return true;
         }
         return false;
     }
