@@ -183,7 +183,7 @@ public class CommentProcessorRegistry {
 
         try {
             expressionResolver.resolveExpression(commentString, expressionContext);
-            // comments.remove(comment.getId()); // guarantee one-time processing
+            comments.remove(comment.getId());
             logger.debug(
                     String.format("Comment '%s' has been successfully processed by a comment processor.",
                             commentString));
