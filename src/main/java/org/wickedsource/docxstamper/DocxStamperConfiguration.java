@@ -8,6 +8,8 @@ import org.wickedsource.docxstamper.processor.displayif.IDisplayIfProcessor;
 import org.wickedsource.docxstamper.processor.repeat.*;
 import org.wickedsource.docxstamper.processor.replaceExpression.IReplaceWithProcessor;
 import org.wickedsource.docxstamper.processor.replaceExpression.ReplaceWithProcessor;
+import org.wickedsource.docxstamper.processor.table.ITableResolver;
+import org.wickedsource.docxstamper.processor.table.TableResolver;
 import org.wickedsource.docxstamper.replace.typeresolver.FallbackResolver;
 
 import java.util.HashMap;
@@ -48,6 +50,7 @@ public class DocxStamperConfiguration {
         commentProcessorsToUse.put(IRepeatProcessor.class, RepeatProcessor.class);
         commentProcessorsToUse.put(IParagraphRepeatProcessor.class, ParagraphRepeatProcessor.class);
         commentProcessorsToUse.put(IRepeatDocPartProcessor.class, RepeatDocPartProcessor.class);
+        commentProcessorsToUse.put(ITableResolver.class, TableResolver.class);
         commentProcessorsToUse.put(IDisplayIfProcessor.class, DisplayIfProcessor.class);
         commentProcessorsToUse.put(IReplaceWithProcessor.class, ReplaceWithProcessor.class);
     }
