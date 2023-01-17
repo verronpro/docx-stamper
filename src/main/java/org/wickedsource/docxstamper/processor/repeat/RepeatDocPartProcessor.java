@@ -9,6 +9,7 @@ import org.docx4j.wml.*;
 import org.jvnet.jaxb2_commons.ppp.Child;
 import org.wickedsource.docxstamper.DocxStamper;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
+import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.DocumentUtil;
@@ -22,8 +23,6 @@ import java.util.stream.Collectors;
 
 public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRepeatDocPartProcessor {
 
-    private final DocxStamperConfiguration config;
-
     private Map<CommentWrapper, List<Object>> subContexts = new HashMap<>();
     private Map<CommentWrapper, List<Object>> repeatElementsMap = new HashMap<>();
     private Map<CommentWrapper, WordprocessingMLPackage> subTemplates = new HashMap<>();
@@ -31,9 +30,10 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 
     private static ObjectFactory objectFactory = null;
 
-    public RepeatDocPartProcessor(DocxStamperConfiguration config) {
-        this.config = config;
+    public RepeatDocPartProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
+        super(config, typeResolverRegistry);
     }
+
 
     @Override
     public void repeatDocPart(List<Object> contexts) throws Exception {
@@ -82,7 +82,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                 for (Object subContext : expressionContexts) {
                     try {
                         WordprocessingMLPackage subTemplate = copyTemplate(subTemplates.get(commentWrapper));
-                        DocxStamper<Object> stamper = new DocxStamper<>(config.copy());
+                        DocxStamper<Object> stamper = new DocxStamper<>(configuration.copy());
                         ByteArrayOutputStream output = new ByteArrayOutputStream();
                         stamper.stamp(subTemplate, subContext, output);
                         WordprocessingMLPackage subDocument = WordprocessingMLPackage.load(new ByteArrayInputStream(output.toByteArray()));
@@ -97,8 +97,8 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                         throw new RuntimeException(e);
                     }
                 }
-            } else if (config.isReplaceNullValues() && config.getNullValuesDefault() != null) {
-                insertParentContentAccessor.getContent().add(index, ParagraphUtil.create(config.getNullValuesDefault()));
+            } else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
+                insertParentContentAccessor.getContent().add(index, ParagraphUtil.create(configuration.getNullValuesDefault()));
             }
 
             insertParentContentAccessor.getContent().removeAll(repeatElementsMap.get(commentWrapper));

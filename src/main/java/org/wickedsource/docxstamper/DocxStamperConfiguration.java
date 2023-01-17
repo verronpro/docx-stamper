@@ -1,13 +1,15 @@
 package org.wickedsource.docxstamper;
 
 import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
-import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
 import org.wickedsource.docxstamper.el.NoOpEvaluationContextConfigurer;
+import org.wickedsource.docxstamper.processor.displayif.DisplayIfProcessor;
+import org.wickedsource.docxstamper.processor.displayif.IDisplayIfProcessor;
+import org.wickedsource.docxstamper.processor.repeat.*;
+import org.wickedsource.docxstamper.processor.replaceExpression.IReplaceWithProcessor;
+import org.wickedsource.docxstamper.processor.replaceExpression.ReplaceWithProcessor;
 import org.wickedsource.docxstamper.replace.typeresolver.FallbackResolver;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,6 +34,8 @@ public class DocxStamperConfiguration {
 
     private String nullValuesDefault = null;
 
+    private final Map<Class<?>, Class<?>> commentProcessorsToUse = new HashMap<>();
+
     private final Map<Class<?>, Object> commentProcessors = new HashMap<>();
 
     private final Map<Class<?>, ITypeResolver> typeResolvers = new HashMap<>();
@@ -39,6 +43,14 @@ public class DocxStamperConfiguration {
     private ITypeResolver defaultTypeResolver = new FallbackResolver();
 
     private final Map<Class<?>, Object> expressionFunctions = new HashMap<>();
+
+    public DocxStamperConfiguration() {
+        commentProcessorsToUse.put(IRepeatProcessor.class, RepeatProcessor.class);
+        commentProcessorsToUse.put(IParagraphRepeatProcessor.class, ParagraphRepeatProcessor.class);
+        commentProcessorsToUse.put(IRepeatDocPartProcessor.class, RepeatDocPartProcessor.class);
+        commentProcessorsToUse.put(IDisplayIfProcessor.class, DisplayIfProcessor.class);
+        commentProcessorsToUse.put(IReplaceWithProcessor.class, ReplaceWithProcessor.class);
+    }
 
     /**
      * Copy operator for the whole DocxStamperConfiguration, including creating self comment processors instances
@@ -61,16 +73,7 @@ public class DocxStamperConfiguration {
 
         typeResolvers.entrySet().forEach(entry -> newConfig.addTypeResolver(entry.getKey(), entry.getValue()));
         expressionFunctions.entrySet().forEach(entry -> newConfig.exposeInterfaceToExpressionLanguage(entry.getKey(), entry.getValue()));
-        commentProcessors.entrySet().forEach(entry -> {
-            try {
-                Constructor<?> constructor = entry.getValue().getClass().getDeclaredConstructor();
-                newConfig.addCommentProcessor(entry.getKey(), (ICommentProcessor) constructor.newInstance());
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException("Cannot find no args constructor for CommentProcessor !", e);
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException("Cannot instantiate CommentProcessor copy !", e);
-            }
-        });
+        commentProcessorsToUse.entrySet().forEach(entry -> newConfig.addCommentProcessor(entry.getKey(), entry.getValue()));
 
         return newConfig;
     }
@@ -113,12 +116,12 @@ public class DocxStamperConfiguration {
      * Registers the specified ICommentProcessor as an implementation of the
      * specified interface.
      *
-     * @param interfaceClass   the Interface which is implemented by the commentProcessor.
-     * @param commentProcessor the commentProcessor implementing the specified interface.
+     * @param interfaceClass            the Interface which is implemented by the commentProcessor.
+     * @param commentProcessorImplClass the commentProcessor class implementing the specified interface.
      */
     public DocxStamperConfiguration addCommentProcessor(Class<?> interfaceClass,
-                                                        ICommentProcessor commentProcessor) {
-        this.commentProcessors.put(interfaceClass, commentProcessor);
+                                                        Class<?> commentProcessorImplClass) {
+        this.commentProcessorsToUse.put(interfaceClass, commentProcessorImplClass);
         return this;
     }
 
@@ -223,6 +226,10 @@ public class DocxStamperConfiguration {
 
     public Map<Class<?>, Object> getCommentProcessors() {
         return commentProcessors;
+    }
+
+    public Map<Class<?>, Class<?>> getCommentProcessorsToUse() {
+        return commentProcessorsToUse;
     }
 
     Map<Class<?>, ITypeResolver> getTypeResolvers() {

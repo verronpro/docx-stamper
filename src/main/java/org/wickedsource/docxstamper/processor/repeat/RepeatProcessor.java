@@ -10,7 +10,6 @@ import org.wickedsource.docxstamper.api.coordinates.TableRowCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
-import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.CommentUtil;
 import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
@@ -25,11 +24,10 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
     private Map<TableRowCoordinates, List<Object>> tableRowsToRepeat = new HashMap<>();
     private Map<TableRowCoordinates, CommentWrapper> tableRowsCommentsToRemove = new HashMap<>();
 
-    private final PlaceholderReplacer placeholderReplacer;
-
-    public RepeatProcessor(TypeResolverRegistry typeResolverRegistry, DocxStamperConfiguration config) {
-        this.placeholderReplacer = new PlaceholderReplacer(typeResolverRegistry, config);
+    public RepeatProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
+        super(config, typeResolverRegistry);
     }
+
 
     @Override
     public void commitChanges(WordprocessingMLPackage document) {

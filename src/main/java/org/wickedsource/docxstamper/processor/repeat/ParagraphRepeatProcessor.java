@@ -10,7 +10,6 @@ import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
-import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
 
 import java.math.BigInteger;
@@ -28,12 +27,9 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 
     private Map<ParagraphCoordinates, ParagraphsToRepeat> pToRepeat = new HashMap<>();
 
-    private final PlaceholderReplacer placeholderReplacer;
-    private final DocxStamperConfiguration config;
 
-    public ParagraphRepeatProcessor(TypeResolverRegistry typeResolverRegistry, DocxStamperConfiguration config) {
-        this.placeholderReplacer = new PlaceholderReplacer(typeResolverRegistry, config);
-        this.config = config;
+    public ParagraphRepeatProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
+        super(config, typeResolverRegistry);
     }
 
     @Override
@@ -67,8 +63,8 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
                         paragraphsToAdd.add(pClone);
                     }
                 }
-            } else if (config.isReplaceNullValues() && config.getNullValuesDefault() != null) {
-                paragraphsToAdd.add(ParagraphUtil.create(config.getNullValuesDefault()));
+            } else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
+                paragraphsToAdd.add(ParagraphUtil.create(configuration.getNullValuesDefault()));
             }
 
             Object parent = rCoords.getParagraph().getParent();
