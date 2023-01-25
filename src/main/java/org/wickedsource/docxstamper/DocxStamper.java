@@ -1,6 +1,8 @@
 package org.wickedsource.docxstamper;
 
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.wml.ContentAccessor;
+import org.docx4j.wml.P;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
@@ -12,6 +14,7 @@ import org.wickedsource.docxstamper.replace.typeresolver.DateResolver;
 import org.wickedsource.docxstamper.replace.typeresolver.FallbackResolver;
 import org.wickedsource.docxstamper.replace.typeresolver.image.Image;
 import org.wickedsource.docxstamper.replace.typeresolver.image.ImageResolver;
+import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -110,12 +113,23 @@ public class DocxStamper<T> {
     public void stamp(InputStream template, T contextRoot, OutputStream out) throws DocxStamperException {
         try {
             WordprocessingMLPackage document = WordprocessingMLPackage.load(template);
+            findSections(document.getMainDocumentPart());
             stamp(document, contextRoot, out);
         } catch (DocxStamperException e) {
             throw e;
         } catch (Exception e) {
             throw new DocxStamperException(e);
         }
+    }
+
+    private void findSections(ContentAccessor content) {
+        new BaseDocumentWalker(content) {
+            @Override
+            protected void onParagraph(P paragraph) {
+                if (paragraph.getPPr() != null && paragraph.getPPr().getSectPr() != null)
+                    System.out.println("shiiiit");
+            }
+        }.walk();
     }
 
     /**

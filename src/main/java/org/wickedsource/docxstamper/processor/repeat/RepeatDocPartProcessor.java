@@ -168,15 +168,28 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         }.walk();
 
         for (Object commentAnchorToRemove : commentsToRemove) {
-            if (commentAnchorToRemove instanceof CommentRangeStart) {
-                ContentAccessor parent = ((ContentAccessor) ((CommentRangeStart) commentAnchorToRemove).getParent());
-                parent.getContent().removeAll(parent.getContent().subList(0, parent.getContent().indexOf(commentAnchorToRemove) + 1));
-            } else if (commentAnchorToRemove instanceof CommentRangeEnd) {
-                ContentAccessor parent = ((ContentAccessor) ((CommentRangeEnd) commentAnchorToRemove).getParent());
-                parent.getContent().removeAll(parent.getContent().subList(parent.getContent().indexOf(commentAnchorToRemove), parent.getContent().size()));
-            } else {
-                throw new RuntimeException("Unknown comment anchor type given to remove !");
-            }
+            removeCommentAnchorFromParentOrFinalRepeatElements(commentAnchorToRemove, finalRepeatElements);
+        }
+    }
+
+    private static void removeCommentAnchorFromParentOrFinalRepeatElements(Object commentAnchorToRemove, List<Object> finalRepeatElements) {
+        if (finalRepeatElements.contains(commentAnchorToRemove)) {
+            finalRepeatElements.remove(commentAnchorToRemove);
+            return;
+        }
+
+        Object parent = null;
+        if (commentAnchorToRemove instanceof CommentRangeStart) {
+            parent = ((CommentRangeStart) commentAnchorToRemove).getParent();
+        } else if (commentAnchorToRemove instanceof CommentRangeEnd) {
+            parent = ((CommentRangeEnd) commentAnchorToRemove).getParent();
+        } else {
+            throw new RuntimeException("Unknown comment anchor type given to remove !");
+        }
+
+        if (finalRepeatElements.contains(commentAnchorToRemove) && parent != null) {
+            ContentAccessor caParent = (ContentAccessor) XmlUtils.unwrap(parent);
+            caParent.getContent().removeAll(caParent.getContent().subList(0, caParent.getContent().indexOf(commentAnchorToRemove) + 1));
         }
     }
 
