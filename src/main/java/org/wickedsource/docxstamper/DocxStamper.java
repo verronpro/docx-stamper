@@ -20,7 +20,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -122,14 +124,18 @@ public class DocxStamper<T> {
         }
     }
 
-    private void findSections(ContentAccessor content) {
+    public static void findSections(ContentAccessor content) {
+        List<P> pList = new ArrayList<>();
         new BaseDocumentWalker(content) {
             @Override
             protected void onParagraph(P paragraph) {
-                if (paragraph.getPPr() != null && paragraph.getPPr().getSectPr() != null)
-                    System.out.println("shiiiit");
+                if (paragraph.getPPr() != null && paragraph.getPPr().getSectPr() != null) {
+                    System.out.println("found a paragraph with SectPr set to : " + paragraph.getPPr().getSectPr().getPgSz().getOrient());
+                    pList.add(paragraph);
+                }
             }
         }.walk();
+        System.out.println("TOTAL SECT PR FOUND : " + pList.size());
     }
 
     /**

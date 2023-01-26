@@ -2,10 +2,7 @@ package org.wickedsource.docxstamper.processor.repeat;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.wml.CommentRangeEnd;
-import org.docx4j.wml.CommentRangeStart;
-import org.docx4j.wml.ContentAccessor;
-import org.docx4j.wml.P;
+import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
@@ -26,6 +23,7 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         CommentWrapper commentWrapper;
         List<Object> data;
         List<P> paragraphs;
+        SectPr sectionStyleToApplyAfter;
     }
 
     private Map<ParagraphCoordinates, ParagraphsToRepeat> pToRepeat = new HashMap<>();
@@ -40,12 +38,26 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         ParagraphCoordinates paragraphCoordinates = getCurrentParagraphCoordinates();
 
         P paragraph = paragraphCoordinates.getParagraph();
+
+
         List<P> paragraphs = getParagraphsInsideComment(paragraph);
+        paragraphs.forEach(subP -> {
+            if (subP.getPPr() != null && subP.getPPr().getSectPr() != null) {
+                System.out.println("WARNING ! Sub paragraph in repeatParagraph has section break ! " + subP.getPPr().getSectPr());
+            }
+        });
 
         ParagraphsToRepeat toRepeat = new ParagraphsToRepeat();
         toRepeat.commentWrapper = getCurrentCommentWrapper();
         toRepeat.data = objects;
         toRepeat.paragraphs = paragraphs;
+
+        if (paragraph.getPPr() != null && paragraph.getPPr().getSectPr() != null) {
+            System.out.println("WARNING ! Main paragraph in repeatParagraph has section break ! " + paragraph.getPPr().getSectPr());
+            toRepeat.sectionStyleToApplyAfter = paragraph.getPPr().getSectPr();
+        } else {
+            toRepeat.sectionStyleToApplyAfter = null;
+        }
 
         pToRepeat.put(paragraphCoordinates, toRepeat);
     }
@@ -62,6 +74,8 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
                 for (final Object expressionContext : expressionContexts) {
                     for (P paragraphToClone : paragraphsToRepeat.paragraphs) {
                         P pClone = XmlUtils.deepCopy(paragraphToClone);
+                        // ensure we don't repeat page breaks until the end
+                        pClone.getPPr().setSectPr(null);
                         CommentUtil.deleteCommentFromElement(pClone, paragraphsToRepeat.commentWrapper.getComment().getId());
                         placeholderReplacer.resolveExpressionsForParagraph(pClone, expressionContext, document);
 
@@ -70,6 +84,14 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
                 }
             } else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
                 paragraphsToAdd.add(ParagraphUtil.create(configuration.getNullValuesDefault()));
+            }
+
+            if (!paragraphsToAdd.isEmpty() && paragraphsToRepeat.sectionStyleToApplyAfter != null) {
+                P brParagraph = paragraphsToAdd.get(paragraphsToAdd.size() - 1);
+                if (brParagraph.getPPr() == null) {
+                    brParagraph.setPPr(new PPr());
+                }
+                brParagraph.getPPr().setSectPr(paragraphsToRepeat.sectionStyleToApplyAfter);
             }
 
             Object parent = rCoords.getParagraph().getParent();
@@ -81,6 +103,8 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
                 }
 
                 contentAccessor.getContent().removeAll(paragraphsToRepeat.paragraphs);
+            } else {
+                System.out.println("Don't know where to insert repeated paragraphs ! Parent not found");
             }
         }
     }

@@ -28,6 +28,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     private Map<CommentWrapper, List<Object>> repeatElementsMap = new HashMap<>();
     private Map<CommentWrapper, WordprocessingMLPackage> subTemplates = new HashMap<>();
     private Map<CommentWrapper, ContentAccessor> gcpMap = new HashMap<>();
+    private Map<CommentWrapper, SectPr> previousSectionBreak = new HashMap<>();
 
     private static ObjectFactory objectFactory = null;
 
@@ -91,6 +92,13 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                             List<Object> changes = DocumentUtil.prepareDocumentForInsert(subDocument, document);
                             insertParentContentAccessor.getContent().addAll(index, changes);
                             index += changes.size();
+
+                            // make sure we replicate the previous section break before each repeated doc part
+                            if (!expressionContexts.isEmpty() && previousSectionBreak.containsKey(commentWrapper)) {
+                                P p = (P) insertParentContentAccessor.getContent().get(index - 1);
+                                if (p.getPPr() == null) p.setPPr(new PPr());
+                                p.getPPr().setSectPr(previousSectionBreak.get(commentWrapper));
+                            }
                         } catch (Exception e) {
                             throw new RuntimeException("Unexpected error occured ! Skipping this comment", e);
                         }
@@ -99,7 +107,13 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                     }
                 }
             } else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
-                insertParentContentAccessor.getContent().add(index, ParagraphUtil.create(configuration.getNullValuesDefault()));
+                // make sure we replicate the original previous section break before adding the default value
+                P p = ParagraphUtil.create(configuration.getNullValuesDefault());
+                if (previousSectionBreak.containsKey(commentWrapper)) {
+                    if (p.getPPr() == null) p.setPPr(new PPr());
+                    p.getPPr().setSectPr(previousSectionBreak.get(commentWrapper));
+                }
+                insertParentContentAccessor.getContent().add(index, p);
             }
 
             insertParentContentAccessor.getContent().removeAll(repeatElementsMap.get(commentWrapper));
@@ -112,6 +126,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         subTemplates = new HashMap<>();
         gcpMap = new HashMap<>();
         repeatElementsMap = new HashMap<>();
+        previousSectionBreak = new HashMap<>();
     }
 
     private WordprocessingMLPackage extractSubTemplate(CommentWrapper commentWrapper, List<Object> repeatElements, ObjectFactory objectFactory) throws Exception {
@@ -193,18 +208,30 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         }
     }
 
-    private static List<Object> getRepeatElements(CommentWrapper commentWrapper, ContentAccessor greatestCommonParent) {
+    private List<Object> getRepeatElements(CommentWrapper commentWrapper, ContentAccessor greatestCommonParent) {
         List<Object> repeatElements = new ArrayList<>();
         boolean startFound = false;
+        Object previousElement = null;
         for (Object element : greatestCommonParent.getContent()) {
             if (!startFound
                     && depthElementSearch(commentWrapper.getCommentRangeStart(), element)) {
                 startFound = true;
+            } else {
+                previousElement = element;
             }
             if (startFound) {
                 repeatElements.add(element);
                 if (depthElementSearch(commentWrapper.getCommentRangeEnd(), element)) {
                     break;
+                }
+            }
+        }
+        if (previousElement != null) {
+            Object unwrapped = XmlUtils.unwrap(previousElement);
+            if (unwrapped instanceof P) {
+                P prevP = (P) unwrapped;
+                if (prevP.getPPr() != null && prevP.getPPr().getSectPr() != null) {
+                    previousSectionBreak.put(commentWrapper, prevP.getPPr().getSectPr());
                 }
             }
         }
