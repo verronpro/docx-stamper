@@ -117,7 +117,20 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
 
-        result.save(new File("RESULTAAT.docx"));
+        List<Object> content = result.getMainDocumentPart().getContent();
+        Assert.assertNull(((P) content.get(2)).getPPr().getSectPr().getPgSz().getOrient());
+
+        Assert.assertEquals(
+                STPageOrientation.LANDSCAPE,
+                ((P) content.get(5)).getPPr().getSectPr().getPgSz().getOrient()
+        );
+        Assert.assertNull(((P) content.get(6)).getPPr().getSectPr().getPgSz().getOrient());
+
+        Assert.assertEquals(
+                STPageOrientation.LANDSCAPE,
+                ((P) content.get(9)).getPPr().getSectPr().getPgSz().getOrient()
+        );
+        Assert.assertNull(((P) content.get(11)).getPPr().getSectPr().getPgSz().getOrient());
     }
 
     @Test
@@ -142,7 +155,20 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
 
-        result.save(new File("RESULTAAT.docx"));
+        List<Object> content = result.getMainDocumentPart().getContent();
+
+        Assert.assertEquals(
+                STPageOrientation.LANDSCAPE,
+                ((P) content.get(2)).getPPr().getSectPr().getPgSz().getOrient()
+        );
+        Assert.assertTrue(((R) ((P) content.get(4)).getContent().get(0)).getContent().get(0) instanceof Br);
+
+        Assert.assertNull(((P) content.get(5)).getPPr());
+        Assert.assertNull(((P) content.get(6)).getPPr());
+
+        Assert.assertTrue(((R) ((P) content.get(7)).getContent().get(0)).getContent().get(0) instanceof Br);
+
+        Assert.assertNull(((P) content.get(9)).getPPr().getSectPr().getPgSz().getOrient());
     }
 
     @Test
