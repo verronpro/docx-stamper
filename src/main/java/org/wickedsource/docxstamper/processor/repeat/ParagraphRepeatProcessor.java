@@ -75,7 +75,9 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
                     for (P paragraphToClone : paragraphsToRepeat.paragraphs) {
                         P pClone = XmlUtils.deepCopy(paragraphToClone);
                         // ensure we don't repeat page breaks until the end
-                        pClone.getPPr().setSectPr(null);
+                        if (pClone.getPPr() != null && pClone.getPPr().getSectPr() != null) {
+                            pClone.getPPr().setSectPr(null);
+                        }
                         CommentUtil.deleteCommentFromElement(pClone, paragraphsToRepeat.commentWrapper.getComment().getId());
                         placeholderReplacer.resolveExpressionsForParagraph(pClone, expressionContext, document);
 
