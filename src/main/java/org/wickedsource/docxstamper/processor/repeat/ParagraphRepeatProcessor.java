@@ -10,6 +10,7 @@ import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.util.CommentUtil;
 import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
+import org.wickedsource.docxstamper.util.SectionUtil;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -23,7 +24,8 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         CommentWrapper commentWrapper;
         List<Object> data;
         List<P> paragraphs;
-        SectPr sectionStyleToApplyAfter;
+        boolean hasOddSectionBreaks;
+        SectPr sectionBreakBefore;
     }
 
     private Map<ParagraphCoordinates, ParagraphsToRepeat> pToRepeat = new HashMap<>();
@@ -51,13 +53,8 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         toRepeat.commentWrapper = getCurrentCommentWrapper();
         toRepeat.data = objects;
         toRepeat.paragraphs = paragraphs;
-
-        if (paragraph.getPPr() != null && paragraph.getPPr().getSectPr() != null) {
-            System.out.println("WARNING ! Main paragraph in repeatParagraph has section break ! " + paragraph.getPPr().getSectPr());
-            toRepeat.sectionStyleToApplyAfter = paragraph.getPPr().getSectPr();
-        } else {
-            toRepeat.sectionStyleToApplyAfter = null;
-        }
+        toRepeat.sectionBreakBefore = SectionUtil.getPreviousSectionBreakIfPresent(paragraph, (ContentAccessor) paragraph.getParent());
+        toRepeat.hasOddSectionBreaks = SectionUtil.isOddNumberOfSectionBreaks(toRepeat.paragraphs);
 
         pToRepeat.put(paragraphCoordinates, toRepeat);
     }
@@ -71,13 +68,17 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
             List<P> paragraphsToAdd = new ArrayList<>();
 
             if (expressionContexts != null) {
-                for (final Object expressionContext : expressionContexts) {
-                    for (P paragraphToClone : paragraphsToRepeat.paragraphs) {
+                for (int j = 0; j < expressionContexts.size(); j++) {
+                    final Object expressionContext = expressionContexts.get(j);
+
+                    for (int i = 0; i < paragraphsToRepeat.paragraphs.size(); i++) {
+                        P paragraphToClone = paragraphsToRepeat.paragraphs.get(i);
                         P pClone = XmlUtils.deepCopy(paragraphToClone);
-                        // ensure we don't repeat page breaks until the end
-                        if (pClone.getPPr() != null && pClone.getPPr().getSectPr() != null) {
-                            pClone.getPPr().setSectPr(null);
+
+                        if (paragraphsToRepeat.hasOddSectionBreaks && paragraphsToRepeat.sectionBreakBefore != null && j < expressionContexts.size() - 1 && i == paragraphsToRepeat.paragraphs.size() - 1) {
+                            SectionUtil.applySectionBreakToParagraph(paragraphsToRepeat.sectionBreakBefore, pClone);
                         }
+
                         CommentUtil.deleteCommentFromElement(pClone, paragraphsToRepeat.commentWrapper.getComment().getId());
                         placeholderReplacer.resolveExpressionsForParagraph(pClone, expressionContext, document);
 
@@ -88,13 +89,14 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
                 paragraphsToAdd.add(ParagraphUtil.create(configuration.getNullValuesDefault()));
             }
 
-            if (!paragraphsToAdd.isEmpty() && paragraphsToRepeat.sectionStyleToApplyAfter != null) {
-                P brParagraph = paragraphsToAdd.get(paragraphsToAdd.size() - 1);
-                if (brParagraph.getPPr() == null) {
-                    brParagraph.setPPr(new PPr());
+            /*
+            if (!paragraphsToAdd.isEmpty()) {
+                if (paragraphsToRepeat.sectionBreakBefore != null) {
+                    P lastParagraphToAdd = paragraphsToAdd.get(paragraphsToAdd.size() - 1);
+                    SectionUtil.applySectionBreakToParagraph(paragraphsToRepeat.sectionBreakBefore, lastParagraphToAdd);
                 }
-                brParagraph.getPPr().setSectPr(paragraphsToRepeat.sectionStyleToApplyAfter);
             }
+             */
 
             Object parent = rCoords.getParagraph().getParent();
             if (parent instanceof ContentAccessor) {

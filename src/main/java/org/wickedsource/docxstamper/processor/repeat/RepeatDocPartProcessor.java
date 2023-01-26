@@ -109,10 +109,6 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
             } else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
                 // make sure we replicate the original previous section break before adding the default value
                 P p = ParagraphUtil.create(configuration.getNullValuesDefault());
-                if (previousSectionBreak.containsKey(commentWrapper)) {
-                    if (p.getPPr() == null) p.setPPr(new PPr());
-                    p.getPPr().setSectPr(previousSectionBreak.get(commentWrapper));
-                }
                 insertParentContentAccessor.getContent().add(index, p);
             }
 
@@ -211,13 +207,10 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     private List<Object> getRepeatElements(CommentWrapper commentWrapper, ContentAccessor greatestCommonParent) {
         List<Object> repeatElements = new ArrayList<>();
         boolean startFound = false;
-        Object previousElement = null;
         for (Object element : greatestCommonParent.getContent()) {
             if (!startFound
                     && depthElementSearch(commentWrapper.getCommentRangeStart(), element)) {
                 startFound = true;
-            } else {
-                previousElement = element;
             }
             if (startFound) {
                 repeatElements.add(element);
@@ -226,12 +219,16 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                 }
             }
         }
-        if (previousElement != null) {
-            Object unwrapped = XmlUtils.unwrap(previousElement);
-            if (unwrapped instanceof P) {
-                P prevP = (P) unwrapped;
-                if (prevP.getPPr() != null && prevP.getPPr().getSectPr() != null) {
-                    previousSectionBreak.put(commentWrapper, prevP.getPPr().getSectPr());
+        if (!repeatElements.isEmpty()) {
+            int pIndex = greatestCommonParent.getContent().indexOf(repeatElements.get(0));
+            for (int i = pIndex - 1; i >= 0; i++) {
+                Object prevObj = greatestCommonParent.getContent().get(i);
+                if (prevObj instanceof P) {
+                    P prevParagraph = (P) prevObj;
+                    if (prevParagraph.getPPr() != null && prevParagraph.getPPr().getSectPr() != null) {
+                        previousSectionBreak.put(commentWrapper, prevParagraph.getPPr().getSectPr());
+                    }
+                    break;
                 }
             }
         }
