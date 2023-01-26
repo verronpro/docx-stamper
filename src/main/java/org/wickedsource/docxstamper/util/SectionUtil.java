@@ -44,11 +44,14 @@ public class SectionUtil {
         return null;
     }
 
-    public static boolean isOddNumberOfSectionBreaks(List<P> paragraphs) {
+    public static boolean isOddNumberOfSectionBreaks(List<Object> objects) {
         int count = 0;
-        for (P p : paragraphs) {
-            if (p.getPPr() != null && p.getPPr().getSectPr() != null) {
-                count++;
+        for (Object obj : objects) {
+            if (obj instanceof P) {
+                P p = (P) obj;
+                if (p.getPPr() != null && p.getPPr().getSectPr() != null) {
+                    count++;
+                }
             }
         }
         return (count & 1) != 0;

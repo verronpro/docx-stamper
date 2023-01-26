@@ -15,6 +15,7 @@ import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.DocumentUtil;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
+import org.wickedsource.docxstamper.util.SectionUtil;
 import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
 
 import java.io.ByteArrayInputStream;
@@ -29,6 +30,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     private Map<CommentWrapper, WordprocessingMLPackage> subTemplates = new HashMap<>();
     private Map<CommentWrapper, ContentAccessor> gcpMap = new HashMap<>();
     private Map<CommentWrapper, SectPr> previousSectionBreak = new HashMap<>();
+    private Map<CommentWrapper, Boolean> oddNumberOfBreaks = new HashMap<>();
 
     private static ObjectFactory objectFactory = null;
 
@@ -81,7 +83,8 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
             Integer index = insertParentContentAccessor.getContent().indexOf(repeatElementsMap.get(commentWrapper).get(0));
 
             if (expressionContexts != null) {
-                for (Object subContext : expressionContexts) {
+                for (int i = 0; i < expressionContexts.size(); i++) {
+                    Object subContext = expressionContexts.get(i);
                     try {
                         WordprocessingMLPackage subTemplate = copyTemplate(subTemplates.get(commentWrapper));
                         DocxStamper<Object> stamper = new DocxStamper<>(configuration.copy());
@@ -94,10 +97,17 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                             index += changes.size();
 
                             // make sure we replicate the previous section break before each repeated doc part
-                            if (!expressionContexts.isEmpty() && previousSectionBreak.containsKey(commentWrapper)) {
-                                P p = (P) insertParentContentAccessor.getContent().get(index - 1);
-                                if (p.getPPr() == null) p.setPPr(new PPr());
-                                p.getPPr().setSectPr(previousSectionBreak.get(commentWrapper));
+                            P lastP = null;
+                            for (int j = changes.size() - 1; j >= 0; j--) {
+                                if (changes.get(j) instanceof P) {
+                                    lastP = (P) changes.get(j);
+                                    break;
+                                }
+                            }
+                            if (lastP != null && oddNumberOfBreaks.get(commentWrapper) && previousSectionBreak.get(commentWrapper) != null && i < expressionContexts.size() - 1) {
+                                SectionUtil.applySectionBreakToParagraph(previousSectionBreak.get(commentWrapper), lastP);
+                            } else {
+                                System.out.println("repeating doc part doesn't contain any P");
                             }
                         } catch (Exception e) {
                             throw new RuntimeException("Unexpected error occured ! Skipping this comment", e);
@@ -123,6 +133,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         gcpMap = new HashMap<>();
         repeatElementsMap = new HashMap<>();
         previousSectionBreak = new HashMap<>();
+        oddNumberOfBreaks = new HashMap<>();
     }
 
     private WordprocessingMLPackage extractSubTemplate(CommentWrapper commentWrapper, List<Object> repeatElements, ObjectFactory objectFactory) throws Exception {
@@ -220,17 +231,8 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
             }
         }
         if (!repeatElements.isEmpty()) {
-            int pIndex = greatestCommonParent.getContent().indexOf(repeatElements.get(0));
-            for (int i = pIndex - 1; i >= 0; i++) {
-                Object prevObj = greatestCommonParent.getContent().get(i);
-                if (prevObj instanceof P) {
-                    P prevParagraph = (P) prevObj;
-                    if (prevParagraph.getPPr() != null && prevParagraph.getPPr().getSectPr() != null) {
-                        previousSectionBreak.put(commentWrapper, prevParagraph.getPPr().getSectPr());
-                    }
-                    break;
-                }
-            }
+            previousSectionBreak.put(commentWrapper, SectionUtil.getPreviousSectionBreakIfPresent(repeatElements.get(0), greatestCommonParent));
+            oddNumberOfBreaks.put(commentWrapper, SectionUtil.isOddNumberOfSectionBreaks(repeatElements));
         }
         return repeatElements;
     }
