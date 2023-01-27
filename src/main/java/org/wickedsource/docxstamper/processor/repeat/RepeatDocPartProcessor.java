@@ -32,7 +32,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     private Map<CommentWrapper, SectPr> previousSectionBreak = new HashMap<>();
     private Map<CommentWrapper, Boolean> oddNumberOfBreaks = new HashMap<>();
 
-    private static ObjectFactory objectFactory = null;
+    private static final ObjectFactory objectFactory = Context.getWmlObjectFactory();
 
     public RepeatDocPartProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
         super(config, typeResolverRegistry);
@@ -53,18 +53,11 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         List<Object> repeatElements = getRepeatElements(currentCommentWrapper, gcp);
 
         if (!repeatElements.isEmpty()) {
-            subTemplates.put(currentCommentWrapper, extractSubTemplate(currentCommentWrapper, repeatElements, getOrCreateObjectFactory()));
+            subTemplates.put(currentCommentWrapper, extractSubTemplate(currentCommentWrapper, repeatElements));
             subContexts.put(currentCommentWrapper, contexts);
             gcpMap.put(currentCommentWrapper, gcp);
             repeatElementsMap.put(currentCommentWrapper, repeatElements);
         }
-    }
-
-    private static ObjectFactory getOrCreateObjectFactory() {
-        if (objectFactory == null) {
-            objectFactory = Context.getWmlObjectFactory();
-        }
-        return objectFactory;
     }
 
     private WordprocessingMLPackage copyTemplate(WordprocessingMLPackage doc) throws Docx4JException {
@@ -93,22 +86,24 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                         WordprocessingMLPackage subDocument = WordprocessingMLPackage.load(new ByteArrayInputStream(output.toByteArray()));
                         try {
                             List<Object> changes = DocumentUtil.prepareDocumentForInsert(subDocument, document);
-                            insertParentContentAccessor.getContent().addAll(index, changes);
-                            index += changes.size();
 
                             // make sure we replicate the previous section break before each repeated doc part
-                            P lastP = null;
-                            for (int j = changes.size() - 1; j >= 0; j--) {
-                                if (changes.get(j) instanceof P) {
-                                    lastP = (P) changes.get(j);
-                                    break;
+                            if (oddNumberOfBreaks.get(commentWrapper) && previousSectionBreak.get(commentWrapper) != null && i < expressionContexts.size() - 1) {
+                                P lastP;
+                                if (changes.get(changes.size() - 1) instanceof P) {
+                                    lastP = (P) changes.get(changes.size() - 1);
+                                } else {
+                                    lastP = objectFactory.createP();
                                 }
-                            }
-                            if (lastP != null && oddNumberOfBreaks.get(commentWrapper) && previousSectionBreak.get(commentWrapper) != null && i < expressionContexts.size() - 1) {
+                                changes.add(lastP);
+
                                 SectionUtil.applySectionBreakToParagraph(previousSectionBreak.get(commentWrapper), lastP);
                             } else {
                                 System.out.println("repeating doc part doesn't contain any P");
                             }
+
+                            insertParentContentAccessor.getContent().addAll(index, changes);
+                            index += changes.size();
                         } catch (Exception e) {
                             throw new RuntimeException("Unexpected error occured ! Skipping this comment", e);
                         }
@@ -117,7 +112,6 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                     }
                 }
             } else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
-                // make sure we replicate the original previous section break before adding the default value
                 P p = ParagraphUtil.create(configuration.getNullValuesDefault());
                 insertParentContentAccessor.getContent().add(index, p);
             }
@@ -136,7 +130,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         oddNumberOfBreaks = new HashMap<>();
     }
 
-    private WordprocessingMLPackage extractSubTemplate(CommentWrapper commentWrapper, List<Object> repeatElements, ObjectFactory objectFactory) throws Exception {
+    private WordprocessingMLPackage extractSubTemplate(CommentWrapper commentWrapper, List<Object> repeatElements) throws Exception {
         WordprocessingMLPackage document = getDocument();
         WordprocessingMLPackage subDocument = WordprocessingMLPackage.createPackage();
 
@@ -149,7 +143,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         subDocument.getMainDocumentPart().getContent().addAll(finalRepeatElements);
 
         // copy the images from parent document using the original repeat elements
-        ContentAccessor fakeBody = getOrCreateObjectFactory().createBody();
+        ContentAccessor fakeBody = objectFactory.createBody();
         fakeBody.getContent().addAll(repeatElements);
         DocumentUtil.walkObjectsAndImportImages(fakeBody, document, subDocument);
 

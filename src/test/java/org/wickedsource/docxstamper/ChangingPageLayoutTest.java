@@ -144,6 +144,48 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
     }
 
     @Test
+    public void shouldKeepPageBreakOrientationInRepeatDocPartWithSectionBreaksInsideCommentAndTableAsLastElement() throws IOException, Docx4JException {
+        Map<String, Object> context = new HashMap<>();
+
+        NameContext name1 = new NameContext();
+        name1.setName("Homer");
+
+        NameContext name2 = new NameContext();
+        name2.setName("Marge");
+
+        List repeatValues = new ArrayList();
+        repeatValues.add(name1);
+        repeatValues.add(name2);
+
+        context.put("repeatValues", repeatValues);
+
+        InputStream template = getClass().getResourceAsStream("ChangingPageLayoutInRepeatDocPartWithTableLastElementTest.docx");
+        DocxStamperConfiguration config = new DocxStamperConfiguration()
+                .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));
+
+        WordprocessingMLPackage result = stampAndLoad(template, context, config);
+
+        result.save(new File("ChangingPageLayoutInRepeatDocPartWithTableLastElement.docx"));
+
+        List<Object> content = result.getMainDocumentPart().getContent();
+        Assert.assertNull(((P) content.get(2)).getPPr().getSectPr().getPgSz().getOrient());
+
+        Assert.assertEquals(
+                STPageOrientation.LANDSCAPE,
+                ((P) content.get(5)).getPPr().getSectPr().getPgSz().getOrient()
+        );
+        Assert.assertNull(((P) content.get(8)).getPPr().getSectPr().getPgSz().getOrient());
+
+        Assert.assertEquals(
+                STPageOrientation.LANDSCAPE,
+                ((P) content.get(11)).getPPr().getSectPr().getPgSz().getOrient()
+        );
+        Assert.assertNull(((P) content.get(14)).getPPr().getSectPr().getPgSz().getOrient());
+
+        assertThatNoCommentOrReferenceRemains(result);
+    }
+
+    @Test
     public void shouldKeepPageBreakOrientationInRepeatDocPartWithoutSectionBreaksInsideComment() throws IOException, Docx4JException {
         Map<String, Object> context = new HashMap<>();
 
