@@ -13,7 +13,10 @@ import org.wickedsource.docxstamper.util.ParagraphUtil;
 import org.wickedsource.docxstamper.util.SectionUtil;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IParagraphRepeatProcessor {
 
@@ -51,7 +54,7 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         toRepeat.data = objects;
         toRepeat.paragraphs = paragraphs;
         toRepeat.sectionBreakBefore = SectionUtil.getPreviousSectionBreakIfPresent(paragraph, (ContentAccessor) paragraph.getParent());
-        toRepeat.hasOddSectionBreaks = SectionUtil.isOddNumberOfSectionBreaks(Collections.singletonList(toRepeat.paragraphs));
+        toRepeat.hasOddSectionBreaks = SectionUtil.isOddNumberOfSectionBreaks(new ArrayList<Object>(toRepeat.paragraphs));
 
         pToRepeat.put(paragraphCoordinates, toRepeat);
     }

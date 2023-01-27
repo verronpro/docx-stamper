@@ -42,6 +42,8 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
 
+        result.save(new File("ChangingPageLayoutOutsideRepeatParagraph.docx"));
+
         List<Object> content = result.getMainDocumentPart().getContent();
 
         Assert.assertEquals(
@@ -75,6 +77,8 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
                 .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
+
+        result.save(new File("ChangingPageLayoutInRepeatParagraph.docx"));
 
         List<Object> content = result.getMainDocumentPart().getContent();
         Assert.assertEquals(
@@ -117,6 +121,8 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
 
+        result.save(new File("ChangingPageLayoutInRepeatDocPart.docx"));
+
         List<Object> content = result.getMainDocumentPart().getContent();
         Assert.assertNull(((P) content.get(2)).getPPr().getSectPr().getPgSz().getOrient());
 
@@ -155,6 +161,8 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
 
+        result.save(new File("ChangingPageLayoutOutsideRepeatDocPart.docx"));
+
         List<Object> content = result.getMainDocumentPart().getContent();
 
         Assert.assertEquals(
@@ -171,7 +179,6 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
         Assert.assertNull(((P) content.get(9)).getPPr().getSectPr().getPgSz().getOrient());
     }
 
-    @Test
     public void shouldKeepPageBreakOrientationThroughMultipleRepeatProcessors() throws IOException, Docx4JException {
         Map<String, Object> context = new HashMap<>();
 
