@@ -187,6 +187,13 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                     commentsToRemove.add(commentRangeEnd);
                 }
             }
+
+            @Override
+            protected void onCommentReference(R.CommentReference commentReference) {
+                if (commentReference.getId().equals(commentWrapper.getComment().getId())) {
+                    commentsToRemove.add(commentReference);
+                }
+            }
         }.walk();
 
         for (Object commentAnchorToRemove : commentsToRemove) {
@@ -205,13 +212,20 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
             parent = ((CommentRangeStart) commentAnchorToRemove).getParent();
         } else if (commentAnchorToRemove instanceof CommentRangeEnd) {
             parent = ((CommentRangeEnd) commentAnchorToRemove).getParent();
+        } else if (commentAnchorToRemove instanceof R.CommentReference) {
+            parent = ((R.CommentReference) commentAnchorToRemove).getParent();
         } else {
             throw new RuntimeException("Unknown comment anchor type given to remove !");
         }
 
-        if (finalRepeatElements.contains(commentAnchorToRemove) && parent != null) {
+        if (parent != null) {
             ContentAccessor caParent = (ContentAccessor) XmlUtils.unwrap(parent);
-            caParent.getContent().removeAll(caParent.getContent().subList(0, caParent.getContent().indexOf(commentAnchorToRemove) + 1));
+            if (commentAnchorToRemove instanceof CommentRangeStart)
+                caParent.getContent().removeAll(caParent.getContent().subList(0, caParent.getContent().indexOf(commentAnchorToRemove) + 1));
+            else if (commentAnchorToRemove instanceof CommentRangeEnd)
+                caParent.getContent().removeAll(caParent.getContent().subList(caParent.getContent().indexOf(commentAnchorToRemove), caParent.getContent().size()));
+            else
+                caParent.getContent().remove(commentAnchorToRemove);
         }
     }
 

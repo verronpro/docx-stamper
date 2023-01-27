@@ -2,14 +2,12 @@ package org.wickedsource.docxstamper;
 
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.wml.Br;
-import org.docx4j.wml.P;
-import org.docx4j.wml.R;
-import org.docx4j.wml.STPageOrientation;
+import org.docx4j.wml.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.expression.MapAccessor;
 import org.wickedsource.docxstamper.context.NameContext;
+import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +52,8 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
         Assert.assertTrue(((R) ((P) content.get(8)).getContent().get(23)).getContent().get(0) instanceof Br);
 
         Assert.assertNull(((P) content.get(9)).getPPr().getSectPr().getPgSz().getOrient());
+
+        assertThatNoCommentOrReferenceRemains(result);
     }
 
     @Test
@@ -97,6 +97,8 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
                 STPageOrientation.LANDSCAPE,
                 ((P) content.get(11)).getPPr().getSectPr().getPgSz().getOrient()
         );
+
+        assertThatNoCommentOrReferenceRemains(result);
     }
 
     @Test
@@ -137,6 +139,8 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
                 ((P) content.get(9)).getPPr().getSectPr().getPgSz().getOrient()
         );
         Assert.assertNull(((P) content.get(11)).getPPr().getSectPr().getPgSz().getOrient());
+
+        assertThatNoCommentOrReferenceRemains(result);
     }
 
     @Test
@@ -177,6 +181,8 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
         Assert.assertTrue(((R) ((P) content.get(7)).getContent().get(0)).getContent().get(0) instanceof Br);
 
         Assert.assertNull(((P) content.get(9)).getPPr().getSectPr().getPgSz().getOrient());
+
+        assertThatNoCommentOrReferenceRemains(result);
     }
 
     public void shouldKeepPageBreakOrientationThroughMultipleRepeatProcessors() throws IOException, Docx4JException {
@@ -200,6 +206,27 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
 
-        result.save(new File("RESULTAAT.docx"));
+        result.save(new File("ChangingPageLayout.docx"));
+
+        assertThatNoCommentOrReferenceRemains(result);
+    }
+
+    public void assertThatNoCommentOrReferenceRemains(WordprocessingMLPackage document) {
+        new BaseDocumentWalker(document.getMainDocumentPart()) {
+            @Override
+            protected void onCommentRangeStart(CommentRangeStart commentRangeStart) {
+                Assert.fail("Found a remaining comment range start !");
+            }
+
+            @Override
+            protected void onCommentRangeEnd(CommentRangeEnd commentRangeEnd) {
+                Assert.fail("Found a remaining comment range end !");
+            }
+
+            @Override
+            protected void onCommentReference(R.CommentReference commentReference) {
+                Assert.fail("Found a remaining comment reference !");
+            }
+        }.walk();
     }
 }
