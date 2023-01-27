@@ -28,19 +28,10 @@ public class SectionUtil {
         return null;
     }
 
-    public static SectPr getNextSectionBreakIfPresent(Object lastObject, ContentAccessor parent) {
-        int pIndex = parent.getContent().indexOf(lastObject);
-        for (int i = pIndex + 1; i < parent.getContent().size(); i++) {
-            Object nextObj = parent.getContent().get(i);
-            if (nextObj instanceof P) {
-                P prevParagraph = (P) nextObj;
-                if (prevParagraph.getPPr() != null && prevParagraph.getPPr().getSectPr() != null) {
-                    return prevParagraph.getPPr().getSectPr();
-                }
-                break;
-            }
+    public static SectPr getWrappingSectionBreakIfPresent(P p) {
+        if (p.getPPr() != null && p.getPPr().getSectPr() != null) {
+            return p.getPPr().getSectPr();
         }
-        System.out.println("No next section break found from : " + parent + ", last object index=" + pIndex);
         return null;
     }
 
@@ -63,4 +54,5 @@ public class SectionUtil {
         }
         paragraph.getPPr().setSectPr(XmlUtils.deepCopy(sectPr));
     }
+
 }

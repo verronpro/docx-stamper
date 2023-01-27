@@ -26,6 +26,7 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         List<P> paragraphs;
         boolean hasOddSectionBreaks;
         SectPr sectionBreakBefore;
+        SectPr embeddedSectionBreakAfter;
     }
 
     private Map<ParagraphCoordinates, ParagraphsToRepeat> pToRepeat = new HashMap<>();
@@ -41,7 +42,6 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 
         P paragraph = paragraphCoordinates.getParagraph();
 
-
         List<P> paragraphs = getParagraphsInsideComment(paragraph);
         paragraphs.forEach(subP -> {
             if (subP.getPPr() != null && subP.getPPr().getSectPr() != null) {
@@ -55,6 +55,11 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         toRepeat.paragraphs = paragraphs;
         toRepeat.sectionBreakBefore = SectionUtil.getPreviousSectionBreakIfPresent(paragraph, (ContentAccessor) paragraph.getParent());
         toRepeat.hasOddSectionBreaks = SectionUtil.isOddNumberOfSectionBreaks(new ArrayList<Object>(toRepeat.paragraphs));
+        toRepeat.embeddedSectionBreakAfter = SectionUtil.getWrappingSectionBreakIfPresent(paragraph);
+
+        if (paragraph.getPPr() != null && paragraph.getPPr().getSectPr() != null) {
+            paragraph.getPPr().setSectPr(null);
+        }
 
         pToRepeat.put(paragraphCoordinates, toRepeat);
     }
@@ -95,6 +100,12 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
                 int index = contentAccessor.getContent().indexOf(rCoords.getParagraph());
                 if (index >= 0) {
                     contentAccessor.getContent().addAll(index, paragraphsToAdd);
+                }
+
+                if (paragraphsToRepeat.embeddedSectionBreakAfter != null) {
+                    P breakP = paragraphsToAdd.get(paragraphsToAdd.size() - 1);
+                    if (breakP.getPPr() == null) breakP.setPPr(new PPr());
+                    breakP.getPPr().setSectPr(paragraphsToRepeat.embeddedSectionBreakAfter);
                 }
 
                 contentAccessor.getContent().removeAll(paragraphsToRepeat.paragraphs);
