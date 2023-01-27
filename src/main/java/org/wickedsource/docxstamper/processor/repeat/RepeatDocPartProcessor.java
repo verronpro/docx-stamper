@@ -94,6 +94,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                                     lastP = (P) changes.get(changes.size() - 1);
                                 } else {
                                     lastP = objectFactory.createP();
+                                    lastP.setParent(insertParentContentAccessor);
                                 }
                                 changes.add(lastP);
 
@@ -113,6 +114,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                 }
             } else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
                 P p = ParagraphUtil.create(configuration.getNullValuesDefault());
+                p.setParent(insertParentContentAccessor);
                 insertParentContentAccessor.getContent().add(index, p);
             }
 
