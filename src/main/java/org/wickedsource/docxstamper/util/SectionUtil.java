@@ -17,6 +17,7 @@ public class SectionUtil {
         for (int i = pIndex - 1; i >= 0; i++) {
             Object prevObj = parent.getContent().get(i);
             if (prevObj instanceof P) {
+                // the first P preceding the object is the one potentially carrying a section break
                 P prevParagraph = (P) prevObj;
                 if (prevParagraph.getPPr() != null && prevParagraph.getPPr().getSectPr() != null) {
                     return prevParagraph.getPPr().getSectPr();
@@ -28,7 +29,7 @@ public class SectionUtil {
         return null;
     }
 
-    public static SectPr getWrappingSectionBreakIfPresent(P p) {
+    public static SectPr getParagraphSectionBreak(P p) {
         if (p.getPPr() != null && p.getPPr().getSectPr() != null) {
             return p.getPPr().getSectPr();
         }

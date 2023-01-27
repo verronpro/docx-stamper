@@ -26,7 +26,7 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         List<P> paragraphs;
         boolean hasOddSectionBreaks;
         SectPr sectionBreakBefore;
-        SectPr embeddedSectionBreakAfter;
+        SectPr firstParagraphSectionBreak;
     }
 
     private Map<ParagraphCoordinates, ParagraphsToRepeat> pToRepeat = new HashMap<>();
@@ -54,10 +54,11 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         toRepeat.data = objects;
         toRepeat.paragraphs = paragraphs;
         toRepeat.sectionBreakBefore = SectionUtil.getPreviousSectionBreakIfPresent(paragraph, (ContentAccessor) paragraph.getParent());
-        toRepeat.hasOddSectionBreaks = SectionUtil.isOddNumberOfSectionBreaks(new ArrayList<Object>(toRepeat.paragraphs));
-        toRepeat.embeddedSectionBreakAfter = SectionUtil.getWrappingSectionBreakIfPresent(paragraph);
+        toRepeat.firstParagraphSectionBreak = SectionUtil.getParagraphSectionBreak(paragraph);
+        toRepeat.hasOddSectionBreaks = SectionUtil.isOddNumberOfSectionBreaks(new ArrayList<>(toRepeat.paragraphs));
 
         if (paragraph.getPPr() != null && paragraph.getPPr().getSectPr() != null) {
+            // we need to clear the first paragraph's section break to be able to control how to repeat it
             paragraph.getPPr().setSectPr(null);
         }
 
@@ -72,47 +73,63 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 
             List<P> paragraphsToAdd = new ArrayList<>();
 
+            // paragraphs generation
             if (expressionContexts != null) {
-                for (int j = 0; j < expressionContexts.size(); j++) {
-                    final Object expressionContext = expressionContexts.get(j);
-
-                    for (int i = 0; i < paragraphsToRepeat.paragraphs.size(); i++) {
-                        P paragraphToClone = paragraphsToRepeat.paragraphs.get(i);
-                        P pClone = XmlUtils.deepCopy(paragraphToClone);
-
-                        if (paragraphsToRepeat.hasOddSectionBreaks && paragraphsToRepeat.sectionBreakBefore != null && j < expressionContexts.size() - 1 && i == paragraphsToRepeat.paragraphs.size() - 1) {
-                            SectionUtil.applySectionBreakToParagraph(paragraphsToRepeat.sectionBreakBefore, pClone);
-                        }
-
-                        CommentUtil.deleteCommentFromElement(pClone, paragraphsToRepeat.commentWrapper.getComment().getId());
-                        placeholderReplacer.resolveExpressionsForParagraph(pClone, expressionContext, document);
-
-                        paragraphsToAdd.add(pClone);
-                    }
-                }
+                paragraphsToAdd.addAll(generateParagraphsToAdd(document, paragraphsToRepeat, expressionContexts));
             } else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
                 paragraphsToAdd.add(ParagraphUtil.create(configuration.getNullValuesDefault()));
             }
 
-            Object parent = rCoords.getParagraph().getParent();
-            if (parent instanceof ContentAccessor) {
-                ContentAccessor contentAccessor = (ContentAccessor) parent;
-                int index = contentAccessor.getContent().indexOf(rCoords.getParagraph());
-                if (index >= 0) {
-                    contentAccessor.getContent().addAll(index, paragraphsToAdd);
+            restoreFirstSectionBreakIfNeeded(paragraphsToRepeat, paragraphsToAdd);
+
+            // paragraphs insertion into the document
+            ContentAccessor parent = (ContentAccessor) rCoords.getParagraph().getParent();
+            int index = parent.getContent().indexOf(rCoords.getParagraph());
+            if (index >= 0) {
+                parent.getContent().addAll(index, paragraphsToAdd);
+            }
+
+            // removing template from document
+            parent.getContent().removeAll(paragraphsToRepeat.paragraphs);
+        }
+    }
+
+    private static void restoreFirstSectionBreakIfNeeded(ParagraphsToRepeat paragraphsToRepeat, List<P> paragraphsToAdd) {
+        if (paragraphsToRepeat.firstParagraphSectionBreak != null) {
+            P breakP = paragraphsToAdd.get(paragraphsToAdd.size() - 1);
+            SectionUtil.applySectionBreakToParagraph(paragraphsToRepeat.firstParagraphSectionBreak, breakP);
+        }
+    }
+
+    private List<P> generateParagraphsToAdd(WordprocessingMLPackage document, ParagraphsToRepeat paragraphsToRepeat, List<Object> expressionContexts) {
+        List<P> paragraphsToAdd = new ArrayList<>();
+        Object lastExpressionContext = expressionContexts.get(expressionContexts.size() - 1);
+
+        for (Object expressionContext : expressionContexts) {
+            P lastParagraph = paragraphsToRepeat.paragraphs.get(paragraphsToRepeat.paragraphs.size() - 1);
+
+            for (P paragraphToClone : paragraphsToRepeat.paragraphs) {
+                P pClone = XmlUtils.deepCopy(paragraphToClone);
+
+                if (shouldResetPageOrientationBeforeNextIteration(paragraphsToRepeat, lastExpressionContext, expressionContext, lastParagraph, paragraphToClone)) {
+                    SectionUtil.applySectionBreakToParagraph(paragraphsToRepeat.sectionBreakBefore, pClone);
                 }
 
-                if (paragraphsToRepeat.embeddedSectionBreakAfter != null) {
-                    P breakP = paragraphsToAdd.get(paragraphsToAdd.size() - 1);
-                    if (breakP.getPPr() == null) breakP.setPPr(new PPr());
-                    breakP.getPPr().setSectPr(paragraphsToRepeat.embeddedSectionBreakAfter);
-                }
+                CommentUtil.deleteCommentFromElement(pClone, paragraphsToRepeat.commentWrapper.getComment().getId());
+                placeholderReplacer.resolveExpressionsForParagraph(pClone, expressionContext, document);
 
-                contentAccessor.getContent().removeAll(paragraphsToRepeat.paragraphs);
-            } else {
-                System.out.println("Don't know where to insert repeated paragraphs ! Parent not found");
+                paragraphsToAdd.add(pClone);
             }
         }
+
+        return paragraphsToAdd;
+    }
+
+    private static boolean shouldResetPageOrientationBeforeNextIteration(ParagraphsToRepeat paragraphsToRepeat, Object lastExpressionContext, Object expressionContext, P lastParagraph, P paragraphToClone) {
+        return paragraphsToRepeat.sectionBreakBefore != null
+                && paragraphsToRepeat.hasOddSectionBreaks
+                && expressionContext != lastExpressionContext
+                && paragraphToClone == lastParagraph;
     }
 
     @Override
