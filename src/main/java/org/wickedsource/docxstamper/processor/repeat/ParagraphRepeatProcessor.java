@@ -43,11 +43,6 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         P paragraph = paragraphCoordinates.getParagraph();
 
         List<P> paragraphs = getParagraphsInsideComment(paragraph);
-        paragraphs.forEach(subP -> {
-            if (subP.getPPr() != null && subP.getPPr().getSectPr() != null) {
-                System.out.println("WARNING ! Sub paragraph in repeatParagraph has section break ! " + subP.getPPr().getSectPr());
-            }
-        });
 
         ParagraphsToRepeat toRepeat = new ParagraphsToRepeat();
         toRepeat.commentWrapper = getCurrentCommentWrapper();
