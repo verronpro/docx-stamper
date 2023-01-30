@@ -134,9 +134,9 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 
         Assert.assertEquals(
                 STPageOrientation.LANDSCAPE,
-                ((P) content.get(10)).getPPr().getSectPr().getPgSz().getOrient()
+                ((P) content.get(9)).getPPr().getSectPr().getPgSz().getOrient()
         );
-        Assert.assertNull(((P) content.get(12)).getPPr().getSectPr().getPgSz().getOrient());
+        Assert.assertNull(((P) content.get(11)).getPPr().getSectPr().getPgSz().getOrient());
 
         assertThatNoCommentOrReferenceRemains(result);
     }
