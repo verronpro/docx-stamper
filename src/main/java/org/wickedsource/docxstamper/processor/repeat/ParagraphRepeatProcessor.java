@@ -24,13 +24,16 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         CommentWrapper commentWrapper;
         List<Object> data;
         List<P> paragraphs;
+        // hasOddSectionBreaks is true if the paragraphs to repeat contain an odd number of section breaks
+        // changing the layout, false otherwise
         boolean hasOddSectionBreaks;
+        // section break right before the first paragraph to repeat if present, or null
         SectPr sectionBreakBefore;
+        // section break on the first paragraph to repeat if present, or null
         SectPr firstParagraphSectionBreak;
     }
 
     private Map<ParagraphCoordinates, ParagraphsToRepeat> pToRepeat = new HashMap<>();
-
 
     public ParagraphRepeatProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
         super(config, typeResolverRegistry);

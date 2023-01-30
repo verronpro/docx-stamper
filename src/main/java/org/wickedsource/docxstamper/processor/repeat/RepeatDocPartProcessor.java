@@ -12,11 +12,7 @@ import org.wickedsource.docxstamper.DocxStamper;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
-import org.wickedsource.docxstamper.util.CommentWrapper;
-import org.wickedsource.docxstamper.util.DocumentUtil;
-import org.wickedsource.docxstamper.util.ParagraphUtil;
-import org.wickedsource.docxstamper.util.SectionUtil;
-import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
+import org.wickedsource.docxstamper.util.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,7 +25,10 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     private Map<CommentWrapper, List<Object>> repeatElementsMap = new HashMap<>();
     private Map<CommentWrapper, WordprocessingMLPackage> subTemplates = new HashMap<>();
     private Map<CommentWrapper, ContentAccessor> gcpMap = new HashMap<>();
+    // section break preceding the first repeating element if present
     private Map<CommentWrapper, SectPr> previousSectionBreak = new HashMap<>();
+    // oddNumberOfBreaks will be set to true if repeating elements contain an odd number of section breaks,
+    // false otherwise
     private Map<CommentWrapper, Boolean> oddNumberOfBreaks = new HashMap<>();
 
     private static final ObjectFactory objectFactory = Context.getWmlObjectFactory();
@@ -75,7 +74,8 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
             ContentAccessor insertParentContentAccessor = gcpMap.get(commentWrapper);
             Integer index = insertParentContentAccessor.getContent().indexOf(repeatElementsMap.get(commentWrapper).get(0));
 
-            if (expressionContexts != null) {
+            if (expressionContexts != null && !expressionContexts.isEmpty()) {
+                Object lastExpressionContext = expressionContexts.get(expressionContexts.size() - 1);
                 for (int i = 0; i < expressionContexts.size(); i++) {
                     Object subContext = expressionContexts.get(i);
                     try {
@@ -88,19 +88,19 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                             List<Object> changes = DocumentUtil.prepareDocumentForInsert(subDocument, document);
 
                             // make sure we replicate the previous section break before each repeated doc part
-                            if (oddNumberOfBreaks.get(commentWrapper) && previousSectionBreak.get(commentWrapper) != null && i < expressionContexts.size() - 1) {
+                            if (oddNumberOfBreaks.get(commentWrapper) && previousSectionBreak.get(commentWrapper) != null && subContext != lastExpressionContext) {
                                 P lastP;
                                 if (changes.get(changes.size() - 1) instanceof P) {
                                     lastP = (P) changes.get(changes.size() - 1);
                                 } else {
+                                    // when the last element to be repeated is not a paragraph, we need to add a new
+                                    // one right after to carry the section break to have a valid xml
                                     lastP = objectFactory.createP();
                                     lastP.setParent(insertParentContentAccessor);
+                                    changes.add(lastP);
                                 }
-                                changes.add(lastP);
 
                                 SectionUtil.applySectionBreakToParagraph(previousSectionBreak.get(commentWrapper), lastP);
-                            } else {
-                                System.out.println("repeating doc part doesn't contain any P");
                             }
 
                             insertParentContentAccessor.getContent().addAll(index, changes);
@@ -167,62 +167,8 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     }
 
     private static void removeCommentAnchorsFromFinalElements(CommentWrapper commentWrapper, List<Object> finalRepeatElements) {
-        List<Object> commentsToRemove = new ArrayList<>();
-
-        new BaseDocumentWalker(() -> finalRepeatElements) {
-            @Override
-            protected void onCommentRangeStart(CommentRangeStart commentRangeStart) {
-                if (commentRangeStart.getId().equals(commentWrapper.getComment().getId())) {
-                    commentsToRemove.add(commentRangeStart);
-                }
-            }
-
-            @Override
-            protected void onCommentRangeEnd(CommentRangeEnd commentRangeEnd) {
-                if (commentRangeEnd.getId().equals(commentWrapper.getComment().getId())) {
-                    commentsToRemove.add(commentRangeEnd);
-                }
-            }
-
-            @Override
-            protected void onCommentReference(R.CommentReference commentReference) {
-                if (commentReference.getId().equals(commentWrapper.getComment().getId())) {
-                    commentsToRemove.add(commentReference);
-                }
-            }
-        }.walk();
-
-        for (Object commentAnchorToRemove : commentsToRemove) {
-            removeCommentAnchorFromParentOrFinalRepeatElements(commentAnchorToRemove, finalRepeatElements);
-        }
-    }
-
-    private static void removeCommentAnchorFromParentOrFinalRepeatElements(Object commentAnchorToRemove, List<Object> finalRepeatElements) {
-        if (finalRepeatElements.contains(commentAnchorToRemove)) {
-            finalRepeatElements.remove(commentAnchorToRemove);
-            return;
-        }
-
-        Object parent = null;
-        if (commentAnchorToRemove instanceof CommentRangeStart) {
-            parent = ((CommentRangeStart) commentAnchorToRemove).getParent();
-        } else if (commentAnchorToRemove instanceof CommentRangeEnd) {
-            parent = ((CommentRangeEnd) commentAnchorToRemove).getParent();
-        } else if (commentAnchorToRemove instanceof R.CommentReference) {
-            parent = ((R.CommentReference) commentAnchorToRemove).getParent();
-        } else {
-            throw new RuntimeException("Unknown comment anchor type given to remove !");
-        }
-
-        if (parent != null) {
-            ContentAccessor caParent = (ContentAccessor) XmlUtils.unwrap(parent);
-            if (commentAnchorToRemove instanceof CommentRangeStart)
-                caParent.getContent().removeAll(caParent.getContent().subList(0, caParent.getContent().indexOf(commentAnchorToRemove) + 1));
-            else if (commentAnchorToRemove instanceof CommentRangeEnd)
-                caParent.getContent().removeAll(caParent.getContent().subList(caParent.getContent().indexOf(commentAnchorToRemove), caParent.getContent().size()));
-            else
-                caParent.getContent().remove(commentAnchorToRemove);
-        }
+        ContentAccessor fakeBody = () -> finalRepeatElements;
+        CommentUtil.deleteCommentFromElement(fakeBody, commentWrapper.getComment().getId());
     }
 
     private List<Object> getRepeatElements(CommentWrapper commentWrapper, ContentAccessor greatestCommonParent) {
