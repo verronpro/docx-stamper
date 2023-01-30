@@ -123,8 +123,6 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
 
-        result.save(new File("ChangingPageLayoutInRepeatDocPart.docx"));
-
         List<Object> content = result.getMainDocumentPart().getContent();
         Assert.assertNull(((P) content.get(2)).getPPr().getSectPr().getPgSz().getOrient());
 
@@ -164,8 +162,6 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
                 .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
-
-        result.save(new File("ChangingPageLayoutInRepeatDocPartWithTableLastElement.docx"));
 
         List<Object> content = result.getMainDocumentPart().getContent();
         Assert.assertNull(((P) content.get(2)).getPPr().getSectPr().getPgSz().getOrient());
@@ -207,8 +203,6 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
 
-        result.save(new File("ChangingPageLayoutOutsideRepeatDocPart.docx"));
-
         List<Object> content = result.getMainDocumentPart().getContent();
 
         Assert.assertEquals(
@@ -223,32 +217,6 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
         Assert.assertTrue(((R) ((P) content.get(7)).getContent().get(0)).getContent().get(0) instanceof Br);
 
         Assert.assertNull(((P) content.get(9)).getPPr().getSectPr().getPgSz().getOrient());
-
-        assertThatNoCommentOrReferenceRemains(result);
-    }
-
-    public void shouldKeepPageBreakOrientationThroughMultipleRepeatProcessors() throws IOException, Docx4JException {
-        Map<String, Object> context = new HashMap<>();
-
-        NameContext name1 = new NameContext();
-        name1.setName("Homer");
-
-        NameContext name2 = new NameContext();
-        name2.setName("Marge");
-
-        List repeatValues = new ArrayList();
-        repeatValues.add(name1);
-        repeatValues.add(name2);
-
-        context.put("repeatValues", repeatValues);
-
-        InputStream template = getClass().getResourceAsStream("ChangingPageLayoutTest.docx");
-        DocxStamperConfiguration config = new DocxStamperConfiguration()
-                .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));
-
-        WordprocessingMLPackage result = stampAndLoad(template, context, config);
-
-        result.save(new File("ChangingPageLayout.docx"));
 
         assertThatNoCommentOrReferenceRemains(result);
     }

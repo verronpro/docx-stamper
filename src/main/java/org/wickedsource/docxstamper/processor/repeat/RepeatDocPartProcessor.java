@@ -76,8 +76,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 
             if (expressionContexts != null && !expressionContexts.isEmpty()) {
                 Object lastExpressionContext = expressionContexts.get(expressionContexts.size() - 1);
-                for (int i = 0; i < expressionContexts.size(); i++) {
-                    Object subContext = expressionContexts.get(i);
+                for (Object subContext : expressionContexts) {
                     try {
                         WordprocessingMLPackage subTemplate = copyTemplate(subTemplates.get(commentWrapper));
                         DocxStamper<Object> stamper = new DocxStamper<>(configuration.copy());
