@@ -152,15 +152,16 @@ public class CommentUtil {
             ContentAccessor commentRangeEndParent = (ContentAccessor) comment
                     .getCommentRangeEnd().getParent();
             commentRangeEndParent.getContent().remove(comment.getCommentRangeEnd());
-            deleteCommentReference(commentRangeEndParent,
-                    comment.getCommentRangeEnd().getId());
         }
         if (comment.getCommentRangeStart() != null) {
             ContentAccessor commentRangeStartParent = (ContentAccessor) comment
                     .getCommentRangeStart().getParent();
             commentRangeStartParent.getContent().remove(comment.getCommentRangeStart());
-            deleteCommentReference(commentRangeStartParent,
-                    comment.getCommentRangeStart().getId());
+        }
+        if (comment.getCommentReference() != null) {
+            ContentAccessor commentReferenceParent = (ContentAccessor) comment
+                    .getCommentReference().getParent();
+            commentReferenceParent.getContent().remove(comment.getCommentReference());
         }
     }
 
@@ -188,7 +189,6 @@ public class CommentUtil {
 
         element.getContent().removeAll(elementsToRemove);
     }
-
 
     private static boolean deleteCommentReference(ContentAccessor parent,
                                                   BigInteger commentId) {
@@ -309,6 +309,15 @@ public class CommentUtil {
                         throw new RuntimeException("Cannot figure which comment contains the other !");
                     }
                 }
+            }
+
+            @Override
+            protected void onCommentReference(R.CommentReference commentReference) {
+                CommentWrapper commentWrapper = allComments.get(commentReference.getId());
+                if (commentWrapper == null) {
+                    throw new RuntimeException("Found a comment reference before the comment range start !");
+                }
+                commentWrapper.setCommentReference(commentReference);
             }
         };
         documentWalker.walk();
