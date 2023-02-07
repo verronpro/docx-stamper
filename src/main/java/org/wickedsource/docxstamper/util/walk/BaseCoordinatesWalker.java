@@ -1,7 +1,8 @@
 package org.wickedsource.docxstamper.util.walk;
 
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.wickedsource.docxstamper.api.coordinates.*;
+import org.docx4j.wml.P;
+import org.wickedsource.docxstamper.api.coordinates.RunCoordinates;
 
 public abstract class BaseCoordinatesWalker extends CoordinatesWalker {
 
@@ -10,27 +11,12 @@ public abstract class BaseCoordinatesWalker extends CoordinatesWalker {
     }
 
     @Override
-    protected void onParagraph(ParagraphCoordinates paragraphCoordinates) {
+    protected void onParagraph(P paragraph) {
 
     }
 
     @Override
-    protected void onTable(TableCoordinates tableCoordinates) {
-
-    }
-
-    @Override
-    protected void onTableCell(TableCellCoordinates tableCellCoordinates) {
-
-    }
-
-    @Override
-    protected void onTableRow(TableRowCoordinates tableRowCoordinates) {
-
-    }
-
-    @Override
-    protected void onRun(RunCoordinates runCoordinates, ParagraphCoordinates paragraphCoordinates) {
+    protected void onRun(RunCoordinates runCoordinates, P paragraph) {
 
     }
 }

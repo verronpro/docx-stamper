@@ -11,7 +11,6 @@ import org.springframework.expression.spel.SpelEvaluationException;
 import org.springframework.expression.spel.SpelParseException;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.UnresolvedExpressionException;
-import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.el.ExpressionResolver;
@@ -51,8 +50,8 @@ public class PlaceholderReplacer {
     public void resolveExpressions(final WordprocessingMLPackage document, Object expressionContext) {
         CoordinatesWalker walker = new BaseCoordinatesWalker(document) {
             @Override
-            protected void onParagraph(ParagraphCoordinates paragraphCoordinates) {
-                resolveExpressionsForParagraph(paragraphCoordinates.getParagraph(), expressionContext, document);
+            protected void onParagraph(P paragraph) {
+                resolveExpressionsForParagraph(paragraph, expressionContext, document);
             }
         };
         walker.walk();

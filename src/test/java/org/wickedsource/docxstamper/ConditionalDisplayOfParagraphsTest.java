@@ -8,16 +8,13 @@ import org.docx4j.wml.Tc;
 import org.docx4j.wml.Tr;
 import org.junit.Assert;
 import org.junit.Test;
-import org.wickedsource.docxstamper.api.coordinates.TableCoordinates;
 import org.wickedsource.docxstamper.context.NameContext;
+import org.wickedsource.docxstamper.util.DocumentUtil;
 import org.wickedsource.docxstamper.util.ParagraphWrapper;
-import org.wickedsource.docxstamper.util.walk.BaseCoordinatesWalker;
-import org.wickedsource.docxstamper.util.walk.CoordinatesWalker;
 
 import javax.xml.bind.JAXBElement;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ConditionalDisplayOfParagraphsTest extends AbstractDocx4jTest {
@@ -78,14 +75,7 @@ public class ConditionalDisplayOfParagraphsTest extends AbstractDocx4jTest {
     }
 
     private void paragraphsInNestedTablesAreRemoved(WordprocessingMLPackage document) {
-        final List<Tbl> tables = new ArrayList<>();
-        CoordinatesWalker walker = new BaseCoordinatesWalker(document) {
-            @Override
-            protected void onTable(TableCoordinates tableCoordinates) {
-                tables.add(tableCoordinates.getTable());
-            }
-        };
-        walker.walk();
+        final List<Tbl> tables = DocumentUtil.getTableFromObject(document);
 
         Tbl nestedTable = tables.get(1);
         Tc cell = (Tc) ((JAXBElement) ((Tr) nestedTable.getContent().get(1)).getContent().get(0)).getValue();

@@ -2,6 +2,7 @@ package org.wickedsource.docxstamper.processor;
 
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.Comments;
+import org.docx4j.wml.P;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.spel.SpelEvaluationException;
@@ -9,7 +10,6 @@ import org.springframework.expression.spel.SpelParseException;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.UnresolvedExpressionException;
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
-import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
 import org.wickedsource.docxstamper.api.coordinates.RunCoordinates;
 import org.wickedsource.docxstamper.el.ExpressionResolver;
 import org.wickedsource.docxstamper.el.ExpressionUtil;
@@ -66,16 +66,16 @@ public class CommentProcessorRegistry {
         CoordinatesWalker walker = new BaseCoordinatesWalker(document) {
 
             @Override
-            protected void onParagraph(ParagraphCoordinates paragraphCoordinates) {
-                runProcessorsOnParagraphComment(document, comments, expressionContext, paragraphCoordinates)
+            protected void onParagraph(P paragraph) {
+                runProcessorsOnParagraphComment(document, comments, expressionContext, paragraph)
                         .ifPresent(proceedComments::add);
-                runProcessorsOnInlineContent(expressionContext, paragraphCoordinates);
+                runProcessorsOnInlineContent(expressionContext, paragraph);
             }
 
             @Override
             protected void onRun(RunCoordinates runCoordinates,
-                                 ParagraphCoordinates paragraphCoordinates) {
-                runProcessorsOnRunComment(document, comments, expressionContext, paragraphCoordinates, runCoordinates)
+                                 P paragraph) {
+                runProcessorsOnRunComment(document, comments, expressionContext, paragraph, runCoordinates)
                         .ifPresent(proceedComments::add);
             }
 
@@ -95,14 +95,14 @@ public class CommentProcessorRegistry {
      * Finds all processor expressions within the specified paragraph and tries
      * to evaluate it against all registered {@link ICommentProcessor}s.
      *
-     * @param expressionContext    a builder for a proxy around the context root object to customize its interface
-     * @param paragraphCoordinates the paragraph to process.
-     * @param <T>                  type of the context root object
+     * @param expressionContext a builder for a proxy around the context root object to customize its interface
+     * @param p                 the paragraph to process.
+     * @param <T>               type of the context root object
      */
     private <T> void runProcessorsOnInlineContent(T expressionContext,
-                                                  ParagraphCoordinates paragraphCoordinates) {
+                                                  P p) {
 
-        ParagraphWrapper paragraph = new ParagraphWrapper(paragraphCoordinates.getParagraph());
+        ParagraphWrapper paragraph = new ParagraphWrapper(p);
         List<String> processorExpressions = expressionUtil
                 .findProcessorExpressions(paragraph.getText());
 
@@ -110,7 +110,7 @@ public class CommentProcessorRegistry {
             String strippedExpression = expressionUtil.stripExpression(processorExpression);
 
             for (final Object processor : configuration.getCommentProcessors().values()) {
-                ((ICommentProcessor) processor).setCurrentParagraph(paragraphCoordinates.getParagraph());
+                ((ICommentProcessor) processor).setCurrentParagraph(p);
             }
 
             try {
@@ -138,28 +138,28 @@ public class CommentProcessorRegistry {
      * the string within the comment against all registered
      * {@link ICommentProcessor}s.
      *
-     * @param document             the word document.
-     * @param comments             the comments within the document.
-     * @param expressionContext    the context root object
-     * @param paragraphCoordinates the paragraph whose comments to evaluate.
-     * @param <T>                  the type of the context root object.
+     * @param document          the word document.
+     * @param comments          the comments within the document.
+     * @param expressionContext the context root object
+     * @param paragraph         the paragraph whose comments to evaluate.
+     * @param <T>               the type of the context root object.
      */
     private <T> Optional<CommentWrapper> runProcessorsOnParagraphComment(final WordprocessingMLPackage document,
                                                                          final Map<BigInteger, CommentWrapper> comments, T expressionContext,
-                                                                         ParagraphCoordinates paragraphCoordinates) {
-        Comments.Comment comment = CommentUtil.getCommentFor(paragraphCoordinates.getParagraph(), document);
-        return runCommentProcessors(comments, expressionContext, comment, paragraphCoordinates, null, document);
+                                                                         P paragraph) {
+        Comments.Comment comment = CommentUtil.getCommentFor(paragraph, document);
+        return runCommentProcessors(comments, expressionContext, comment, paragraph, null, document);
     }
 
     private <T> Optional<CommentWrapper> runProcessorsOnRunComment(final WordprocessingMLPackage document,
                                                                    final Map<BigInteger, CommentWrapper> comments, T expressionContext,
-                                                                   ParagraphCoordinates paragraphCoordinates, RunCoordinates runCoordinates) {
+                                                                   P paragraph, RunCoordinates runCoordinates) {
         Comments.Comment comment = CommentUtil.getCommentAround(runCoordinates.getRun(), document);
-        return runCommentProcessors(comments, expressionContext, comment, paragraphCoordinates, runCoordinates, document);
+        return runCommentProcessors(comments, expressionContext, comment, paragraph, runCoordinates, document);
     }
 
     private <T> Optional<CommentWrapper> runCommentProcessors(final Map<BigInteger, CommentWrapper> comments, T expressionContext,
-                                                              Comments.Comment comment, ParagraphCoordinates paragraphCoordinates,
+                                                              Comments.Comment comment, P paragraph,
                                                               RunCoordinates runCoordinates, WordprocessingMLPackage document) {
 
         CommentWrapper commentWrapper = Optional.ofNullable(comment)
@@ -175,7 +175,7 @@ public class CommentProcessorRegistry {
         String commentString = CommentUtil.getCommentString(comment);
 
         for (final Object processor : configuration.getCommentProcessors().values()) {
-            ((ICommentProcessor) processor).setCurrentParagraph(paragraphCoordinates.getParagraph());
+            ((ICommentProcessor) processor).setCurrentParagraph(paragraph);
             ((ICommentProcessor) processor).setCurrentRunCoordinates(runCoordinates);
             ((ICommentProcessor) processor).setCurrentCommentWrapper(commentWrapper);
             ((ICommentProcessor) processor).setDocument(document);

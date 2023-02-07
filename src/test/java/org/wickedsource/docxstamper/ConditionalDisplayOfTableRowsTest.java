@@ -2,16 +2,14 @@ package org.wickedsource.docxstamper;
 
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.wml.Tr;
 import org.junit.Assert;
 import org.junit.Test;
-import org.wickedsource.docxstamper.api.coordinates.TableRowCoordinates;
 import org.wickedsource.docxstamper.context.NameContext;
-import org.wickedsource.docxstamper.util.walk.BaseCoordinatesWalker;
-import org.wickedsource.docxstamper.util.walk.CoordinatesWalker;
+import org.wickedsource.docxstamper.util.DocumentUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ConditionalDisplayOfTableRowsTest extends AbstractDocx4jTest {
@@ -23,14 +21,7 @@ public class ConditionalDisplayOfTableRowsTest extends AbstractDocx4jTest {
         InputStream template = getClass().getResourceAsStream("ConditionalDisplayOfTableRowsTest.docx");
         WordprocessingMLPackage document = stampAndLoad(template, context);
 
-        final List<TableRowCoordinates> rowCoords = new ArrayList<>();
-        CoordinatesWalker walker = new BaseCoordinatesWalker(document) {
-            @Override
-            protected void onTableRow(TableRowCoordinates tableRowCoordinates) {
-                rowCoords.add(tableRowCoordinates);
-            }
-        };
-        walker.walk();
+        final List<Tr> rowCoords = DocumentUtil.getTableRowsFromObject(document);
 
         Assert.assertEquals(5, rowCoords.size());
     }

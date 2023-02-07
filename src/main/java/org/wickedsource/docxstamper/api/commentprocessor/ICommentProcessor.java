@@ -28,7 +28,7 @@ import org.wickedsource.docxstamper.util.CommentWrapper;
  * <p><strong>2. Creating an implementation of your interface</strong><br/>
  * Your implementation class must also implement the Interface
  * ICommentProcessor. To stay in the above example, when the boldIf method is called, simply keep track of the paragraphs that are to be made bold.
- * The currently processed paragraph is passed into the method setCurrentParagraphCoordinates() before your own method
+ * The currently processed paragraph is passed into the method setCurrentParagraph() before your own method
  * (in this case boldIf()) is called.
  * Within the method commitChanges() you then do the manipulations on the word document, i.e. make the paragraphs
  * that were commented bold.
