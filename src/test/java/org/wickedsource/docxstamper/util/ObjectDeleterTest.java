@@ -12,6 +12,7 @@ import org.wickedsource.docxstamper.api.coordinates.TableCoordinates;
 import org.wickedsource.docxstamper.api.coordinates.TableRowCoordinates;
 import org.wickedsource.docxstamper.util.walk.BaseCoordinatesWalker;
 import org.wickedsource.docxstamper.util.walk.CoordinatesWalker;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -32,10 +33,10 @@ public class ObjectDeleterTest extends AbstractDocx4jTest {
             index++;
         }
 
-        ObjectDeleter deleter = new ObjectDeleter(document);
-        deleter.deleteParagraph(coordinates.get(0));
-        deleter.deleteParagraph(coordinates.get(2));
-        deleter.deleteParagraph(coordinates.get(3));
+        ObjectDeleter deleter = new ObjectDeleter();
+        deleter.deleteParagraph(coordinates.get(0).getParagraph());
+        deleter.deleteParagraph(coordinates.get(2).getParagraph());
+        deleter.deleteParagraph(coordinates.get(3).getParagraph());
 
         WordprocessingMLPackage savedDocument = saveAndLoadDocument(document);
         Assert.assertEquals(2, savedDocument.getMainDocumentPart().getContent().size());
@@ -49,13 +50,13 @@ public class ObjectDeleterTest extends AbstractDocx4jTest {
         WordprocessingMLPackage document = WordprocessingMLPackage.load(template);
         final List<ParagraphCoordinates> coordinates = getParagraphCoordinates(document);
 
-        ObjectDeleter deleter = new ObjectDeleter(document);
-        deleter.deleteParagraph(coordinates.get(1));
-        deleter.deleteParagraph(coordinates.get(2));
-        deleter.deleteParagraph(coordinates.get(4));
-        deleter.deleteParagraph(coordinates.get(5));
-        deleter.deleteParagraph(coordinates.get(8));
-        deleter.deleteParagraph(coordinates.get(11));
+        ObjectDeleter deleter = new ObjectDeleter();
+        deleter.deleteParagraph(coordinates.get(1).getParagraph());
+        deleter.deleteParagraph(coordinates.get(2).getParagraph());
+        deleter.deleteParagraph(coordinates.get(4).getParagraph());
+        deleter.deleteParagraph(coordinates.get(5).getParagraph());
+        deleter.deleteParagraph(coordinates.get(8).getParagraph());
+        deleter.deleteParagraph(coordinates.get(11).getParagraph());
 
         WordprocessingMLPackage savedDocument = saveAndLoadDocument(document);
         List<TableCellCoordinates> cellCoordinates = getTableCellCoordinats(savedDocument);
@@ -75,9 +76,9 @@ public class ObjectDeleterTest extends AbstractDocx4jTest {
         WordprocessingMLPackage document = WordprocessingMLPackage.load(template);
         final List<TableCoordinates> coordinates = getTableCoordinats(document);
 
-        ObjectDeleter deleter = new ObjectDeleter(document);
-        deleter.deleteTable(coordinates.get(1));
-        deleter.deleteTable(coordinates.get(3));
+        ObjectDeleter deleter = new ObjectDeleter();
+        deleter.deleteTable(coordinates.get(1).getTable());
+        deleter.deleteTable(coordinates.get(3).getTable());
 
         WordprocessingMLPackage savedDocument = saveAndLoadDocument(document);
 
@@ -98,9 +99,9 @@ public class ObjectDeleterTest extends AbstractDocx4jTest {
         WordprocessingMLPackage document = WordprocessingMLPackage.load(template);
         final List<TableRowCoordinates> rowCoordinates = getTableRowCoordinats(document);
 
-        ObjectDeleter deleter = new ObjectDeleter(document);
-        deleter.deleteTableRow(rowCoordinates.get(2));
-        deleter.deleteTableRow(rowCoordinates.get(4));
+        ObjectDeleter deleter = new ObjectDeleter();
+        deleter.deleteTableRow(rowCoordinates.get(2).getRow());
+        deleter.deleteTableRow(rowCoordinates.get(4).getRow());
 
         WordprocessingMLPackage savedDocument = saveAndLoadDocument(document);
 

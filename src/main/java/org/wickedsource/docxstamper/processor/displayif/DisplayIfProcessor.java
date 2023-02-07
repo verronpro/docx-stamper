@@ -27,7 +27,7 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
 
     @Override
     public void commitChanges(WordprocessingMLPackage document) {
-        ObjectDeleter deleter = new ObjectDeleter(document);
+        ObjectDeleter deleter = new ObjectDeleter();
         removeParagraphs(deleter);
         removeTables(deleter);
         removeTableRows(deleter);
@@ -42,19 +42,19 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
 
     private void removeParagraphs(ObjectDeleter deleter) {
         for (ParagraphCoordinates pCoords : paragraphsToBeRemoved) {
-            deleter.deleteParagraph(pCoords);
+            deleter.deleteParagraph(pCoords.getParagraph());
         }
     }
 
     private void removeTables(ObjectDeleter deleter) {
         for (TableCoordinates tCoords : tablesToBeRemoved) {
-            deleter.deleteTable(tCoords);
+            deleter.deleteTable(tCoords.getTable());
         }
     }
 
     private void removeTableRows(ObjectDeleter deleter) {
         for (TableRowCoordinates rCoords : tableRowsToBeRemoved) {
-            deleter.deleteTableRow(rCoords);
+            deleter.deleteTableRow(rCoords.getRow());
         }
     }
 
