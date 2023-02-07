@@ -1,9 +1,9 @@
 package org.wickedsource.docxstamper.processor;
 
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.wml.P;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
-import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
 import org.wickedsource.docxstamper.api.coordinates.RunCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -16,7 +16,7 @@ public abstract class BaseCommentProcessor implements ICommentProcessor {
 
     protected final DocxStamperConfiguration configuration;
     protected final PlaceholderReplacer placeholderReplacer;
-    private ParagraphCoordinates currentParagraphCoordinates;
+    private P currentParagraph;
 
     private RunCoordinates currentRunCoordinates;
 
@@ -40,12 +40,12 @@ public abstract class BaseCommentProcessor implements ICommentProcessor {
     }
 
     @Override
-    public void setCurrentParagraphCoordinates(ParagraphCoordinates coordinates) {
-        this.currentParagraphCoordinates = coordinates;
+    public void setCurrentParagraph(P paragraph) {
+        this.currentParagraph = paragraph;
     }
 
-    public ParagraphCoordinates getCurrentParagraphCoordinates() {
-        return currentParagraphCoordinates;
+    public P getCurrentParagraph() {
+        return currentParagraph;
     }
 
     @Override

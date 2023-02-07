@@ -23,11 +23,11 @@ public class CoordinatesWalkerTest extends AbstractDocx4jTest {
 
         CoordinatesWalker walker = new CoordinatesWalker(document) {
 
-        	@Override
-			protected void onRun(RunCoordinates runCoordinates, ParagraphCoordinates paragraphCoordinates) {
-				// TODO Auto-generated method stub
-			}
-        	
+            @Override
+            protected void onRun(RunCoordinates runCoordinates, ParagraphCoordinates paragraphCoordinates) {
+                // TODO Auto-generated method stub
+            }
+
             @Override
             protected void onParagraph(ParagraphCoordinates paragraphCoordinates) {
                 paragraphCount.increment();

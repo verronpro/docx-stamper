@@ -3,10 +3,10 @@ package org.wickedsource.docxstamper.processor.repeat;
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.P;
+import org.docx4j.wml.Tbl;
+import org.docx4j.wml.Tc;
 import org.docx4j.wml.Tr;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
-import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
-import org.wickedsource.docxstamper.api.coordinates.TableRowCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
@@ -21,8 +21,8 @@ import java.util.Map;
 
 public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProcessor {
 
-    private Map<TableRowCoordinates, List<Object>> tableRowsToRepeat = new HashMap<>();
-    private Map<TableRowCoordinates, CommentWrapper> tableRowsCommentsToRemove = new HashMap<>();
+    private Map<Tr, List<Object>> tableRowsToRepeat = new HashMap<>();
+    private Map<Tr, CommentWrapper> tableRowsCommentsToRemove = new HashMap<>();
 
     public RepeatProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
         super(config, typeResolverRegistry);
@@ -41,14 +41,15 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
     }
 
     private void repeatRows(final WordprocessingMLPackage document) {
-        for (TableRowCoordinates rCoords : tableRowsToRepeat.keySet()) {
-            List<Object> expressionContexts = tableRowsToRepeat.get(rCoords);
-            int index = rCoords.getIndex();
+        for (Tr row : tableRowsToRepeat.keySet()) {
+            List<Object> expressionContexts = tableRowsToRepeat.get(row);
+            Tbl table = (Tbl) XmlUtils.unwrap(row.getParent());
+            int index = table.getContent().indexOf(row);
 
             if (expressionContexts != null) {
                 for (final Object expressionContext : expressionContexts) {
-                    Tr rowClone = XmlUtils.deepCopy(rCoords.getRow());
-                    CommentUtil.deleteCommentFromElement(rowClone, tableRowsCommentsToRemove.get(rCoords).getComment().getId());
+                    Tr rowClone = XmlUtils.deepCopy(row);
+                    CommentUtil.deleteCommentFromElement(rowClone, tableRowsCommentsToRemove.get(row).getComment().getId());
 
                     DocumentWalker walker = new BaseDocumentWalker(rowClone) {
                         @Override
@@ -57,24 +58,25 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
                         }
                     };
                     walker.walk();
-                    rCoords.getParentTableCoordinates().getTable().getContent().add(++index, rowClone);
+                    table.getContent().add(++index, rowClone);
                 }
             }
 
             // TODO : how to replace null values here ?
-            rCoords.getParentTableCoordinates().getTable().getContent().remove(rCoords.getRow());
+            table.getContent().remove(row);
         }
     }
 
     @Override
     public void repeatTableRow(List<Object> objects) {
-        ParagraphCoordinates pCoords = getCurrentParagraphCoordinates();
-        if (pCoords.getParentTableCellCoordinates() == null ||
-                pCoords.getParentTableCellCoordinates().getParentTableRowCoordinates() == null) {
+        P pCoords = getCurrentParagraph();
+
+        if (pCoords.getParent() instanceof Tc && ((Tc) pCoords.getParent()).getParent() instanceof Tr) {
+            Tr tableRow = (Tr) ((Tc) pCoords.getParent()).getParent();
+            tableRowsToRepeat.put(tableRow, objects);
+            tableRowsCommentsToRemove.put(tableRow, getCurrentCommentWrapper());
+        } else {
             throw new CommentProcessingException("Paragraph is not within a table!", pCoords);
         }
-        TableRowCoordinates parentTableRowCoordinates = getCurrentParagraphCoordinates().getParentTableCellCoordinates().getParentTableRowCoordinates();
-        tableRowsToRepeat.put(parentTableRowCoordinates, objects);
-        tableRowsCommentsToRemove.put(parentTableRowCoordinates, getCurrentCommentWrapper());
     }
 }

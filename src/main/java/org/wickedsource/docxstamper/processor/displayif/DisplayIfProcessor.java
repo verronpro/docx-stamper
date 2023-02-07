@@ -1,10 +1,11 @@
 package org.wickedsource.docxstamper.processor.displayif;
 
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.wml.P;
+import org.docx4j.wml.Tbl;
+import org.docx4j.wml.Tc;
+import org.docx4j.wml.Tr;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
-import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
-import org.wickedsource.docxstamper.api.coordinates.TableCoordinates;
-import org.wickedsource.docxstamper.api.coordinates.TableRowCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
@@ -15,11 +16,11 @@ import java.util.List;
 
 public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplayIfProcessor {
 
-    private List<ParagraphCoordinates> paragraphsToBeRemoved = new ArrayList<>();
+    private List<P> paragraphsToBeRemoved = new ArrayList<>();
 
-    private List<TableCoordinates> tablesToBeRemoved = new ArrayList<>();
+    private List<Tbl> tablesToBeRemoved = new ArrayList<>();
 
-    private List<TableRowCoordinates> tableRowsToBeRemoved = new ArrayList<>();
+    private List<Tr> tableRowsToBeRemoved = new ArrayList<>();
 
     public DisplayIfProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
         super(config, typeResolverRegistry);
@@ -41,28 +42,27 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
     }
 
     private void removeParagraphs(ObjectDeleter deleter) {
-        for (ParagraphCoordinates pCoords : paragraphsToBeRemoved) {
-            deleter.deleteParagraph(pCoords.getParagraph());
+        for (P p : paragraphsToBeRemoved) {
+            deleter.deleteParagraph(p);
         }
     }
 
     private void removeTables(ObjectDeleter deleter) {
-        for (TableCoordinates tCoords : tablesToBeRemoved) {
-            deleter.deleteTable(tCoords.getTable());
+        for (Tbl table : tablesToBeRemoved) {
+            deleter.deleteTable(table);
         }
     }
 
     private void removeTableRows(ObjectDeleter deleter) {
-        for (TableRowCoordinates rCoords : tableRowsToBeRemoved) {
-            deleter.deleteTableRow(rCoords.getRow());
+        for (Tr row : tableRowsToBeRemoved) {
+            deleter.deleteTableRow(row);
         }
     }
 
     @Override
     public void displayParagraphIf(Boolean condition) {
         if (!condition) {
-            ParagraphCoordinates coords = getCurrentParagraphCoordinates();
-            paragraphsToBeRemoved.add(coords);
+            paragraphsToBeRemoved.add(getCurrentParagraph());
         }
     }
 
@@ -74,25 +74,28 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
     @Override
     public void displayTableIf(Boolean condition) {
         if (!condition) {
-            ParagraphCoordinates pCoords = getCurrentParagraphCoordinates();
-            if (pCoords.getParentTableCellCoordinates() == null ||
-                    pCoords.getParentTableCellCoordinates().getParentTableRowCoordinates() == null ||
-                    pCoords.getParentTableCellCoordinates().getParentTableRowCoordinates().getParentTableCoordinates() == null) {
-                throw new CommentProcessingException("Paragraph is not within a table!", pCoords);
+            P p = getCurrentParagraph();
+
+            if (p.getParent() instanceof Tc &&
+                    ((Tc) p.getParent()).getParent() instanceof Tr &&
+                    ((Tr) ((Tc) p.getParent()).getParent()).getParent() instanceof Tbl) {
+                tablesToBeRemoved.add((Tbl) ((Tr) ((Tc) p.getParent()).getParent()).getParent());
+            } else {
+                throw new CommentProcessingException("Paragraph is not within a table!", p);
             }
-            tablesToBeRemoved.add(pCoords.getParentTableCellCoordinates().getParentTableRowCoordinates().getParentTableCoordinates());
         }
     }
 
     @Override
     public void displayTableRowIf(Boolean condition) {
         if (!condition) {
-            ParagraphCoordinates pCoords = getCurrentParagraphCoordinates();
-            if (pCoords.getParentTableCellCoordinates() == null ||
-                    pCoords.getParentTableCellCoordinates().getParentTableRowCoordinates() == null) {
-                throw new CommentProcessingException("Paragraph is not within a table!", pCoords);
+            P p = getCurrentParagraph();
+            if (p.getParent() instanceof Tc &&
+                    ((Tc) p.getParent()).getParent() instanceof Tr) {
+                tableRowsToBeRemoved.add((Tr) ((Tc) p.getParent()).getParent());
+            } else {
+                throw new CommentProcessingException("Paragraph is not within a table!", p);
             }
-            tableRowsToBeRemoved.add(pCoords.getParentTableCellCoordinates().getParentTableRowCoordinates());
         }
     }
 }

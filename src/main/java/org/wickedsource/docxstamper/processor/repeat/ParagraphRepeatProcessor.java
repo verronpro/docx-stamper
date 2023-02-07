@@ -4,7 +4,6 @@ import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
-import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.util.CommentUtil;
@@ -33,7 +32,7 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
         SectPr firstParagraphSectionBreak;
     }
 
-    private Map<ParagraphCoordinates, ParagraphsToRepeat> pToRepeat = new HashMap<>();
+    private Map<P, ParagraphsToRepeat> pToRepeat = new HashMap<>();
 
     public ParagraphRepeatProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
         super(config, typeResolverRegistry);
@@ -41,9 +40,7 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 
     @Override
     public void repeatParagraph(List<Object> objects) {
-        ParagraphCoordinates paragraphCoordinates = getCurrentParagraphCoordinates();
-
-        P paragraph = paragraphCoordinates.getParagraph();
+        P paragraph = getCurrentParagraph();
 
         List<P> paragraphs = getParagraphsInsideComment(paragraph);
 
@@ -60,13 +57,13 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
             paragraph.getPPr().setSectPr(null);
         }
 
-        pToRepeat.put(paragraphCoordinates, toRepeat);
+        pToRepeat.put(paragraph, toRepeat);
     }
 
     @Override
     public void commitChanges(WordprocessingMLPackage document) {
-        for (ParagraphCoordinates rCoords : pToRepeat.keySet()) {
-            ParagraphsToRepeat paragraphsToRepeat = pToRepeat.get(rCoords);
+        for (P currentP : pToRepeat.keySet()) {
+            ParagraphsToRepeat paragraphsToRepeat = pToRepeat.get(currentP);
             List<Object> expressionContexts = paragraphsToRepeat.data;
 
             List<P> paragraphsToAdd = new ArrayList<>();
@@ -81,8 +78,8 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
             restoreFirstSectionBreakIfNeeded(paragraphsToRepeat, paragraphsToAdd);
 
             // paragraphs insertion into the document
-            ContentAccessor parent = (ContentAccessor) rCoords.getParagraph().getParent();
-            int index = parent.getContent().indexOf(rCoords.getParagraph());
+            ContentAccessor parent = (ContentAccessor) currentP.getParent();
+            int index = parent.getContent().indexOf(currentP);
             if (index >= 0) {
                 parent.getContent().addAll(index, paragraphsToAdd);
             }

@@ -28,9 +28,9 @@ public abstract class BaseCoordinatesWalker extends CoordinatesWalker {
     protected void onTableRow(TableRowCoordinates tableRowCoordinates) {
 
     }
-    
-    @Override
-	protected void onRun(RunCoordinates runCoordinates, ParagraphCoordinates paragraphCoordinates) {
 
-	}
+    @Override
+    protected void onRun(RunCoordinates runCoordinates, ParagraphCoordinates paragraphCoordinates) {
+
+    }
 }

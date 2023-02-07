@@ -110,7 +110,7 @@ public class CommentProcessorRegistry {
             String strippedExpression = expressionUtil.stripExpression(processorExpression);
 
             for (final Object processor : configuration.getCommentProcessors().values()) {
-                ((ICommentProcessor) processor).setCurrentParagraphCoordinates(paragraphCoordinates);
+                ((ICommentProcessor) processor).setCurrentParagraph(paragraphCoordinates.getParagraph());
             }
 
             try {
@@ -175,7 +175,7 @@ public class CommentProcessorRegistry {
         String commentString = CommentUtil.getCommentString(comment);
 
         for (final Object processor : configuration.getCommentProcessors().values()) {
-            ((ICommentProcessor) processor).setCurrentParagraphCoordinates(paragraphCoordinates);
+            ((ICommentProcessor) processor).setCurrentParagraph(paragraphCoordinates.getParagraph());
             ((ICommentProcessor) processor).setCurrentRunCoordinates(runCoordinates);
             ((ICommentProcessor) processor).setCurrentCommentWrapper(commentWrapper);
             ((ICommentProcessor) processor).setDocument(document);

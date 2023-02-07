@@ -2,15 +2,8 @@ package org.wickedsource.docxstamper.processor.table;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.wml.ContentAccessor;
-import org.docx4j.wml.Tbl;
-import org.docx4j.wml.Tc;
-import org.docx4j.wml.Tr;
+import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
-import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
-import org.wickedsource.docxstamper.api.coordinates.TableCellCoordinates;
-import org.wickedsource.docxstamper.api.coordinates.TableCoordinates;
-import org.wickedsource.docxstamper.api.coordinates.TableRowCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
@@ -30,18 +23,14 @@ public class TableResolver extends BaseCommentProcessor implements ITableResolve
 
     @Override
     public void resolveTable(StampTable givenTable) {
-        ParagraphCoordinates pCoords = getCurrentParagraphCoordinates();
-        if (pCoords.getParentTableCellCoordinates() == null ||
-                pCoords.getParentTableCellCoordinates().getParentTableRowCoordinates() == null) {
-            throw new CommentProcessingException("Paragraph is not within a table!", pCoords);
+        P p = getCurrentParagraph();
+
+        if (p.getParent() instanceof Tc && ((Tc) p.getParent()).getParent() instanceof Tr) {
+            Tbl table = (Tbl) ((Tr) ((Tc) p.getParent()).getParent()).getParent();
+            cols.put(table, givenTable);
         }
 
-        TableCellCoordinates parentTableCellCoordinates = pCoords.getParentTableCellCoordinates();
-        TableRowCoordinates parentTableRowCoordinates = parentTableCellCoordinates.getParentTableRowCoordinates();
-        TableCoordinates parentTableCoordinates = parentTableRowCoordinates.getParentTableCoordinates();
-        Tbl table = parentTableCoordinates.getTable();
-
-        cols.put(table, givenTable);
+        throw new CommentProcessingException("Paragraph is not within a table!", p);
     }
 
     @Override

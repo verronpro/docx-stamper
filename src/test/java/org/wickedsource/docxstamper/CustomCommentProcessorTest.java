@@ -2,10 +2,10 @@ package org.wickedsource.docxstamper;
 
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.wml.P;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
-import org.wickedsource.docxstamper.api.coordinates.ParagraphCoordinates;
 import org.wickedsource.docxstamper.api.coordinates.RunCoordinates;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
@@ -43,9 +43,9 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
 
     public static class CustomCommentProcessor extends BaseCommentProcessor implements ICustomCommentProcessor {
 
-        private final List<ParagraphCoordinates> visitedParagraphs = new ArrayList<>();
+        private final List<P> visitedParagraphs = new ArrayList<>();
 
-        private ParagraphCoordinates currentParagraph;
+        private P currentParagraph;
 
         public CustomCommentProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
             super(config, typeResolverRegistry);
@@ -57,8 +57,8 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
         }
 
         @Override
-        public void setCurrentParagraphCoordinates(ParagraphCoordinates coordinates) {
-            currentParagraph = coordinates;
+        public void setCurrentParagraph(P paragraph) {
+            currentParagraph = paragraph;
         }
 
         @Override
@@ -81,7 +81,7 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
 
         }
 
-        public List<ParagraphCoordinates> getVisitedParagraphs() {
+        public List<P> getVisitedParagraphs() {
             return visitedParagraphs;
         }
 

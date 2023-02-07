@@ -9,15 +9,15 @@ import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.relationships.Relationship;
 import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.api.coordinates.*;
+import org.wickedsource.docxstamper.util.ParagraphUtil;
 
 import javax.xml.bind.JAXBElement;
 import java.util.ArrayList;
 import java.util.List;
-import org.wickedsource.docxstamper.util.ParagraphUtil;
 
 public abstract class CoordinatesWalker {
 
-    private WordprocessingMLPackage document;
+    private final WordprocessingMLPackage document;
 
     public CoordinatesWalker(WordprocessingMLPackage document) {
         this.document = document;
@@ -36,7 +36,7 @@ public abstract class CoordinatesWalker {
 
         // walk through elements in main document part
         walkContent(document.getMainDocumentPart().getContent());
-        
+
         // walk through textboxes in main document
         walkContent(ParagraphUtil.getAllTextBoxes(document));
 
@@ -78,21 +78,21 @@ public abstract class CoordinatesWalker {
             }
         }
     }
-    
-    private void walkParagraph(ParagraphCoordinates paragraphCoordinates){
-    	int rowIndex = 0;
-    	for (Object contentElement : paragraphCoordinates.getParagraph().getContent()){
-    		 if (XmlUtils.unwrap(contentElement) instanceof R) {
-    			 R run = (R) contentElement;
-    			 RunCoordinates runCoordinates = new RunCoordinates(run, rowIndex);
-    			 onRun(runCoordinates, paragraphCoordinates);
-    		 }
-    	}
-    	// we run the paragraph afterwards so that the comments inside work before the whole paragraph comments
-    	onParagraph(paragraphCoordinates);
+
+    private void walkParagraph(ParagraphCoordinates paragraphCoordinates) {
+        int rowIndex = 0;
+        for (Object contentElement : paragraphCoordinates.getParagraph().getContent()) {
+            if (XmlUtils.unwrap(contentElement) instanceof R) {
+                R run = (R) contentElement;
+                RunCoordinates runCoordinates = new RunCoordinates(run, rowIndex);
+                onRun(runCoordinates, paragraphCoordinates);
+            }
+        }
+        // we run the paragraph afterwards so that the comments inside work before the whole paragraph comments
+        onParagraph(paragraphCoordinates);
 
     }
-    
+
     private void walkTable(TableCoordinates tableCoordinates) {
         onTable(tableCoordinates);
         int rowIndex = 0;
@@ -140,7 +140,7 @@ public abstract class CoordinatesWalker {
     protected abstract void onParagraph(ParagraphCoordinates paragraphCoordinates);
 
     protected abstract void onRun(RunCoordinates runCoordinates, ParagraphCoordinates paragraphCoordinates);
-    
+
     protected abstract void onTable(TableCoordinates tableCoordinates);
 
     protected abstract void onTableCell(TableCellCoordinates tableCellCoordinates);
