@@ -9,7 +9,6 @@ import org.springframework.context.expression.MapAccessor;
 import org.wickedsource.docxstamper.context.NameContext;
 import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -39,8 +38,6 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
                 .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
-
-        result.save(new File("ChangingPageLayoutOutsideRepeatParagraph.docx"));
 
         List<Object> content = result.getMainDocumentPart().getContent();
 
@@ -77,8 +74,6 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
                 .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));
 
         WordprocessingMLPackage result = stampAndLoad(template, context, config);
-
-        result.save(new File("ChangingPageLayoutInRepeatParagraph.docx"));
 
         List<Object> content = result.getMainDocumentPart().getContent();
         Assert.assertEquals(
