@@ -25,7 +25,7 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
                 .addCommentProcessor(ICustomCommentProcessor.class, CustomCommentProcessor.class);
         InputStream template = getClass().getResourceAsStream("CustomCommentProcessorTest.docx");
         OutputStream out = getOutputStream();
-        DocxStamper stamper = new DocxStamper(config);
+        DocxStamper<EmptyContext> stamper = new DocxStamper<>(config);
         stamper.stamp(template, new EmptyContext(), out);
         CustomCommentProcessor processor = (CustomCommentProcessor) stamper.getCommentProcessorInstance(ICustomCommentProcessor.class);
         Assert.assertEquals(2, processor.getVisitedParagraphs().size());
@@ -37,15 +37,11 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
 
     public interface ICustomCommentProcessor extends ICommentProcessor {
 
-        void visitParagraph();
-
     }
 
     public static class CustomCommentProcessor extends BaseCommentProcessor implements ICustomCommentProcessor {
 
         private final List<P> visitedParagraphs = new ArrayList<>();
-
-        private P currentParagraph;
 
         public CustomCommentProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
             super(config, typeResolverRegistry);
@@ -57,8 +53,7 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
         }
 
         @Override
-        public void setCurrentParagraph(P paragraph) {
-            currentParagraph = paragraph;
+        public void setParagraph(P paragraph) {
         }
 
         @Override
@@ -85,10 +80,6 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
             return visitedParagraphs;
         }
 
-        @Override
-        public void visitParagraph() {
-            visitedParagraphs.add(currentParagraph);
-        }
     }
 
 

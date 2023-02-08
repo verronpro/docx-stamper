@@ -45,7 +45,7 @@ public interface ICommentProcessor {
      * within in the custom methods of a comment processor, the ongoing iteration over the paragraphs in the document
      * may be disturbed.
      *
-     * @param document The word document that can be manipulated by using the DOCX4J api.
+     * @param document The Word document that can be manipulated by using the DOCX4J api.
      */
     void commitChanges(WordprocessingMLPackage document);
 
@@ -56,7 +56,7 @@ public interface ICommentProcessor {
      *
      * @param paragraph coordinates of the currently processed paragraph within the template.
      */
-    void setCurrentParagraph(P paragraph);
+    void setParagraph(P paragraph);
 
 
     /**
@@ -67,7 +67,6 @@ public interface ICommentProcessor {
      * @param run coordinates of the currently processed run within the template.
      */
     void setCurrentRun(R run);
-
 
     /**
      * Passes the comment range wrapper that is currently being processed

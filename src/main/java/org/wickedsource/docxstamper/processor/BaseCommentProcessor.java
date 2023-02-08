@@ -11,17 +11,14 @@ import org.wickedsource.docxstamper.util.CommentWrapper;
 
 import java.util.Objects;
 
-public abstract class BaseCommentProcessor implements ICommentProcessor {
+public abstract class BaseCommentProcessor
+        implements ICommentProcessor {
     protected final TypeResolverRegistry typeResolverRegistry;
-
     protected final DocxStamperConfiguration configuration;
     protected final PlaceholderReplacer placeholderReplacer;
     private P currentParagraph;
-
     private R currentRun;
-
     private CommentWrapper currentCommentWrapper;
-
     private WordprocessingMLPackage document;
 
     public BaseCommentProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
@@ -40,7 +37,7 @@ public abstract class BaseCommentProcessor implements ICommentProcessor {
     }
 
     @Override
-    public void setCurrentParagraph(P paragraph) {
+    public void setParagraph(P paragraph) {
         this.currentParagraph = paragraph;
     }
 

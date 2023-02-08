@@ -34,13 +34,9 @@ public class CommentProcessorRegistry {
   private final Logger logger = LoggerFactory.getLogger(CommentProcessorRegistry.class);
 
   private final DocxStamperConfiguration configuration;
-
-  private final Map<ICommentProcessor, Class<?>> commentProcessorInterfaces = new HashMap<>();
-
     private ExpressionResolver expressionResolver;
 
     private final ExpressionUtil expressionUtil = new ExpressionUtil();
-  private final List<ICommentProcessor> commentProcessors = new ArrayList<>();
     private final PlaceholderReplacer placeholderReplacer;
 
     public CommentProcessorRegistry(PlaceholderReplacer placeholderReplacer, DocxStamperConfiguration configuration) {
@@ -113,7 +109,7 @@ public class CommentProcessorRegistry {
             String strippedExpression = expressionUtil.stripExpression(processorExpression);
 
             for (final Object processor : configuration.getCommentProcessors().values()) {
-                ((ICommentProcessor) processor).setCurrentParagraph(paragraph);
+                ((ICommentProcessor) processor).setParagraph(paragraph);
             }
 
             try {
@@ -178,7 +174,7 @@ public class CommentProcessorRegistry {
         String commentString = CommentUtil.getCommentString(comment);
 
         for (final Object processor : configuration.getCommentProcessors().values()) {
-            ((ICommentProcessor) processor).setCurrentParagraph(paragraph);
+            ((ICommentProcessor) processor).setParagraph(paragraph);
             ((ICommentProcessor) processor).setCurrentRun(run);
             ((ICommentProcessor) processor).setCurrentCommentWrapper(commentWrapper);
             ((ICommentProcessor) processor).setDocument(document);
