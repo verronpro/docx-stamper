@@ -74,6 +74,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     @Override
     public void commitChanges(WordprocessingMLPackage document) {
         for (CommentWrapper commentWrapper : subContexts.keySet()) {
+            if (commentWrapper == null) throw new RuntimeException("commentWrapper should not be null");
             List<Object> expressionContexts = subContexts.get(commentWrapper);
 
             // index changes after each replacement, so we need to get the insert index at the last moment.

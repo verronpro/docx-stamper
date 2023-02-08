@@ -51,7 +51,7 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
             if (expressionContexts != null) {
                 for (final Object expressionContext : expressionContexts) {
                     Tr rowClone = XmlUtils.deepCopy(row);
-                    CommentWrapper commentWrapper = tableRowsCommentsToRemove.get(row);
+                    CommentWrapper commentWrapper = Objects.requireNonNull(tableRowsCommentsToRemove.get(row));
                     Comments.Comment comment = Objects.requireNonNull(commentWrapper.getComment());
                     BigInteger commentId = comment.getId();
                     CommentUtil.deleteCommentFromElement(rowClone, commentId);
