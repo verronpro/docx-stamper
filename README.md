@@ -7,13 +7,13 @@ processor
 and feed it to a DocxStamper instance to create a document based on the template at runtime. Example code:
 
 ```java
-MyContext context = ...;                 // your own POJO against which expressions found in the template
-        // will be resolved
-InputStream template = ...;              // InputStream to your .docx template file
-OutputStream out = ...;                  // OutputStream in which to write the resulting .docx document
-        DocxStamper stamper=new DocxStamperConfiguration()
-        .build();
-        stamper.stamp(template,context,out);
+class Example {
+    public static void main(String[] args) {
+        MyContext context = ...// your own POJO against which expressions found in the template will be resolved
+        InputStream template = ...// InputStream to your .docx template file
+        OutputStream out = ...// OutputStream in which to write the resulting .docx document
+        DocxStamper stamper = new DocxStamperConfiguration().build();
+        stamper.stamp(template, context, out);
         out.close();
     }
 }
@@ -62,10 +62,14 @@ and customize Springs `StandardEvaluationContext` to your needs. You can registe
 this:
 
 ```java 
-EvaluationContextConfigurer configurer = ...;
-DocxStamper stamper = new DocxStamperConfiguration()
-  .setEvaluationContextConfigurer(configurer)
-  .build();
+class Main {
+    public static void main(String... args) {
+        EvaluationContextConfigurer configurer = ...
+        DocxStamper stamper = new DocxStamperConfiguration()
+                .setEvaluationContextConfigurer(configurer)
+                .build();
+    }
+}
 ```
 
 ## Adding custom functions to the Expression Language
@@ -111,12 +115,14 @@ own [ICommentProcessor](src/main/java/org/wickedsource/docxstamper/api/commentpr
 register you comment processor to docx-stamper, use the following code:
 
 ```java
-ICommentProcessor commentProcessor = ...;      // instance of your own ICommentProcessor implementation
-Class<?> interfaceClass = ...;                 // class of the interface that defines the methods that are
-        // exposed into the expression language
-        DocxStamper stamper=new DocxStamperConfiguration()
-        .addCommentProcessor(interfaceClass,commentProcessor)
-        .build();
+class Main {
+    public static void main(String... args) {
+        ICommentProcessor commentProcessor = ...// instance of your own ICommentProcessor implementation
+        Class<?> interfaceClass = ...
+        // class of the interface that defines the methods that are exposed into the expression language
+        DocxStamper stamper = new DocxStamperConfiguration()
+                .addCommentProcessor(interfaceClass, commentProcessor)
+                .build();
     }
 }
 ```
@@ -138,9 +144,9 @@ comments cannot be resolved successfully. If you want to change this behavior, y
 ```java
 class Main {
     public static void main(String... args) {
-DocxStamper stamper=new DocxStamperConfiguration()
-        .setFailOnUnresolvedExpression(false)
-        .build();
+        DocxStamper stamper = new DocxStamperConfiguration()
+                .setFailOnUnresolvedExpression(false)
+                .build();
     }
 }
 ```
@@ -162,7 +168,6 @@ To include docx-stamper in your project, you can use the following maven coordin
 Note that as of version 1.4.0 you have to provide the dependency to your version of Docx4J yourself:
 
 ```xml
-
 <dependency>
     <groupId>org.docx4j</groupId>
     <artifactId>docx4j</artifactId>
