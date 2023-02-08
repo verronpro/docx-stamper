@@ -12,10 +12,7 @@ import org.wickedsource.docxstamper.util.ParagraphUtil;
 import org.wickedsource.docxstamper.util.SectionUtil;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IParagraphRepeatProcessor {
 
@@ -62,31 +59,25 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 
     @Override
     public void commitChanges(WordprocessingMLPackage document) {
-        for (P currentP : pToRepeat.keySet()) {
-            ParagraphsToRepeat paragraphsToRepeat = pToRepeat.get(currentP);
-            List<Object> expressionContexts = paragraphsToRepeat.data;
-
+        pToRepeat.forEach((currentP, paragraphsToRepeat) -> {
+            List<Object> expressionContexts = Objects.requireNonNull(paragraphsToRepeat).data;
             List<P> paragraphsToAdd = new ArrayList<>();
-
             // paragraphs generation
             if (expressionContexts != null) {
                 paragraphsToAdd.addAll(generateParagraphsToAdd(document, paragraphsToRepeat, expressionContexts));
             } else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
                 paragraphsToAdd.add(ParagraphUtil.create(configuration.getNullValuesDefault()));
             }
-
             restoreFirstSectionBreakIfNeeded(paragraphsToRepeat, paragraphsToAdd);
-
             // paragraphs insertion into the document
             ContentAccessor parent = (ContentAccessor) currentP.getParent();
             int index = parent.getContent().indexOf(currentP);
             if (index >= 0) {
                 parent.getContent().addAll(index, paragraphsToAdd);
             }
-
             // removing template from document
             parent.getContent().removeAll(paragraphsToRepeat.paragraphs);
-        }
+        });
     }
 
     private static void restoreFirstSectionBreakIfNeeded(ParagraphsToRepeat paragraphsToRepeat, List<P> paragraphsToAdd) {

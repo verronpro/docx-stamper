@@ -2,10 +2,7 @@ package org.wickedsource.docxstamper.processor.repeat;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.wml.P;
-import org.docx4j.wml.Tbl;
-import org.docx4j.wml.Tc;
-import org.docx4j.wml.Tr;
+import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
@@ -15,6 +12,7 @@ import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
 import org.wickedsource.docxstamper.util.walk.DocumentWalker;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +50,10 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
             if (expressionContexts != null) {
                 for (final Object expressionContext : expressionContexts) {
                     Tr rowClone = XmlUtils.deepCopy(row);
-                    CommentUtil.deleteCommentFromElement(rowClone, tableRowsCommentsToRemove.get(row).getComment().getId());
+                    CommentWrapper commentWrapper = tableRowsCommentsToRemove.get(row);
+                    Comments.Comment comment = commentWrapper.getComment();
+                    BigInteger commentId = comment.getId();
+                    CommentUtil.deleteCommentFromElement(rowClone, commentId);
 
                     DocumentWalker walker = new BaseDocumentWalker(rowClone) {
                         @Override
