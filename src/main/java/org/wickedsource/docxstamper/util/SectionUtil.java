@@ -2,10 +2,7 @@ package org.wickedsource.docxstamper.util;
 
 import org.docx4j.XmlUtils;
 import org.docx4j.jaxb.Context;
-import org.docx4j.wml.ContentAccessor;
-import org.docx4j.wml.ObjectFactory;
-import org.docx4j.wml.P;
-import org.docx4j.wml.SectPr;
+import org.docx4j.wml.*;
 
 import java.util.List;
 
@@ -50,10 +47,10 @@ public class SectionUtil {
     }
 
     public static void applySectionBreakToParagraph(SectPr sectPr, P paragraph) {
-        if (paragraph.getPPr() == null) {
-            paragraph.setPPr(factory.createPPr());
-        }
-        paragraph.getPPr().setSectPr(XmlUtils.deepCopy(sectPr));
+        PPr currentPPr = paragraph.getPPr();
+        PPr nextPPr = currentPPr != null ? currentPPr : factory.createPPr();
+        paragraph.setPPr(nextPPr);
+        nextPPr.setSectPr(XmlUtils.deepCopy(sectPr));
     }
 
 }
