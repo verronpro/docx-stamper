@@ -77,7 +77,6 @@ public class DocumentUtil {
         return result;
     }
 
-
     /**
      * Check if a run contains an embedded image.
      *
@@ -92,7 +91,6 @@ public class DocumentUtil {
                 .map(JAXBElement::getValue)
                 .anyMatch(runValue -> runValue instanceof Drawing);
     }
-
 
     public static <T> List<T> extractElements(Object object, Class<T> elementClass) {
         // we handle full documents slightly differently as they have headers and footers
