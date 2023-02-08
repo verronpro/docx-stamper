@@ -31,9 +31,9 @@ import java.util.*;
  */
 public class CommentProcessorRegistry {
 
-  private final Logger logger = LoggerFactory.getLogger(CommentProcessorRegistry.class);
+    private final Logger logger = LoggerFactory.getLogger(CommentProcessorRegistry.class);
 
-  private final DocxStamperConfiguration configuration;
+    private final DocxStamperConfiguration configuration;
     private ExpressionResolver expressionResolver;
 
     private final ExpressionUtil expressionUtil = new ExpressionUtil();
@@ -92,8 +92,8 @@ public class CommentProcessorRegistry {
      * Finds all processor expressions within the specified paragraph and tries
      * to evaluate it against all registered {@link ICommentProcessor}s.
      *
-   * @param expressionContext         a builder for a proxy around the context root object to customize its interface
-   * @param paragraph            the paragraph to process.
+     * @param expressionContext a builder for a proxy around the context root object to customize its interface
+     * @param paragraph         the paragraph to process.
      * @param <T>               type of the context root object
      */
     private <T> void runProcessorsOnInlineContent(
@@ -101,9 +101,9 @@ public class CommentProcessorRegistry {
             P paragraph
     ) {
 
-    ParagraphWrapper paragraphWrapper = new ParagraphWrapper(paragraph);
+        ParagraphWrapper paragraphWrapper = new ParagraphWrapper(paragraph);
         List<String> processorExpressions = expressionUtil
-            .findProcessorExpressions(paragraphWrapper.getText());
+                .findProcessorExpressions(paragraphWrapper.getText());
 
         for (String processorExpression : processorExpressions) {
             String strippedExpression = expressionUtil.stripExpression(processorExpression);
