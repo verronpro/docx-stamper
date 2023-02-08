@@ -18,7 +18,6 @@ import org.wickedsource.docxstamper.util.walk.DocumentWalker;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProcessor {
 
@@ -71,8 +70,6 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
                 walker.walk();
                 ((Tbl) row.getParent()).getContent().add(rowClone);
             }
-
-            // TODO : how to replace null values here ?
             table.getContent().remove(row);
         }
     }
@@ -89,5 +86,4 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
             throw new CommentProcessingException("Paragraph is not within a table!", pCoords);
         }
     }
-
 }
