@@ -95,7 +95,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                     try {
                         List<Object> changes = DocumentUtil.prepareDocumentForInsert(subDocument, document);
                         // make sure we replicate the previous section break before each repeated doc part
-                        if (oddNumberOfBreaks.get(commentWrapper))
+                        if (Objects.requireNonNull(oddNumberOfBreaks.get(commentWrapper)))
                             if (previousSectionBreak.get(commentWrapper) != null)
                                 if (subContext != lastExpressionContext) {
                                     P lastP;
