@@ -1,24 +1,20 @@
 package org.wickedsource.docxstamper.util;
 
-import org.docx4j.TraversalUtil;
 import jakarta.xml.bind.JAXBElement;
+import org.docx4j.TraversalUtil;
 import org.docx4j.dml.Graphic;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.finders.ClassFinder;
-import org.docx4j.finders.ClassFinder;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.openpackaging.parts.relationships.Namespaces;
-import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.FooterPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.HeaderPart;
+import org.docx4j.openpackaging.parts.relationships.Namespaces;
+import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.relationships.Relationship;
 import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.replace.typeresolver.image.ImageResolver;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -28,7 +24,7 @@ import static java.util.stream.Collectors.toList;
 
 public class DocumentUtil {
     private DocumentUtil() {
-        throw new DocxStamperException("Utility clases shouldn't be instantiated");
+        throw new DocxStamperException("Utility classes shouldn't be instantiated");
     }
 
     /**
@@ -36,12 +32,14 @@ public class DocumentUtil {
      * files to the destination document before importing content.
      *
      * @param sourceDocument document to import.
-     * @param destDocument   document to add the source document content to.
+     * @param targetDocument document to add the source document content to.
      * @return the whole content of the source document with imported images replaced.
-     * @throws Exception
      */
-    public static List<Object> prepareDocumentForInsert(WordprocessingMLPackage sourceDocument, WordprocessingMLPackage destDocument) throws Exception {
-        return walkObjectsAndImportImages(sourceDocument.getMainDocumentPart(), sourceDocument, destDocument);
+    public static List<Object> prepareDocumentForInsert(
+            WordprocessingMLPackage sourceDocument,
+            WordprocessingMLPackage targetDocument
+    ) throws Exception {
+        return walkObjectsAndImportImages(sourceDocument.getMainDocumentPart(), sourceDocument, targetDocument);
     }
 
     /**
@@ -52,7 +50,6 @@ public class DocumentUtil {
      * @param sourceDocument  source document containing image files.
      * @param destDocument    destination document to add image files to.
      * @return the list of imported objects from the source container.
-     * @throws Exception
      */
     public static List<Object> walkObjectsAndImportImages(
             ContentAccessor sourceContainer,
@@ -84,7 +81,7 @@ public class DocumentUtil {
     /**
      * Check if a run contains an embedded image.
      *
-     * @param run
+     * @param run the run to analyze
      * @return true if the run contains an image, false otherwise.
      */
     private static boolean isImageRun(R run) {
@@ -119,7 +116,7 @@ public class DocumentUtil {
      * Retrieve an embedded drawing relationship id.
      *
      * @param drawing the drawing to get the relationship id.
-     * @return
+     * @return the id of the graphic
      */
     public static String getImageRelationshipId(Drawing drawing) {
         Graphic graphic = getInlineGraphic(drawing);
@@ -130,7 +127,7 @@ public class DocumentUtil {
      * Extract an inline graphic from a drawing.
      *
      * @param drawing the drawing containing the graphic.
-     * @return
+     * @return the graphic
      */
     private static Graphic getInlineGraphic(Drawing drawing) {
         if (drawing.getAnchorOrInline().isEmpty()) {
@@ -170,29 +167,6 @@ public class DocumentUtil {
                 .map(clazz::cast);
     }
 
-    /**
-     * Converts an InputStream to byte array.
-     *
-     * @param size expected size of the byte array.
-     * @param is   input stream to read data from.
-     * @return the data from the input stream.
-     * @throws IOException
-     */
-    private static byte[] streamToByteArray(long size, InputStream is) throws IOException {
-        if (size > Integer.MAX_VALUE) {
-            throw new RuntimeException("Image size exceeds maximum allowed (2GB)");
-        }
-        int intSize = (int) size;
-        byte[] data = new byte[intSize];
-        int offset = 0;
-        int numRead;
-        while ((numRead = is.read(data, offset, intSize - offset)) > 0) {
-            offset += numRead;
-        }
-        is.close();
-        return data;
-    }
-
     public static List<P> getParagraphsFromObject(Object parentObject) {
         List<P> paragraphList = new ArrayList<>();
         for (Object object : getElementsFromObject(parentObject, P.class)) {
@@ -204,8 +178,6 @@ public class DocumentUtil {
     }
 
     private static List<Object> getElementsFromObject(Object object, Class<?> elementClass) {
-
-        Instant startTime = Instant.now();
         List<Object> documentElements = new ArrayList<>();
         // we handle full documents slightly differently as they have headers and footers
         if (object instanceof WordprocessingMLPackage) {
@@ -215,7 +187,6 @@ public class DocumentUtil {
         } else {
             documentElements.addAll(getElements(object, elementClass));
         }
-
         return documentElements;
     }
 
