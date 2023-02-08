@@ -30,12 +30,9 @@ import java.util.*;
  * ICommentProcessors.
  */
 public class CommentProcessorRegistry {
-
     private final Logger logger = LoggerFactory.getLogger(CommentProcessorRegistry.class);
-
     private final DocxStamperConfiguration configuration;
     private ExpressionResolver expressionResolver;
-
     private final ExpressionUtil expressionUtil = new ExpressionUtil();
     private final PlaceholderReplacer placeholderReplacer;
 
@@ -100,7 +97,6 @@ public class CommentProcessorRegistry {
             T expressionContext,
             P paragraph
     ) {
-
         ParagraphWrapper paragraphWrapper = new ParagraphWrapper(paragraph);
         List<String> processorExpressions = expressionUtil
                 .findProcessorExpressions(paragraphWrapper.getText());
@@ -131,7 +127,6 @@ public class CommentProcessorRegistry {
         }
     }
 
-
     /**
      * Takes the first comment on the specified paragraph and tries to evaluate
      * the string within the comment against all registered
@@ -143,23 +138,34 @@ public class CommentProcessorRegistry {
      * @param paragraph         the paragraph whose comments to evaluate.
      * @param <T>               the type of the context root object.
      */
-    private <T> Optional<CommentWrapper> runProcessorsOnParagraphComment(final WordprocessingMLPackage document,
-                                                                         final Map<BigInteger, CommentWrapper> comments, T expressionContext,
-                                                                         P paragraph) {
+    private <T> Optional<CommentWrapper> runProcessorsOnParagraphComment(
+            WordprocessingMLPackage document,
+            Map<BigInteger, CommentWrapper> comments,
+            T expressionContext,
+            P paragraph
+    ) {
         Comments.Comment comment = CommentUtil.getCommentFor(paragraph, document);
         return runCommentProcessors(comments, expressionContext, comment, paragraph, null, document);
     }
 
-    private <T> Optional<CommentWrapper> runProcessorsOnRunComment(final WordprocessingMLPackage document,
-                                                                   final Map<BigInteger, CommentWrapper> comments, T expressionContext,
-                                                                   P paragraph, R run) {
+    private <T> Optional<CommentWrapper> runProcessorsOnRunComment(
+            WordprocessingMLPackage document,
+            Map<BigInteger, CommentWrapper> comments,
+            T expressionContext,
+            P paragraph,
+            R run
+    ) {
         Comments.Comment comment = CommentUtil.getCommentAround(run, document);
         return runCommentProcessors(comments, expressionContext, comment, paragraph, run, document);
     }
 
-    private <T> Optional<CommentWrapper> runCommentProcessors(final Map<BigInteger, CommentWrapper> comments, T expressionContext,
-                                                              Comments.Comment comment, P paragraph,
-                                                              R run, WordprocessingMLPackage document) {
+    private <T> Optional<CommentWrapper> runCommentProcessors(
+            Map<BigInteger, CommentWrapper> comments,
+            T expressionContext,
+            Comments.Comment comment,
+            P paragraph,
+            R run,
+            WordprocessingMLPackage document) {
 
         CommentWrapper commentWrapper = Optional.ofNullable(comment)
                 .map(Comments.Comment::getId)
