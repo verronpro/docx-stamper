@@ -37,11 +37,15 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
 
     public interface ICustomCommentProcessor extends ICommentProcessor {
 
+        void visitParagraph();
+
     }
 
     public static class CustomCommentProcessor extends BaseCommentProcessor implements ICustomCommentProcessor {
 
         private final List<P> visitedParagraphs = new ArrayList<>();
+
+        private P currentParagraph;
 
         public CustomCommentProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
             super(config, typeResolverRegistry);
@@ -54,6 +58,7 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
 
         @Override
         public void setParagraph(P paragraph) {
+            currentParagraph = paragraph;
         }
 
         @Override
@@ -80,6 +85,10 @@ public class CustomCommentProcessorTest extends AbstractDocx4jTest {
             return visitedParagraphs;
         }
 
+        @Override
+        public void visitParagraph() {
+            visitedParagraphs.add(currentParagraph);
+        }
     }
 
 
