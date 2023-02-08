@@ -19,19 +19,20 @@ import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.springframework.util.CollectionUtils;
-
 public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRepeatDocPartProcessor {
-
-    private Map<CommentWrapper, List<Object>> subContexts = new HashMap<>();
-    private Map<CommentWrapper, List<Object>> repeatElementsMap = new HashMap<>();
-    private Map<CommentWrapper, WordprocessingMLPackage> subTemplates = new HashMap<>();
-    private Map<CommentWrapper, ContentAccessor> gcpMap = new HashMap<>();
-    // section break preceding the first repeating element if present
-    private Map<CommentWrapper, SectPr> previousSectionBreak = new HashMap<>();
-    // oddNumberOfBreaks will be set to true if repeating elements contain an odd number of section breaks,
-    // false otherwise
-    private Map<CommentWrapper, Boolean> oddNumberOfBreaks = new HashMap<>();
+    private final Map<CommentWrapper, List<Object>> subContexts = new HashMap<>();
+    private final Map<CommentWrapper, List<Object>> repeatElementsMap = new HashMap<>();
+    private final Map<CommentWrapper, WordprocessingMLPackage> subTemplates = new HashMap<>();
+    private final Map<CommentWrapper, ContentAccessor> gcpMap = new HashMap<>();
+    /**
+     * section break preceding the first repeating element if present
+     */
+    private final Map<CommentWrapper, SectPr> previousSectionBreak = new HashMap<>();
+    /**
+     * oddNumberOfBreaks will be set to true if repeating elements contain an odd number of section breaks,
+     * false otherwise
+     */
+    private final Map<CommentWrapper, Boolean> oddNumberOfBreaks = new HashMap<>();
 
     private static final ObjectFactory objectFactory = Context.getWmlObjectFactory();
 
@@ -94,23 +95,24 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                     try {
                         List<Object> changes = DocumentUtil.prepareDocumentForInsert(subDocument, document);
 
-                            // make sure we replicate the previous section break before each repeated doc part
-                            if (oddNumberOfBreaks.get(commentWrapper) && previousSectionBreak.get(commentWrapper) != null && subContext != lastExpressionContext) {
-                                P lastP;
-                                if (changes.get(changes.size() - 1) instanceof P) {
-                                    lastP = (P) changes.get(changes.size() - 1);
-                                } else {
-                                    // when the last element to be repeated is not a paragraph, we need to add a new
-                                    // one right after to carry the section break to have a valid xml
-                                    lastP = objectFactory.createP();
-                                    lastP.setParent(insertParentContentAccessor);
-                                    changes.add(lastP);
+                        // make sure we replicate the previous section break before each repeated doc part
+                        if (oddNumberOfBreaks.get(commentWrapper))
+                            if (previousSectionBreak.get(commentWrapper) != null)
+                                if (subContext != lastExpressionContext) {
+                                    P lastP;
+                                    if (changes.get(changes.size() - 1) instanceof P) {
+                                        lastP = (P) changes.get(changes.size() - 1);
+                                    } else {
+                                        // when the last element to be repeated is not a paragraph, we need to add a new
+                                        // one right after to carry the section break to have a valid xml
+                                        lastP = objectFactory.createP();
+                                        lastP.setParent(insertParentContentAccessor);
+                                        changes.add(lastP);
+                                    }
+
+                                    SectionUtil.applySectionBreakToParagraph(previousSectionBreak.get(commentWrapper), lastP);
                                 }
-
-                                SectionUtil.applySectionBreakToParagraph(previousSectionBreak.get(commentWrapper), lastP);
-                            }
-
-                            insertParentContentAccessor.getContent().addAll(index, changes);
+                        insertParentContentAccessor.getContent().addAll(index, changes);
                         index += changes.size();
                     } catch (Exception e) {
                         throw new RuntimeException("Unexpected error occured ! Skipping this comment", e);
@@ -131,12 +133,12 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 
     @Override
     public void reset() {
-        subContexts = new HashMap<>();
-        subTemplates = new HashMap<>();
-        gcpMap = new HashMap<>();
-        repeatElementsMap = new HashMap<>();
-        previousSectionBreak = new HashMap<>();
-        oddNumberOfBreaks = new HashMap<>();
+        subContexts.clear();
+        subTemplates.clear();
+        gcpMap.clear();
+        repeatElementsMap.clear();
+        previousSectionBreak.clear();
+        oddNumberOfBreaks.clear();
     }
 
     private WordprocessingMLPackage extractSubTemplate(CommentWrapper commentWrapper, List<Object> repeatElements) throws Exception {
