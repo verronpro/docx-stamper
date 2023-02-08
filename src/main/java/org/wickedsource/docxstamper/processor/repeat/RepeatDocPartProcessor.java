@@ -94,7 +94,6 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
                     WordprocessingMLPackage subDocument = WordprocessingMLPackage.load(new ByteArrayInputStream(output.toByteArray()));
                     try {
                         List<Object> changes = DocumentUtil.prepareDocumentForInsert(subDocument, document);
-
                         // make sure we replicate the previous section break before each repeated doc part
                         if (oddNumberOfBreaks.get(commentWrapper))
                             if (previousSectionBreak.get(commentWrapper) != null)
