@@ -29,7 +29,7 @@ public class ExpressionUtil {
 
     private List<String> findExpressions(String text, String expressionPattern) {
         List<String> matches = new ArrayList<>();
-        if ("".equals(text) || text == null) {
+        if (text.equals("") || text == null) {
             return matches;
         }
         Pattern pattern = Pattern.compile(expressionPattern);

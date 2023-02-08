@@ -30,7 +30,7 @@ public class RunUtil {
                 if (element.getValue() instanceof Text) {
                     Text textObj = (Text) element.getValue();
                     String text = textObj.getValue();
-                    if (!PRESERVE.equals(textObj.getSpace())) {
+                    if (!textObj.getSpace().equals(PRESERVE)) {
                         // trimming text if spaces are not to be preserved (simulates behavior of Word; LibreOffice seems
                         // to ignore the "space" property and always preserves spaces)
                         text = text.trim();
