@@ -76,7 +76,7 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
 
     @Override
     public void repeatTableRow(List<Object> objects) {
-        P pCoords = getCurrentParagraph();
+        P pCoords = getParagraph();
 
         if (pCoords.getParent() instanceof Tc && ((Tc) pCoords.getParent()).getParent() instanceof Tr) {
             Tr tableRow = (Tr) ((Tc) pCoords.getParent()).getParent();

@@ -23,7 +23,7 @@ public class TableResolver extends BaseCommentProcessor implements ITableResolve
 
     @Override
     public void resolveTable(StampTable givenTable) {
-        P p = getCurrentParagraph();
+        P p = getParagraph();
 
         if (p.getParent() instanceof Tc && ((Tc) p.getParent()).getParent() instanceof Tr) {
             Tbl table = (Tbl) ((Tr) ((Tc) p.getParent()).getParent()).getParent();

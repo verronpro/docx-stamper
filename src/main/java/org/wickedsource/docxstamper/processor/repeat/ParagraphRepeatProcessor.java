@@ -40,7 +40,7 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 
     @Override
     public void repeatParagraph(List<Object> objects) {
-        P paragraph = getCurrentParagraph();
+        P paragraph = getParagraph();
 
         List<P> paragraphs = getParagraphsInsideComment(paragraph);
 

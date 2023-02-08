@@ -16,8 +16,8 @@ public abstract class BaseCommentProcessor
     protected final TypeResolverRegistry typeResolverRegistry;
     protected final DocxStamperConfiguration configuration;
     protected final PlaceholderReplacer placeholderReplacer;
-    private P currentParagraph;
-    private R currentRun;
+    private P paragraph;
+    private R run;
     private CommentWrapper currentCommentWrapper;
     private WordprocessingMLPackage document;
 
@@ -28,21 +28,21 @@ public abstract class BaseCommentProcessor
     }
 
     public R getCurrentRun() {
-        return currentRun;
+        return run;
     }
 
     @Override
-    public void setCurrentRun(R currentRun) {
-        this.currentRun = currentRun;
+    public void setCurrentRun(R run) {
+        this.run = run;
+    }
+
+    public P getParagraph() {
+        return paragraph;
     }
 
     @Override
     public void setParagraph(P paragraph) {
-        this.currentParagraph = paragraph;
-    }
-
-    public P getCurrentParagraph() {
-        return currentParagraph;
+        this.paragraph = paragraph;
     }
 
     @Override

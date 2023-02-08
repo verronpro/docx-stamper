@@ -71,7 +71,7 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
     @Override
     public void displayParagraphIf(Boolean condition) {
         if (!condition) {
-            paragraphsToBeRemoved.add(getCurrentParagraph());
+            paragraphsToBeRemoved.add(getParagraph());
         }
     }
 
@@ -83,7 +83,7 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
     @Override
     public void displayTableIf(Boolean condition) {
         if (!condition) {
-            P p = getCurrentParagraph();
+            P p = getParagraph();
 
             if (p.getParent() instanceof Tc &&
                     ((Tc) p.getParent()).getParent() instanceof Tr &&
@@ -98,7 +98,7 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
     @Override
     public void displayTableRowIf(Boolean condition) {
         if (!condition) {
-            P p = getCurrentParagraph();
+            P p = getParagraph();
             if (p.getParent() instanceof Tc &&
                     ((Tc) p.getParent()).getParent() instanceof Tr) {
                 tableRowsToBeRemoved.add((Tr) ((Tc) p.getParent()).getParent());
