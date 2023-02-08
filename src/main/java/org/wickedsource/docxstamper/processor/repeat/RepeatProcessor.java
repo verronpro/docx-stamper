@@ -16,6 +16,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProcessor {
 
@@ -51,7 +52,7 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
                 for (final Object expressionContext : expressionContexts) {
                     Tr rowClone = XmlUtils.deepCopy(row);
                     CommentWrapper commentWrapper = tableRowsCommentsToRemove.get(row);
-                    Comments.Comment comment = commentWrapper.getComment();
+                    Comments.Comment comment = Objects.requireNonNull(commentWrapper.getComment());
                     BigInteger commentId = comment.getId();
                     CommentUtil.deleteCommentFromElement(rowClone, commentId);
 
