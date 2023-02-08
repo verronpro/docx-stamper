@@ -1,28 +1,15 @@
 package org.wickedsource.docxstamper.processor;
 
 import org.docx4j.wml.P;
-import org.docx4j.TextUtils;
-import org.docx4j.wml.P;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 
+import static java.lang.String.format;
 import static org.docx4j.TextUtils.getText;
 
-import static java.text.MessageFormat.format;
-
 public class CommentProcessingException extends DocxStamperException {
-    private static final String PATTERN = "{0}\n" +
-            "Coordinates of offending commented paragraph within the document: \n" +
-            "{1}";
 
     public CommentProcessingException(String message, P paragraph) {
-        super(message + "\nCoordinates of offending commented paragraph within the document: \n" + getText(paragraph));
+        super(format("%s : %s", message, getText(paragraph)));
     }
 
-    private CommentProcessingException(String message, String paragraphContent) {
-        this(format(PATTERN, message, paragraphContent));
-    }
-
-    private CommentProcessingException(String message) {
-        super(message);
-    }
 }
