@@ -24,7 +24,6 @@ public class CommentUtil {
 	private static final Logger logger = LoggerFactory.getLogger(CommentUtil.class);
 
 	private CommentUtil() {
-
 	}
 
 	/**
@@ -34,13 +33,15 @@ public class CommentUtil {
 	 * @param document the document that contains the run.
 	 * @return the comment, if found, null otherwise.
 	 */
-	public static Comments.Comment getCommentAround(R run,
-													WordprocessingMLPackage document) {
+	public static Optional<Comments.Comment> getCommentAround(
+			R run,
+			WordprocessingMLPackage document
+	) {
 		try {
 			if (run != null) {
 				ContentAccessor parent = (ContentAccessor) ((Child) run).getParent();
 				if (parent == null)
-					return null;
+					return Optional.empty();
 				CommentRangeStart possibleComment = null;
 				boolean foundChild = false;
 				for (Object contentElement : parent.getContent()) {
@@ -63,7 +64,7 @@ public class CommentUtil {
 							Comments comments = commentsPart.getContents();
 							for (Comments.Comment comment : comments.getComment()) {
 								if (comment.getId().equals(id)) {
-									return comment;
+									return Optional.of(comment);
 								}
 							}
 						} catch (InvalidFormatException e) {
@@ -79,7 +80,7 @@ public class CommentUtil {
 					}
 				}
 			}
-			return null;
+			return Optional.empty();
 		} catch (Docx4JException e) {
 			throw new DocxStamperException(
 					"error accessing the comments of the document!", e);
@@ -88,7 +89,7 @@ public class CommentUtil {
 
 	public static String getCommentStringFor(ContentAccessor object,
 											 WordprocessingMLPackage document) {
-		Comments.Comment comment = getCommentFor(object, document);
+		Comments.Comment comment = getCommentFor(object, document).orElseThrow();
 		return getCommentString(comment);
 	}
 
@@ -103,33 +104,38 @@ public class CommentUtil {
 	 * @return the concatenated string of all paragraphs of text within the comment or
 	 * null if the specified object is not commented.
 	 */
-	public static Comments.Comment getCommentFor(ContentAccessor object,
-												 WordprocessingMLPackage document) {
-		try {
-			for (Object contentObject : object.getContent()) {
-				if (contentObject instanceof CommentRangeStart) {
-					try {
-						BigInteger id = ((CommentRangeStart) contentObject).getId();
-						CommentsPart commentsPart = (CommentsPart) document.getParts()
-																		   .get(new PartName("/word/comments.xml"));
-						Comments comments = commentsPart.getContents();
-						for (Comments.Comment comment : comments.getComment()) {
-							if (comment.getId().equals(id)) {
-								return comment;
-							}
-						}
-					} catch (InvalidFormatException e) {
-						logger.warn(String.format(
-								"Error while searching comment. Skipping object %s.",
-								object), e);
+	public static Optional<Comments.Comment> getCommentFor(
+			ContentAccessor object,
+			WordprocessingMLPackage document
+	) {
+		for (Object contentObject : object.getContent()) {
+			if (contentObject instanceof CommentRangeStart) {
+				BigInteger id = ((CommentRangeStart) contentObject).getId();
+				PartName partName;
+				try {
+					partName = new PartName("/word/comments.xml");
+				} catch (InvalidFormatException e) {
+					logger.warn(String.format(
+							"Error while searching comment. Skipping object %s.",
+							object), e);
+					throw new DocxStamperException("error accessing the comments of the document!", e);
+				}
+				CommentsPart commentsPart = (CommentsPart) document.getParts().get(partName);
+				Comments comments;
+				try {
+					comments = commentsPart.getContents();
+				} catch (Docx4JException e) {
+					throw new DocxStamperException("error accessing the comments of the document!", e);
+				}
+
+				for (Comments.Comment comment : comments.getComment()) {
+					if (comment.getId().equals(id)) {
+						return Optional.of(comment);
 					}
 				}
 			}
-			return null;
-		} catch (Docx4JException e) {
-			throw new DocxStamperException(
-					"error accessing the comments of the document!", e);
 		}
+		return Optional.empty();
 	}
 
 	/**
@@ -243,9 +249,8 @@ public class CommentUtil {
 			Map<BigInteger, CommentWrapper> rootComments,
 			final Map<BigInteger, CommentWrapper> allComments,
 			WordprocessingMLPackage document) {
-		Stack<CommentWrapper> stack = new Stack<>();
-		DocumentWalker documentWalker = new BaseDocumentWalker(
-				document.getMainDocumentPart()) {
+		Queue<CommentWrapper> stack = Collections.asLifoQueue(new ArrayDeque<>());
+		DocumentWalker documentWalker = new BaseDocumentWalker(document.getMainDocumentPart()) {
 			@Override
 			protected void onCommentRangeStart(CommentRangeStart commentRangeStart) {
 				CommentWrapper commentWrapper = allComments.get(commentRangeStart.getId());
@@ -259,7 +264,7 @@ public class CommentUtil {
 					}
 				}
 				commentWrapper.setCommentRangeStart(commentRangeStart);
-				stack.push(commentWrapper);
+				stack.add(commentWrapper);
 			}
 
 			@Override
@@ -271,7 +276,7 @@ public class CommentUtil {
 				commentWrapper.setCommentRangeEnd(commentRangeEnd);
 				if (!stack.isEmpty()) {
 					if (stack.peek().equals(commentWrapper)) {
-						stack.pop();
+						stack.remove();
 					} else {
 						throw new RuntimeException("Cannot figure which comment contains the other !");
 					}

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.spel.SpelEvaluationException;
 import org.springframework.expression.spel.SpelParseException;
+import org.springframework.lang.NonNull;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.UnresolvedExpressionException;
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
@@ -83,7 +84,6 @@ public class CommentProcessorRegistry {
 		for (CommentWrapper commentWrapper : proceedComments) {
 			CommentUtil.deleteComment(commentWrapper);
 		}
-
 	}
 
 	/**
@@ -103,8 +103,13 @@ public class CommentProcessorRegistry {
 			T expressionContext,
 			P paragraph
 	) {
-		Comments.Comment comment = CommentUtil.getCommentFor(paragraph, document);
-		return runCommentProcessors(comments, expressionContext, comment, paragraph, null, document);
+		return CommentUtil.getCommentFor(paragraph, document)
+						  .flatMap(c -> this.runCommentProcessors(comments,
+																  expressionContext,
+																  c,
+																  paragraph,
+																  null,
+																  document));
 	}
 
 	/**
@@ -156,24 +161,21 @@ public class CommentProcessorRegistry {
 			P paragraph,
 			R run
 	) {
-		Comments.Comment comment = CommentUtil.getCommentAround(run, document);
-		return runCommentProcessors(comments, expressionContext, comment, paragraph, run, document);
+		var comment = CommentUtil.getCommentAround(run, document);
+		return comment.flatMap(c -> runCommentProcessors(comments, expressionContext, c, paragraph, run, document));
 	}
 
 	private <T> Optional<CommentWrapper> runCommentProcessors(
 			Map<BigInteger, CommentWrapper> comments,
 			T expressionContext,
-			Comments.Comment comment,
+			@NonNull Comments.Comment comment,
 			P paragraph,
 			R run,
-			WordprocessingMLPackage document) {
+			WordprocessingMLPackage document
+	) {
+		CommentWrapper commentWrapper = comments.get(comment.getId());
 
-		CommentWrapper commentWrapper = Optional.ofNullable(comment)
-												.map(Comments.Comment::getId)
-												.map(comments::get)
-												.orElse(null);
-
-		if (Objects.isNull(comment) || Objects.isNull(commentWrapper)) {
+		if (Objects.isNull(commentWrapper)) {
 			// no comment to process
 			return Optional.empty();
 		}

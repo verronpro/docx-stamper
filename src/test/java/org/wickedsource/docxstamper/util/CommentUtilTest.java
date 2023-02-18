@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.wickedsource.docxstamper.AbstractDocx4jTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CommentUtilTest extends AbstractDocx4jTest {
 
@@ -21,10 +21,10 @@ public class CommentUtilTest extends AbstractDocx4jTest {
 		P p4 = (P) document.getMainDocumentPart().getContent().get(4);
 		P p5 = (P) document.getMainDocumentPart().getContent().get(5);
 
-		assertNull(CommentUtil.getCommentFor(p1, document));
+		assertTrue(CommentUtil.getCommentFor(p1, document).isEmpty());
 		assertEquals("Comment for paragraph 2.", CommentUtil.getCommentStringFor(p2, document));
 		assertEquals("Comment for paragraph 3.", CommentUtil.getCommentStringFor(p3, document));
-		assertNull(CommentUtil.getCommentFor(p4, document));
-		assertNull(CommentUtil.getCommentFor(p5, document));
+		assertTrue(CommentUtil.getCommentFor(p4, document).isEmpty());
+		assertTrue(CommentUtil.getCommentFor(p5, document).isEmpty());
 	}
 }
