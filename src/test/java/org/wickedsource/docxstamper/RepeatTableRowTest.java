@@ -19,7 +19,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RepeatTableRowTest extends AbstractDocx4jTest {
-
 	@Test
 	public void test() throws Docx4JException, IOException {
 		CharactersContext context = new CharactersContext();
@@ -57,16 +56,5 @@ public class RepeatTableRowTest extends AbstractDocx4jTest {
 		assertEquals("Hank Azaria", new ParagraphWrapper((P) cells.get(11).getContent().get(0)).getText());
 		assertEquals("Krusty the Clown", new ParagraphWrapper((P) cells.get(12).getContent().get(0)).getText());
 		assertEquals("Dan Castellaneta", new ParagraphWrapper((P) cells.get(13).getContent().get(0)).getText());
-	}
-
-	private String getTextFromCell(List<Tr> tableRows, int rowNumber, int cellNumber) {
-		return getTextFromCell(DocumentUtil.extractElements(tableRows.get(rowNumber).getContent(), Tc.class)
-										   .get(cellNumber));
-	}
-
-	private String getTextFromCell(Tc tc) {
-		List<P> paragraphsFromObject = DocumentUtil.extractElements(tc, P.class);
-		assertEquals(1, paragraphsFromObject.size());
-		return paragraphsFromObject.get(0).toString();
 	}
 }

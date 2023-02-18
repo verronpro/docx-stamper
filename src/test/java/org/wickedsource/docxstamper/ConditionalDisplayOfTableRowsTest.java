@@ -25,7 +25,6 @@ public class ConditionalDisplayOfTableRowsTest extends AbstractDocx4jTest {
 		InputStream template = getClass().getResourceAsStream("ConditionalDisplayOfTableRowsTest.docx");
 		WordprocessingMLPackage document = stampAndLoad(template, context);
 
-		final List<Tr> rowCoords = DocumentUtil.getTableRowsFromObject(document);
 		final List<Tbl> tablesFromObject = DocumentUtil.extractElements(document, Tbl.class);
 		assertEquals(2, tablesFromObject.size());
 

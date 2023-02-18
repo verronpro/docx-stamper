@@ -1,8 +1,5 @@
 package org.wickedsource.docxstamper.replace;
 
-import org.docx4j.jaxb.Context;
-import org.docx4j.wml.ObjectFactory;
-import org.docx4j.wml.R;
 import org.junit.jupiter.api.Test;
 import org.wickedsource.docxstamper.util.IndexedRun;
 import org.wickedsource.docxstamper.util.RunUtil;
@@ -10,8 +7,6 @@ import org.wickedsource.docxstamper.util.RunUtil;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class IndexedRunTest {
-
-	private final ObjectFactory factory = Context.getWmlObjectFactory();
 
 	@Test
 	public void isNotTouchedByRangeBeforeStart() {
@@ -54,18 +49,12 @@ public class IndexedRunTest {
 
 	@Test
 	public void replaceWorksWithinRange() {
-		IndexedRun run = new IndexedRun(5, 9, 0, createRun("ipsum"));
+		IndexedRun run = new IndexedRun(5, 9, 0, RunUtil.createRun("ipsum"));
 		run.replace(5, 9, "lorem");
 		assertEquals("lorem", RunUtil.getText(run.getRun()));
 		run.replace(8, 9, "el");
 		assertEquals("lorel", RunUtil.getText(run.getRun()));
 		run.replace(8, 9, "em ipsum");
 		assertEquals("lorem ipsum", RunUtil.getText(run.getRun()));
-	}
-
-	private R createRun(String text) {
-		R run = factory.createR();
-		RunUtil.setText(run, text);
-		return run;
 	}
 }

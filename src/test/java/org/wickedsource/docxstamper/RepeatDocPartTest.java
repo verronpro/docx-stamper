@@ -41,15 +41,14 @@ public class RepeatDocPartTest extends AbstractDocx4jTest {
 			for (int j = 0; j < 3; j++) { // 3 elements should be repeated
 				Object object = XmlUtils.unwrap(documentContent.get(index++));
 				switch (j) {
-					case 0: {
+					case 0 -> {
 						P paragraph = (P) object;
 						String expected = String.format("Paragraph for test: %s - %s",
 														character.getName(),
 														character.getActor());
 						assertEquals(expected, new ParagraphWrapper(paragraph).getText());
-						break;
 					}
-					case 1: {
+					case 1 -> {
 
 						final List<Tc> cells = new ArrayList<>();
 						DocumentWalker cellWalker = new BaseDocumentWalker((ContentAccessor) object) {
@@ -64,9 +63,8 @@ public class RepeatDocPartTest extends AbstractDocx4jTest {
 									 new ParagraphWrapper((P) cells.get(0).getContent().get(0)).getText());
 						assertEquals(character.getActor(),
 									 new ParagraphWrapper((P) cells.get(1).getContent().get(0)).getText());
-						break;
 					}
-					case 2: {
+					case 2 -> {
 						P paragraph = (P) object;
 						List<Object> runs = paragraph.getContent();
 						assertEquals(3, runs.size());
@@ -74,7 +72,6 @@ public class RepeatDocPartTest extends AbstractDocx4jTest {
 						List<Object> targetRunContent = ((R) runs.get(1)).getContent();
 						assertEquals(1, targetRunContent.size());
 						assertTrue(targetRunContent.get(0) instanceof Br);
-						break;
 					}
 				}
 			}

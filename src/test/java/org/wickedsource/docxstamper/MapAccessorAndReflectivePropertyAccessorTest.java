@@ -44,15 +44,15 @@ public class MapAccessorAndReflectivePropertyAccessorTest extends AbstractDocx4j
 		List<Object> contents = result.getMainDocumentPart().getContent();
 
 		assertEquals("Flat string has been resolved",
-					 ((Text) ((JAXBElement) ((R) ((P) contents.get(0)).getContent().get(1)).getContent()
-																						   .get(0)).getValue()).getValue());
-		assertEquals(3, ((Tbl) ((JAXBElement) contents.get(2)).getValue()).getContent().size());
+					 ((Text) ((JAXBElement<?>) ((R) ((P) contents.get(0)).getContent().get(1)).getContent()
+																							  .get(0)).getValue()).getValue());
+		assertEquals(3, ((Tbl) ((JAXBElement<?>) contents.get(2)).getValue()).getContent().size());
 		assertEquals("first value",
-					 ((Text) ((JAXBElement) ((R) ((P) contents.get(6)).getContent().get(0)).getContent()
-																						   .get(0)).getValue()).getValue());
+					 ((Text) ((JAXBElement<?>) ((R) ((P) contents.get(6)).getContent().get(0)).getContent()
+																							  .get(0)).getValue()).getValue());
 		assertEquals("second value",
-					 ((Text) ((JAXBElement) ((R) ((P) contents.get(9)).getContent().get(0)).getContent()
-																						   .get(0)).getValue()).getValue());
+					 ((Text) ((JAXBElement<?>) ((R) ((P) contents.get(9)).getContent().get(0)).getContent()
+																							  .get(0)).getValue()).getValue());
 	}
 
 	static class Container {

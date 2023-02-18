@@ -28,7 +28,7 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 		NameContext name2 = new NameContext();
 		name2.setName("Marge");
 
-		List repeatValues = new ArrayList();
+		List<NameContext> repeatValues = new ArrayList<>();
 		repeatValues.add(name1);
 		repeatValues.add(name2);
 
@@ -83,7 +83,7 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 		NameContext name2 = new NameContext();
 		name2.setName("Marge");
 
-		List repeatValues = new ArrayList();
+		List<NameContext> repeatValues = new ArrayList<>();
 		repeatValues.add(name1);
 		repeatValues.add(name2);
 
@@ -126,7 +126,7 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 		NameContext name2 = new NameContext();
 		name2.setName("Marge");
 
-		List repeatValues = new ArrayList();
+		List<NameContext> repeatValues = new ArrayList<>();
 		repeatValues.add(name1);
 		repeatValues.add(name2);
 
@@ -166,7 +166,7 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 		NameContext name2 = new NameContext();
 		name2.setName("Marge");
 
-		List repeatValues = new ArrayList();
+		List<NameContext> repeatValues = new ArrayList<>();
 		repeatValues.add(name1);
 		repeatValues.add(name2);
 
@@ -207,7 +207,7 @@ public class ChangingPageLayoutTest extends AbstractDocx4jTest {
 		NameContext name2 = new NameContext();
 		name2.setName("Marge");
 
-		List repeatValues = new ArrayList();
+		List<NameContext> repeatValues = new ArrayList<>();
 		repeatValues.add(name1);
 		repeatValues.add(name2);
 

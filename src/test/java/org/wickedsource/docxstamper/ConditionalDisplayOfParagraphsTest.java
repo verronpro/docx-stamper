@@ -54,7 +54,7 @@ public class ConditionalDisplayOfParagraphsTest extends AbstractDocx4jTest {
 		final List<Tbl> tables = DocumentUtil.getTableFromObject(document);
 
 		Tbl nestedTable = tables.get(1);
-		Tc cell = (Tc) ((JAXBElement) ((Tr) nestedTable.getContent().get(1)).getContent().get(0)).getValue();
+		Tc cell = (Tc) ((JAXBElement<?>) ((Tr) nestedTable.getContent().get(1)).getContent().get(0)).getValue();
 		P p1 = (P) cell.getContent().get(0);
 
 		assertEquals(1, cell.getContent().size());

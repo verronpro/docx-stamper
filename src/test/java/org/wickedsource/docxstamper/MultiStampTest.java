@@ -13,7 +13,6 @@ import org.wickedsource.docxstamper.util.DocumentUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,7 +24,11 @@ public class MultiStampTest extends AbstractDocx4jTest {
 	public void expressionsAreResolvedOnMultiStamp() throws Docx4JException, IOException {
 		DocxStamper<NamesContext> stamper = new DocxStamper<>(new DocxStamperConfiguration().setFailOnUnresolvedExpression(
 				false));
-		NamesContext context = new NamesContext();
+		NamesContext context = new NamesContext(List.of(new NameContext("Homer"),
+														new NameContext("Marge"),
+														new NameContext("Bart"),
+														new NameContext("Lisa"),
+														new NameContext("Maggie")));
 
 		InputStream template = getClass().getResourceAsStream("MultiStampTest.docx");
 		OutputStream out = getOutputStream();
@@ -63,24 +66,6 @@ public class MultiStampTest extends AbstractDocx4jTest {
 		assertTrue(cellContent.contains(text), message);
 	}
 
-	public static class NamesContext {
-		private List<NameContext> names = new ArrayList<>();
-
-		public NamesContext() {
-			this.names.add(new NameContext("Homer"));
-			this.names.add(new NameContext("Marge"));
-			this.names.add(new NameContext("Bart"));
-			this.names.add(new NameContext("Lisa"));
-			this.names.add(new NameContext("Maggie"));
-		}
-
-		public List<NameContext> getNames() {
-			return names;
-		}
-
-		public void setNames(List<NameContext> names) {
-			this.names = names;
-		}
+	public record NamesContext(List<NameContext> names) {
 	}
-
 }

@@ -38,8 +38,7 @@ public class CommentUtil {
 													WordprocessingMLPackage document) {
 		try {
 			if (run != null) {
-				Child child = run;
-				ContentAccessor parent = (ContentAccessor) child.getParent();
+				ContentAccessor parent = (ContentAccessor) ((Child) run).getParent();
 				if (parent == null)
 					return null;
 				CommentRangeStart possibleComment = null;
@@ -51,7 +50,7 @@ public class CommentUtil {
 						possibleComment = (CommentRangeStart) contentElement;
 					}
 					// then we check if the child we are looking for is ours
-					else if (possibleComment != null && child.equals(contentElement)) {
+					else if (possibleComment != null && run.equals(contentElement)) {
 						foundChild = true;
 					}
 					// and then if we have an end of a comment we are good!
@@ -88,7 +87,7 @@ public class CommentUtil {
 	}
 
 	public static String getCommentStringFor(ContentAccessor object,
-											 WordprocessingMLPackage document) throws Docx4JException {
+											 WordprocessingMLPackage document) {
 		Comments.Comment comment = getCommentFor(object, document);
 		return getCommentString(comment);
 	}
@@ -187,41 +186,6 @@ public class CommentUtil {
 		}
 
 		element.getContent().removeAll(elementsToRemove);
-	}
-
-	private static boolean deleteCommentReference(ContentAccessor parent,
-												  BigInteger commentId) {
-		for (int i = 0; i < parent.getContent().size(); i++) {
-			Object contentObject = XmlUtils.unwrap(parent.getContent().get(i));
-			if (contentObject instanceof ContentAccessor) {
-				if (deleteCommentReference((ContentAccessor) contentObject, commentId)) {
-					return true;
-				}
-			} else if (contentObject instanceof R) {
-				for (Object runContentObject : ((R) contentObject).getContent()) {
-					Object unwrapped = XmlUtils.unwrap(runContentObject);
-					if (unwrapped instanceof R.CommentReference && removeCommentReference(parent,
-																						  commentId,
-																						  i,
-																						  (R.CommentReference) unwrapped))
-						return true;
-				}
-			} else if (contentObject instanceof R.CommentReference) {
-				if (removeCommentReference(parent, commentId, i, (R.CommentReference) contentObject))
-					return true;
-			}
-		}
-		return false;
-	}
-
-	private static boolean removeCommentReference(ContentAccessor parent, BigInteger commentId, int i, R.CommentReference contentObject) {
-		BigInteger foundCommentId = contentObject
-				.getId();
-		if (foundCommentId.equals(commentId)) {
-			parent.getContent().remove(i);
-			return true;
-		}
-		return false;
 	}
 
 	public static Map<BigInteger, CommentWrapper> getComments(
