@@ -11,9 +11,7 @@ import java.util.function.Predicate;
 
 @UtilityClass
 public class TableCellUtil {
-
 	private static final ObjectFactory objectFactory = new ObjectFactory();
-
 
 	public static boolean hasNoParagraphOrTable(Tc cell) {
 		Predicate<Object> isP = e -> e instanceof P;
