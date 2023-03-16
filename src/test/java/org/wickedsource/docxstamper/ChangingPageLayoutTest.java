@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ChangingPageLayoutTest {
 	@Test
-	public void shouldKeepSectionBreakOrientationInRepeatParagraphWithoutSectionBreakInsideComment() throws IOException, Docx4JException {
+	public void shouldKeepSectionBreakOrientationInRepeatParagraphWithoutSectionBreakInsideComment() {
 		var context = new HashMap<String, Object>();
 
 		var name1 = new Name("Homer");

@@ -5,8 +5,6 @@ import org.docx4j.wml.P;
 import org.docx4j.wml.R;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
-import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
-import org.wickedsource.docxstamper.el.ExpressionResolver;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.CommentWrapper;
 
@@ -14,7 +12,6 @@ import java.util.Objects;
 
 public abstract class BaseCommentProcessor
 		implements ICommentProcessor {
-	protected final TypeResolverRegistry typeResolverRegistry;
 	protected final DocxStamperConfiguration configuration;
 	protected final PlaceholderReplacer placeholderReplacer;
 	private P paragraph;
@@ -22,22 +19,12 @@ public abstract class BaseCommentProcessor
 	private CommentWrapper currentCommentWrapper;
 	private WordprocessingMLPackage document;
 
-	public BaseCommentProcessor(DocxStamperConfiguration config, TypeResolverRegistry typeResolverRegistry) {
+	public BaseCommentProcessor(
+			DocxStamperConfiguration config,
+			PlaceholderReplacer placeholderReplacer
+	) {
 		this.configuration = config;
-		this.typeResolverRegistry = typeResolverRegistry;
-		this.placeholderReplacer = new PlaceholderReplacer(typeResolverRegistry,
-														   new ExpressionResolver(
-																   configuration.isFailOnUnresolvedExpression(),
-																   configuration.getCommentProcessors(),
-																   configuration.getExpressionFunctions(),
-																   configuration.getEvaluationContextConfigurer()),
-														   configuration.isReplaceNullValues(),
-														   configuration.getNullValuesDefault(),
-														   configuration.isFailOnUnresolvedExpression(),
-														   configuration.isReplaceUnresolvedExpressions(),
-														   configuration.getUnresolvedExpressionsDefaultValue(),
-														   configuration.isLeaveEmptyOnExpressionError(),
-														   configuration.getLineBreakPlaceholder());
+		this.placeholderReplacer = placeholderReplacer;
 	}
 
 	public R getCurrentRun() {

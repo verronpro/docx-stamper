@@ -4,9 +4,9 @@ import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
-import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
+import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.CommentUtil;
 import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
@@ -25,11 +25,10 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
 
 	public RepeatProcessor(
 			DocxStamperConfiguration config,
-			TypeResolverRegistry typeResolverRegistry
+			PlaceholderReplacer placeholderReplacer
 	) {
-		super(config, typeResolverRegistry);
+		super(config, placeholderReplacer);
 	}
-
 
 	@Override
 	public void commitChanges(WordprocessingMLPackage document) {

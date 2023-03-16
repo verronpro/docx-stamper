@@ -51,8 +51,8 @@ public final class TestDocxStamper<T> {
 				.toList();
 	}
 
-	private <U> Stream<U> streamElements(InputStream template, T context, Class<U> clazz) {
-		Stream<U> elements;
+	private <C> Stream<C> streamElements(InputStream template, T context, Class<C> clazz) {
+		Stream<C> elements;
 		try {
 			var config = new DocxStamperConfiguration().setFailOnUnresolvedExpression(false);
 			var out = IOStreams.getOutputStream();
@@ -78,7 +78,7 @@ public final class TestDocxStamper<T> {
 					   .orElse(runs);
 	}
 
-	private <U> DocxCollector<U> newCollector(Class<U> type) {
+	private <C> DocxCollector<C> newCollector(Class<C> type) {
 		return new DocxCollector<>(type);
 	}
 
@@ -191,7 +191,7 @@ public final class TestDocxStamper<T> {
 		return String.join(",", set);
 	}
 
-	public <U> List<String> stampAndLoadAndExtract(InputStream template, T context, Class<U> clazz) {
+	public <C> List<String> stampAndLoadAndExtract(InputStream template, T context, Class<C> clazz) {
 		return streamElements(template, context, clazz)
 				.map(TestDocxStamper::extractDocumentRuns)
 				.toList();

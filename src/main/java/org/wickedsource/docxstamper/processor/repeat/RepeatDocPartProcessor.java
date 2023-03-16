@@ -10,8 +10,8 @@ import org.docx4j.wml.P;
 import org.docx4j.wml.SectPr;
 import org.wickedsource.docxstamper.DocxStamper;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
-import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
+import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.DocumentUtil;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
@@ -32,13 +32,13 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 
 	public RepeatDocPartProcessor(
 			DocxStamperConfiguration config,
-			TypeResolverRegistry typeResolverRegistry
+			PlaceholderReplacer placeholderReplacer1
 	) {
-		super(config, typeResolverRegistry);
+		super(config, placeholderReplacer1);
 	}
 
 	@Override
-	public void repeatDocPart(List<Object> contexts) throws Exception {
+	public void repeatDocPart(List<Object> contexts) {
 		if (contexts == null) {
 			contexts = Collections.emptyList();
 		}
