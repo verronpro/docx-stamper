@@ -2,6 +2,7 @@ package org.wickedsource.docxstamper;
 
 import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
 import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
+import org.wickedsource.docxstamper.api.typeresolver.TypeResolver;
 import org.wickedsource.docxstamper.el.NoOpEvaluationContextConfigurer;
 import org.wickedsource.docxstamper.processor.displayif.DisplayIfProcessor;
 import org.wickedsource.docxstamper.processor.displayif.IDisplayIfProcessor;
@@ -13,6 +14,7 @@ import org.wickedsource.docxstamper.processor.table.TableResolver;
 import org.wickedsource.docxstamper.replace.typeresolver.FallbackResolver;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -168,9 +170,12 @@ public class DocxStamperConfiguration {
 
 	/**
 	 * Creates a {@link DocxStamper} instance configured with this configuration.
+	 *
+	 * @deprecated use new DocxStamper(DocxStamperConfiguration configuration) instead
 	 */
-	public DocxStamper build() {
-		return new DocxStamper(this);
+	@Deprecated(forRemoval = true, since = "1.6.4")
+	public <T> DocxStamper<T> build() {
+		return new DocxStamper<T>(this);
 	}
 
 	public EvaluationContextConfigurer getEvaluationContextConfigurer() {
@@ -266,5 +271,12 @@ public class DocxStamperConfiguration {
 
 	public void putCommentProcessor(Class<?> key, Object processorInstance) {
 		this.commentProcessors.put(key, processorInstance);
+	}
+
+	public List<TypeResolver> getTypeResolversList() {
+		return typeResolvers.entrySet()
+							.stream()
+							.map((e) -> TypeResolver.raw(e.getKey(), e.getValue()))
+							.toList();
 	}
 }

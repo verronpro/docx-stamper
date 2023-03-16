@@ -34,39 +34,17 @@ public class ChangingPageLayoutTest {
 		var config = new DocxStamperConfiguration()
 				.setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));
 		var stamper = new TestDocxStamper<Map<String, Object>>(config);
-		var result = stamper.stampAndLoad(template, context);
-
-		var content = result.getMainDocumentPart().getContent();
-
-		assertEquals(
-				STPageOrientation.LANDSCAPE,
-				((P) content.get(2)).getPPr().getSectPr().getPgSz().getOrient()
-		);
-		assertTrue(((R) ((P) content.get(5)).getContent().get(23)).getContent().get(0) instanceof Br);
-		assertTrue(((R) ((P) content.get(8)).getContent().get(23)).getContent().get(0) instanceof Br);
-
-		assertNull(((P) content.get(9)).getPPr().getSectPr().getPgSz().getOrient());
-
-		assertThatNoCommentOrReferenceRemains(result);
-	}
-
-	public void assertThatNoCommentOrReferenceRemains(WordprocessingMLPackage document) {
-		new BaseDocumentWalker(document.getMainDocumentPart()) {
-			@Override
-			protected void onCommentRangeStart(CommentRangeStart commentRangeStart) {
-				fail("Found a remaining comment range start !");
-			}
-
-			@Override
-			protected void onCommentRangeEnd(CommentRangeEnd commentRangeEnd) {
-				fail("Found a remaining comment range end !");
-			}
-
-			@Override
-			protected void onCommentReference(R.CommentReference commentReference) {
-				fail("Found a remaining comment reference !");
-			}
-		}.walk();
+		var result = stamper.stampAndLoadAndExtract(template, context);
+		var expected = List.of(
+				"First page is landscape.",
+				"",
+				"//sectPr={docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}}",
+				"Second page is portrait, layout change should survive to repeatParagraph processor (${name}).",
+				"",
+				"Without a section break changing the layout in between, but a page break instead.",
+				"//sectPr={docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}}",
+				"Fourth page is set to landscape again.");
+		assertIterableEquals(expected, result);
 	}
 
 	@Test
@@ -107,6 +85,25 @@ public class ChangingPageLayoutTest {
 		);
 
 		assertThatNoCommentOrReferenceRemains(result);
+	}
+
+	public void assertThatNoCommentOrReferenceRemains(WordprocessingMLPackage document) {
+		new BaseDocumentWalker(document.getMainDocumentPart()) {
+			@Override
+			protected void onCommentRangeStart(CommentRangeStart commentRangeStart) {
+				fail("Found a remaining comment range start !");
+			}
+
+			@Override
+			protected void onCommentRangeEnd(CommentRangeEnd commentRangeEnd) {
+				fail("Found a remaining comment range end !");
+			}
+
+			@Override
+			protected void onCommentReference(R.CommentReference commentReference) {
+				fail("Found a remaining comment reference !");
+			}
+		}.walk();
 	}
 
 	@Test

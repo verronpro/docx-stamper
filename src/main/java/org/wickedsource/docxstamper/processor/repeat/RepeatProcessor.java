@@ -68,10 +68,11 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
 			} else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
 				Tr rowClone = XmlUtils.deepCopy(row);
 				Object nullExpressionContext = new Object();
-				DocumentWalker walker = new ParagraphResolverDocumentWalker(rowClone,
-																			nullExpressionContext,
-																			document,
-																			this.placeholderReplacer);
+				DocumentWalker walker = new ParagraphResolverDocumentWalker(
+						rowClone,
+						nullExpressionContext,
+						document,
+						this.placeholderReplacer);
 				walker.walk();
 				((Tbl) row.getParent()).getContent().add(rowClone);
 			}

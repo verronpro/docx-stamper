@@ -4,17 +4,16 @@ import org.docx4j.TextUtils;
 import org.docx4j.TraversalUtil;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.wml.P;
-import org.docx4j.wml.R;
-import org.docx4j.wml.RPr;
-import org.wickedsource.docxstamper.util.ParagraphCollector;
+import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.util.RunCollector;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
 
@@ -40,32 +39,50 @@ public final class TestDocxStamper<T> {
 	 * object structure were really transported into the XML of the .docx file.
 	 */
 	public WordprocessingMLPackage stampAndLoad(InputStream template, T contextRoot) throws IOException, Docx4JException {
-		var out = IOStreams.getOutputStream();
+		OutputStream out = IOStreams.getOutputStream();
 		stamper.stamp(template, contextRoot, out);
-		var in = IOStreams.getInputStream(out);
+		InputStream in = IOStreams.getInputStream(out);
 		return WordprocessingMLPackage.load(in);
 	}
 
 	public List<String> stampAndLoadAndExtract(InputStream template, T context) {
+		return streamElements(template, context, P.class)
+				.map(this::serialize)
+				.toList();
+	}
+
+	private <U> Stream<U> streamElements(InputStream template, T context, Class<U> clazz) {
+		Stream<U> elements;
 		try {
-			var config = new DocxStamperConfiguration()
-					.setFailOnUnresolvedExpression(false);
+			var config = new DocxStamperConfiguration().setFailOnUnresolvedExpression(false);
 			var out = IOStreams.getOutputStream();
 			var stamper = new DocxStamper<T>(config);
 			stamper.stamp(template, context, out);
 			var in = IOStreams.getInputStream(out);
 			var document = WordprocessingMLPackage.load(in);
-			var visitor = new ParagraphCollector();
-			TraversalUtil.visit(document.getMainDocumentPart().getContent(), visitor);
-			return visitor.paragraphs()
-						  .map(TestDocxStamper::extractDocumentRuns)
-						  .toList();
+			var visitor = newCollector(clazz);
+			var content = document.getMainDocumentPart().getContent();
+			TraversalUtil.visit(content, visitor);
+			elements = visitor.elements();
+
 		} catch (Docx4JException | IOException e) {
 			throw new RuntimeException(e);
 		}
+		return elements;
 	}
 
-	private static String extractDocumentRuns(P p) {
+	private String serialize(P p) {
+		String runs = extractDocumentRuns(p);
+		return Optional.ofNullable(p.getPPr())
+					   .map(ppr -> "%s//%s".formatted(runs, serialize(ppr)))
+					   .orElse(runs);
+	}
+
+	private <U> DocxCollector<U> newCollector(Class<U> type) {
+		return new DocxCollector<>(type);
+	}
+
+	private static String extractDocumentRuns(Object p) {
 		var runCollector = new RunCollector();
 		TraversalUtil.visit(p, runCollector);
 		return runCollector.runs()
@@ -73,6 +90,35 @@ public final class TestDocxStamper<T> {
 						   .filter(r -> !TextUtils.getText(r).isEmpty())
 						   .map(TestDocxStamper::serialize)
 						   .collect(joining());
+	}
+
+	private String serialize(PPr pPr) {
+		var set = new TreeSet<String>();
+		if (pPr.getJc() != null) set.add("jc=" + pPr.getJc().getVal().value());
+		if (pPr.getInd() != null) set.add("ind=" + pPr.getInd().getLeft().intValue());
+		if (pPr.getKeepLines() != null) set.add("keepLines=" + pPr.getKeepLines().isVal());
+		if (pPr.getKeepNext() != null) set.add("keepNext=" + pPr.getKeepNext().isVal());
+		if (pPr.getOutlineLvl() != null) set.add("outlineLvl=" + pPr.getOutlineLvl().getVal().intValue());
+		if (pPr.getPageBreakBefore() != null) set.add("pageBreakBefore=" + pPr.getPageBreakBefore().isVal());
+		if (pPr.getPBdr() != null) set.add("pBdr=xxx");
+		if (pPr.getPPrChange() != null) set.add("pPrChange=xxx");
+		if (pPr.getRPr() != null) set.add("rPr={" + serialize(pPr.getRPr()) + "}");
+		if (pPr.getSectPr() != null) set.add("sectPr={" + serialize(pPr.getSectPr()) + "}");
+		if (pPr.getShd() != null) set.add("shd=xxx");
+		if (pPr.getSpacing() != null) set.add("spacing=xxx");
+		if (pPr.getSuppressAutoHyphens() != null) set.add("suppressAutoHyphens=xxx");
+		if (pPr.getSuppressLineNumbers() != null) set.add("suppressLineNumbers=xxx");
+		if (pPr.getSuppressOverlap() != null) set.add("suppressOverlap=xxx");
+		if (pPr.getTabs() != null) set.add("tabs=xxx");
+		if (pPr.getTextAlignment() != null) set.add("textAlignment=xxx");
+		if (pPr.getTextDirection() != null) set.add("textDirection=xxx");
+		if (pPr.getTopLinePunct() != null) set.add("topLinePunct=xxx");
+		if (pPr.getWidowControl() != null) set.add("widowControl=xxx");
+		if (pPr.getWordWrap() != null) set.add("wordWrap=xxx");
+		if (pPr.getFramePr() != null) set.add("framePr=xxx");
+		if (pPr.getDivId() != null) set.add("divId=xxx");
+		if (pPr.getCnfStyle() != null) set.add("cnfStyle=xxx");
+		return String.join(",", set);
 	}
 
 	private static String serialize(R run) {
@@ -84,7 +130,7 @@ public final class TestDocxStamper<T> {
 				.orElse(runText);
 	}
 
-	private static String serialize(RPr rPr) {
+	private static String serialize(RPrAbstract rPr) {
 		var set = new TreeSet<String>();
 		if (rPr.getB() != null) set.add("b=" + rPr.getB().isVal());
 		if (rPr.getBdr() != null) set.add("bdr=xxx");
@@ -116,5 +162,38 @@ public final class TestDocxStamper<T> {
 		if (rPr.getHighlight() != null) set.add("highlight=" + rPr.getHighlight().getVal());
 		if (rPr.getEffect() != null) set.add("effect=" + rPr.getEffect().getVal().value());
 		return String.join(",", set);
+	}
+
+	private String serialize(SectPr sectPr) {
+		var set = new TreeSet<String>();
+		if (sectPr.getEGHdrFtrReferences() != null) set.add("eGHdrFtrReferences=xxx");
+		if (sectPr.getPgSz() != null) set.add("pgSz={" + serialize(sectPr.getPgSz()) + "}");
+		if (sectPr.getPgMar() != null) set.add("pgMar=xxx");
+		if (sectPr.getPaperSrc() != null) set.add("paperSrc=xxx");
+		if (sectPr.getBidi() != null) set.add("bidi=xxx");
+		if (sectPr.getRtlGutter() != null) set.add("rtlGutter=xxx");
+		if (sectPr.getDocGrid() != null) set.add("docGrid=xxx");
+		if (sectPr.getFormProt() != null) set.add("formProt=xxx");
+		if (sectPr.getVAlign() != null) set.add("vAlign=xxx");
+		if (sectPr.getNoEndnote() != null) set.add("noEndnote=xxx");
+		if (sectPr.getTitlePg() != null) set.add("titlePg=xxx");
+		if (sectPr.getTextDirection() != null) set.add("textDirection=xxx");
+		if (sectPr.getRtlGutter() != null) set.add("rtlGutter=xxx");
+		return String.join(",", set);
+	}
+
+	private String serialize(SectPr.PgSz pgSz) {
+		var set = new TreeSet<String>();
+		if (pgSz.getOrient() != null) set.add("orient=" + pgSz.getOrient().value());
+		if (pgSz.getW() != null) set.add("w=" + pgSz.getW().intValue());
+		if (pgSz.getH() != null) set.add("h=" + pgSz.getH().intValue());
+		if (pgSz.getCode() != null) set.add("code=" + pgSz.getCode().intValue());
+		return String.join(",", set);
+	}
+
+	public <U> List<String> stampAndLoadAndExtract(InputStream template, T context, Class<U> clazz) {
+		return streamElements(template, context, clazz)
+				.map(TestDocxStamper::extractDocumentRuns)
+				.toList();
 	}
 }
