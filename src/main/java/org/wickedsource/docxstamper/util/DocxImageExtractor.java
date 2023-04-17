@@ -23,64 +23,26 @@ public class DocxImageExtractor {
     }
 
     /**
-     * Extract an inline graphic from a drawing.
+     * Extract an image bytes from an embedded image run.
      *
-     * @param drawing the drawing containing the graphic.
-     * 
+     * @param run run containing the embedded drawing.
      */
-    private static Graphic getInlineGraphic(Drawing drawing) {
-        if (drawing.getAnchorOrInline().isEmpty()) {
-            throw new DocxStamperException("Anchor or Inline is empty !");
-        }
-        Object anchorOrInline = drawing.getAnchorOrInline().get(0);
-        if (anchorOrInline instanceof Inline) {
-            Inline inline = ((Inline) anchorOrInline);
-            return inline.getGraphic();
-        } else {
-            throw new DocxStamperException("Don't know how to process anchor !");
-        }
-    }
-
-    /**
-     * Converts an InputStream to byte array.
-     *
-     * @param size expected size of the byte array.
-     * @param is   input stream to read data from.
-     * @return the data from the input stream.
-     *
-     */
-    private static byte[] streamToByteArray(long size, InputStream is) throws IOException {
-        if (size > Integer.MAX_VALUE) {
-            throw new DocxStamperException("Image size exceeds maximum allowed (2GB)");
-        }
-        int intSize = (int) size;
-        byte[] data = new byte[intSize];
-        int numRead = is.read(data);
-        return Arrays.copyOfRange(data, 0, numRead);
+    byte[] getRunDrawingData(R run) {
+        String imageRelId = getPic(run).getBlipFill().getBlip().getEmbed();
+        String imageRelPartName = getImageRelPartName(imageRelId);
+        long size = getImageSize(imageRelPartName);
+        InputStream stream = getImageStream(imageRelPartName);
+        return streamToByteArray(size, stream);
     }
 
     private static Pic getPic(R run) {
         for (Object runContent : run.getContent()) {
-            if (!(runContent instanceof JAXBElement)) break;
-            JAXBElement<?> runElement = (JAXBElement<?>) runContent;
-            if (!(runElement.getValue() instanceof Drawing)) break;
-            Drawing drawing = (Drawing) runElement.getValue();
+            if (!(runContent instanceof JAXBElement<?> runElement)) break;
+            if (!(runElement.getValue() instanceof Drawing drawing)) break;
             Graphic graphic = getInlineGraphic(drawing);
             return graphic.getGraphicData().getPic();
         }
         throw new DocxStamperException("Run drawing not found !");
-    }
-
-    private InputStream getImageStream(String imageRelPartName) throws Docx4JException {
-        return wordprocessingMLPackage
-                .getSourcePartStore()
-                .loadPart(imageRelPartName);
-    }
-
-    private long getImageSize(String imageRelPartName) throws Docx4JException {
-        return wordprocessingMLPackage
-                .getSourcePartStore()
-                .getPartSize(imageRelPartName);
     }
 
     private String getImageRelPartName(String imageRelId) {
@@ -94,20 +56,66 @@ public class DocxImageExtractor {
                 .substring(1);
     }
 
+    private long getImageSize(String imageRelPartName) {
+        try {
+            return wordprocessingMLPackage
+                    .getSourcePartStore()
+                    .getPartSize(imageRelPartName);
+        } catch (Docx4JException e) {
+            throw new DocxStamperException(e);
+        }
+    }
+
+    private InputStream getImageStream(String imageRelPartName) {
+        try {
+            return wordprocessingMLPackage
+                    .getSourcePartStore()
+                    .loadPart(imageRelPartName);
+        } catch (Docx4JException e) {
+            throw new DocxStamperException(e);
+        }
+    }
+
     /**
-     * Extract an image bytes from an embedded image run.
+     * Converts an InputStream to byte array.
      *
-     * @param run run containing the embedded drawing.
-     * 
-     * 
-     * 
+     * @param size expected size of the byte array.
+     * @param is   input stream to read data from.
+     * @return the data from the input stream.
      */
-    byte[] getRunDrawingData(R run) throws Docx4JException, IOException {
-        String imageRelId = getPic(run).getBlipFill().getBlip().getEmbed();
-        String imageRelPartName = getImageRelPartName(imageRelId);
-        long size = getImageSize(imageRelPartName);
-        InputStream stream = getImageStream(imageRelPartName);
-        return streamToByteArray(size, stream);
+    private static byte[] streamToByteArray(long size, InputStream is) {
+        if (size > Integer.MAX_VALUE)
+            throw new DocxStamperException("Image size exceeds maximum allowed (2GB)");
+
+        int intSize = (int) size;
+        byte[] data = new byte[intSize];
+        int numRead = tryRead(is, data);
+        return Arrays.copyOfRange(data, 0, numRead);
+    }
+
+    /**
+     * Extract an inline graphic from a drawing.
+     *
+     * @param drawing the drawing containing the graphic.
+     */
+    private static Graphic getInlineGraphic(Drawing drawing) {
+        if (drawing.getAnchorOrInline().isEmpty()) {
+            throw new DocxStamperException("Anchor or Inline is empty !");
+        }
+        Object anchorOrInline = drawing.getAnchorOrInline().get(0);
+        if (anchorOrInline instanceof Inline inline) {
+            return inline.getGraphic();
+        } else {
+            throw new DocxStamperException("Don't know how to process anchor !");
+        }
+    }
+
+    private static int tryRead(InputStream is, byte[] data) {
+        try {
+            return is.read(data);
+        } catch (IOException e) {
+            throw new DocxStamperException(e);
+        }
     }
 
     public String getRunDrawingFilename(R run) {

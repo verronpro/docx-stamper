@@ -6,6 +6,7 @@ import org.docx4j.dml.Graphic;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.finders.ClassFinder;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.openpackaging.parts.WordprocessingML.FooterPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.HeaderPart;
 import org.docx4j.openpackaging.parts.relationships.Namespaces;
@@ -15,8 +16,7 @@ import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.replace.typeresolver.image.ImageResolver;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.function.Function.identity;
@@ -25,73 +25,6 @@ import static java.util.stream.Collectors.toList;
 public class DocumentUtil {
 	private DocumentUtil() {
 		throw new DocxStamperException("Utility classes shouldn't be instantiated");
-	}
-
-	/**
-	 * Recursively walk through the content accessor to replace embedded images and import the matching
-	 * files to the destination document before importing content.
-	 *
-	 * @param sourceDocument document to import.
-	 * @param targetDocument document to add the source document content to.
-	 * @return the whole content of the source document with imported images replaced.
-	 */
-	public static List<Object> prepareDocumentForInsert(
-			WordprocessingMLPackage sourceDocument,
-			WordprocessingMLPackage targetDocument
-	) throws Exception {
-		return walkObjectsAndImportImages(sourceDocument.getMainDocumentPart(), sourceDocument, targetDocument);
-	}
-
-	/**
-	 * Recursively walk through the content accessor to replace embedded images and import the matching
-	 * files to the destination document.
-	 *
-	 * @param sourceContainer source container to walk.
-	 * @param sourceDocument  source document containing image files.
-	 * @param destDocument    destination document to add image files to.
-	 * @return the list of imported objects from the source container.
-	 */
-	public static List<Object> walkObjectsAndImportImages(
-			ContentAccessor sourceContainer,
-			WordprocessingMLPackage sourceDocument,
-			WordprocessingMLPackage destDocument
-	) throws Exception {
-		List<Object> result = new ArrayList<>();
-		for (Object obj : sourceContainer.getContent()) {
-			if (obj instanceof R && isImageRun((R) obj)) {
-				DocxImageExtractor docxImageExtractor = new DocxImageExtractor(sourceDocument);
-				byte[] imageData = docxImageExtractor.getRunDrawingData((R) obj);
-				String filename = docxImageExtractor.getRunDrawingFilename((R) obj);
-				String alt = docxImageExtractor.getRunDrawingAltText((R) obj);
-				Integer maxWidth = docxImageExtractor.getRunDrawingMaxWidth((R) obj);
-				result.add(ImageResolver.createRunWithImage(destDocument, imageData, filename, alt, maxWidth));
-			} else if (obj instanceof ContentAccessor) {
-				List<Object> importedChildren = walkObjectsAndImportImages((ContentAccessor) obj,
-																		   sourceDocument,
-																		   destDocument);
-				((ContentAccessor) obj).getContent().clear();
-				((ContentAccessor) obj).getContent().addAll(importedChildren);
-				result.add(obj);
-			} else {
-				result.add(obj);
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * Check if a run contains an embedded image.
-	 *
-	 * @param run the run to analyze
-	 * @return true if the run contains an image, false otherwise.
-	 */
-	private static boolean isImageRun(R run) {
-		return run.getContent()
-				  .stream()
-				  .filter(runElement -> runElement instanceof JAXBElement)
-				  .map(JAXBElement.class::cast)
-				  .map(JAXBElement::getValue)
-				  .anyMatch(runValue -> runValue instanceof Drawing);
 	}
 
 	public static <T> List<T> extractElements(Object object, Class<T> elementClass) {
@@ -198,13 +131,12 @@ public class DocumentUtil {
 			HeaderPart headerPart = (HeaderPart) relationshipsPart.getPart(header.getId());
 			paragraphs.addAll(getElements(headerPart, elementClass));
 		}
-
 		return paragraphs;
 	}
 
 	private static List<Object> getElements(Object obj, Class<?> elementClass) {
 		ClassFinder finder = new ClassFinder(elementClass);
-		new TraversalUtil(obj, finder);
+		TraversalUtil.visit(obj, finder);
 		return finder.results;
 	}
 
@@ -258,12 +190,89 @@ public class DocumentUtil {
 	}
 
 	public static List<Tc> getTableCellsFromObject(Object parentObject) {
-		List<Tc> tableCellList = new ArrayList<>();
-		for (Object object : getElementsFromObject(parentObject, Tc.class)) {
-			if (object instanceof Tc) {
-				tableCellList.add((Tc) object);
+		return getElementsFromObject(parentObject, Tc.class)
+				.stream()
+				.filter(object -> object instanceof Tc)
+				.map(object -> (Tc) object)
+				.toList();
+	}
+
+	public static Object lastElement(WordprocessingMLPackage subDocument) {
+		List<Object> content = subDocument.getMainDocumentPart().getContent();
+		return content.get(content.size() - 1);
+	}
+
+	public static List<Object> allElements(WordprocessingMLPackage subDocument) {
+		return subDocument.getMainDocumentPart().getContent();
+	}
+
+	/**
+	 * Recursively walk through source to find embedded images and import them in the target document.
+	 *
+	 * @param source source document containing image files.
+	 * @param target target document to add image files to.
+	 */
+	public static Map<R, R> walkObjectsAndImportImages(WordprocessingMLPackage source, WordprocessingMLPackage target) {
+		return walkObjectsAndImportImages(source.getMainDocumentPart(), source, target);
+	}
+
+	/**
+	 * Recursively walk through source accessor to find embedded images and import the target document.
+	 *
+	 * @param container source container to walk.
+	 * @param source    source document containing image files.
+	 * @param target    target document to add image files to.
+	 */
+	public static Map<R, R> walkObjectsAndImportImages(
+			ContentAccessor container,
+			WordprocessingMLPackage source,
+			WordprocessingMLPackage target
+	) {
+		Map<R, R> replacements = new HashMap<>();
+		for (Object obj : container.getContent()) {
+			Queue<Object> queue = new ArrayDeque<>();
+			queue.add(obj);
+
+			while (!queue.isEmpty()) {
+				Object currentObj = queue.remove();
+
+				if (currentObj instanceof R currentR && isImageRun(currentR)) {
+					DocxImageExtractor docxImageExtractor = new DocxImageExtractor(source);
+					byte[] imageData = docxImageExtractor.getRunDrawingData(currentR);
+					String filename = docxImageExtractor.getRunDrawingFilename(currentR);
+					String alt = docxImageExtractor.getRunDrawingAltText(currentR);
+					Integer maxWidth = docxImageExtractor.getRunDrawingMaxWidth(currentR);
+					BinaryPartAbstractImage imagePart = tryCreateImagePart(target, imageData);
+					replacements.put(currentR, ImageResolver.createRunWithImage(filename, alt, maxWidth, imagePart));
+				} else if (currentObj instanceof ContentAccessor contentAccessor)
+					queue.addAll(contentAccessor.getContent());
 			}
 		}
-		return tableCellList;
+		return replacements;
 	}
+
+	/**
+	 * Check if a run contains an embedded image.
+	 *
+	 * @param run the run to analyze
+	 * @return true if the run contains an image, false otherwise.
+	 */
+	private static boolean isImageRun(R run) {
+		return run.getContent()
+				  .stream()
+				  .filter(runElement -> runElement instanceof JAXBElement)
+				  .map(JAXBElement.class::cast)
+				  .map(JAXBElement::getValue)
+				  .anyMatch(runValue -> runValue instanceof Drawing);
+	}
+
+	private static BinaryPartAbstractImage tryCreateImagePart(WordprocessingMLPackage destDocument, byte[] imageData) {
+		try {
+			return BinaryPartAbstractImage.createImagePart(destDocument, imageData);
+		} catch (Exception e) {
+			throw new DocxStamperException(e);
+		}
+	}
+
+
 }

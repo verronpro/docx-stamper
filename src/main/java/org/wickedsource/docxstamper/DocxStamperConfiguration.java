@@ -1,5 +1,7 @@
 package org.wickedsource.docxstamper;
 
+import org.docx4j.wml.P;
+import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
 import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolver;
@@ -13,10 +15,13 @@ import org.wickedsource.docxstamper.processor.table.ITableResolver;
 import org.wickedsource.docxstamper.processor.table.TableResolver;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.replace.typeresolver.FallbackResolver;
+import org.wickedsource.docxstamper.util.ParagraphUtil;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Provides configuration parameters for DocxStamper.
@@ -39,8 +44,29 @@ public class DocxStamperConfiguration {
 
 	public DocxStamperConfiguration() {
 		commentProcessorsToUse.put(IRepeatProcessor.class, RepeatProcessor::new);
-		commentProcessorsToUse.put(IParagraphRepeatProcessor.class, ParagraphRepeatProcessor::new);
-		commentProcessorsToUse.put(IRepeatDocPartProcessor.class, RepeatDocPartProcessor::new);
+		commentProcessorsToUse.put(
+				IParagraphRepeatProcessor.class,
+				(config, placeholderReplacer1) -> {
+					Supplier<List<P>> nullSupplier = () ->
+							config.isReplaceNullValues() && config.getNullValuesDefault() != null
+									? List.of(ParagraphUtil.create(config.getNullValuesDefault()))
+									: Collections.emptyList();
+					return new ParagraphRepeatProcessor(config, placeholderReplacer1,
+														nullSupplier);
+				});
+		commentProcessorsToUse.put(IRepeatDocPartProcessor.class,
+								   (config, placeholderReplacer1) -> new RepeatDocPartProcessor(config,
+																								placeholderReplacer1,
+																								() -> {
+																									if (config.isReplaceNullValues() && config.getNullValuesDefault() != null) {
+																										P p = ParagraphUtil.create(
+																												config.getNullValuesDefault());
+																										return List.of(p);
+																									} else {
+																										throw new DocxStamperException(
+																												"Impossible");
+																									}
+																								}));
 		commentProcessorsToUse.put(ITableResolver.class, TableResolver::new);
 		commentProcessorsToUse.put(IDisplayIfProcessor.class, DisplayIfProcessor::new);
 		commentProcessorsToUse.put(IReplaceWithProcessor.class, ReplaceWithProcessor::new);

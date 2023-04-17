@@ -10,16 +10,19 @@ public class SectionUtil {
 	private static final ObjectFactory factory = Context.getWmlObjectFactory();
 
 	public static SectPr getPreviousSectionBreakIfPresent(Object firstObject, ContentAccessor parent) {
-		int pIndex = parent.getContent().indexOf(firstObject);
-		for (int i = pIndex - 1; i >= 0; i++) {
-			Object prevObj = parent.getContent().get(i);
-			if (prevObj instanceof P prevParagraph) {
+		List<Object> parentContent = parent.getContent();
+		int pIndex = parentContent.indexOf(firstObject);
+
+		int i = pIndex - 1;
+		while (i >= 0) {
+			if (parentContent.get(i) instanceof P prevParagraph) {
 				// the first P preceding the object is the one potentially carrying a section break
-				if (prevParagraph.getPPr() != null && prevParagraph.getPPr().getSectPr() != null) {
-					return prevParagraph.getPPr().getSectPr();
-				}
-				break;
+				PPr pPr = prevParagraph.getPPr();
+				if (pPr != null && pPr.getSectPr() != null) {
+					return pPr.getSectPr();
+				} else return null;
 			}
+			i--;
 		}
 		System.out.println("No previous section break found from : " + parent + ", first object index=" + pIndex);
 		return null;
@@ -41,10 +44,10 @@ public class SectionUtil {
 	}
 
 	public static void applySectionBreakToParagraph(SectPr sectPr, P paragraph) {
-		PPr currentPPr = paragraph.getPPr();
-		PPr nextPPr = currentPPr != null ? currentPPr : factory.createPPr();
-		paragraph.setPPr(nextPPr);
+		PPr pPpr = paragraph.getPPr();
+		PPr nextPPr = pPpr != null ? pPpr : factory.createPPr();
 		nextPPr.setSectPr(XmlUtils.deepCopy(sectPr));
+		paragraph.setPPr(nextPPr);
 	}
 
 }

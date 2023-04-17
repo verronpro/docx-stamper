@@ -19,7 +19,6 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
 	private List<P> paragraphsToBeRemoved = new ArrayList<>();
 	private List<Tbl> tablesToBeRemoved = new ArrayList<>();
 	private List<Tr> tableRowsToBeRemoved = new ArrayList<>();
-	private List<Object> objectsToBeRemoved = new ArrayList<>();
 
 	public DisplayIfProcessor(DocxStamperConfiguration config, PlaceholderReplacer placeholderReplacer1) {
 		super(config, placeholderReplacer1);
@@ -31,7 +30,6 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
 		removeParagraphs(deleter);
 		removeTables(deleter);
 		removeTableRows(deleter);
-		removeObjects(deleter);
 	}
 
 	@Override
@@ -39,7 +37,6 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
 		paragraphsToBeRemoved = new ArrayList<>();
 		tablesToBeRemoved = new ArrayList<>();
 		tableRowsToBeRemoved = new ArrayList<>();
-		objectsToBeRemoved = new ArrayList<>();
 	}
 
 	private void removeParagraphs(ObjectDeleter deleter) {
@@ -57,12 +54,6 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
 	private void removeTableRows(ObjectDeleter deleter) {
 		for (Tr row : tableRowsToBeRemoved) {
 			deleter.deleteTableRow(row);
-		}
-	}
-
-	private void removeObjects(ObjectDeleter deleter) {
-		for (Object object : objectsToBeRemoved) {
-			deleter.deleteObject(object);
 		}
 	}
 

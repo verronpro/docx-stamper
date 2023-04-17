@@ -34,29 +34,29 @@ public final class TestDocxStamper<T> {
 	}
 
 	/**
-	 * Stamps the given template resolving the expressions within the template against the specified contextRoot.
+	 * Stamps the given template resolving the expressions within the template against the specified context.
 	 * Returns the resulting document after it has been saved and loaded again to ensure that changes in the Docx4j
 	 * object structure were really transported into the XML of the .docx file.
 	 */
-	public WordprocessingMLPackage stampAndLoad(InputStream template, T contextRoot) throws IOException, Docx4JException {
+	public WordprocessingMLPackage stampAndLoad(InputStream template, T context) throws IOException, Docx4JException {
 		OutputStream out = IOStreams.getOutputStream();
-		stamper.stamp(template, contextRoot, out);
+		stamper.stamp(template, context, out);
 		InputStream in = IOStreams.getInputStream(out);
 		return WordprocessingMLPackage.load(in);
 	}
 
 	public List<String> stampAndLoadAndExtract(InputStream template, T context) {
-		return streamElements(template, context, P.class)
+		DocxStamperConfiguration configuration = this.stamper.config.setFailOnUnresolvedExpression(false);
+		return streamElements(template, context, P.class, configuration)
 				.map(this::serialize)
 				.toList();
 	}
 
-	private <C> Stream<C> streamElements(InputStream template, T context, Class<C> clazz) {
+	private <C> Stream<C> streamElements(InputStream template, T context, Class<C> clazz, DocxStamperConfiguration configuration) {
 		Stream<C> elements;
 		try {
-			var config = new DocxStamperConfiguration().setFailOnUnresolvedExpression(false);
 			var out = IOStreams.getOutputStream();
-			var stamper = new DocxStamper<T>(config);
+			var stamper = new DocxStamper<T>(configuration);
 			stamper.stamp(template, context, out);
 			var in = IOStreams.getInputStream(out);
 			var document = WordprocessingMLPackage.load(in);
@@ -192,7 +192,8 @@ public final class TestDocxStamper<T> {
 	}
 
 	public <C> List<String> stampAndLoadAndExtract(InputStream template, T context, Class<C> clazz) {
-		return streamElements(template, context, clazz)
+		return streamElements(template, context, clazz,
+							  new DocxStamperConfiguration().setFailOnUnresolvedExpression(false))
 				.map(TestDocxStamper::extractDocumentRuns)
 				.toList();
 	}

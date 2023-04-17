@@ -2,6 +2,7 @@ package org.wickedsource.docxstamper;
 
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.wml.P;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
 import org.wickedsource.docxstamper.api.preprocessor.PreProcessor;
@@ -23,6 +24,7 @@ import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.replace.typeresolver.*;
 import org.wickedsource.docxstamper.replace.typeresolver.image.Image;
 import org.wickedsource.docxstamper.replace.typeresolver.image.ImageResolver;
+import org.wickedsource.docxstamper.util.ParagraphUtil;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,6 +32,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * <p>
@@ -94,14 +97,13 @@ public class DocxStamper<T> {
 				replaceUnresolvedExpressions,
 				unresolvedExpressionsDefaultValue,
 				leaveEmptyOnExpressionError,
-				lineBreakPlaceholder);
+				lineBreakPlaceholder
+		);
 
 		for (var entry : config.getCommentProcessorsToUse().entrySet()) {
 			var clazz = entry.getKey();
 			var commentProcessorFactory = entry.getValue();
-			Object instance = commentProcessorFactory.create(
-					config,
-					placeholderReplacer);
+			Object instance = commentProcessorFactory.create(config, placeholderReplacer);
 			commentProcessors.put(clazz, instance);
 		}
 
@@ -112,7 +114,7 @@ public class DocxStamper<T> {
 				failOnUnresolvedExpression);
 
 		this.config = config;
-		this.config.getCommentProcessors().putAll(commentProcessors);
+		// this.config.getCommentProcessors().putAll(commentProcessors);
 		this.placeholderReplacer = placeholderReplacer;
 		this.commentProcessorRegistry = commentProcessorRegistry;
 		this.preprocessors = new ArrayList<>();
@@ -206,10 +208,22 @@ public class DocxStamper<T> {
 				leaveEmptyOnExpressionError,
 				lineBreakPlaceholder);
 
+		Supplier<List<P>> nullSupplier = () ->
+				config.isReplaceNullValues() && config.getNullValuesDefault() != null
+						? List.of(ParagraphUtil.create(config.getNullValuesDefault()))
+						: Collections.emptyList();
+
+		Supplier<List<Object>> nullSupplier2 = () ->
+				config.isReplaceNullValues() && config.getNullValuesDefault() != null
+						? List.of(ParagraphUtil.create(config.getNullValuesDefault()))
+						: Collections.emptyList();
 		commentProcessors.put(IRepeatProcessor.class, new RepeatProcessor(config, placeholderReplacer));
-		commentProcessors.put(IParagraphRepeatProcessor.class,
-							  new ParagraphRepeatProcessor(config, placeholderReplacer));
-		commentProcessors.put(IRepeatDocPartProcessor.class, new RepeatDocPartProcessor(config, placeholderReplacer));
+		commentProcessors.put(
+				IParagraphRepeatProcessor.class,
+				new ParagraphRepeatProcessor(config, placeholderReplacer, nullSupplier));
+		commentProcessors.put(
+				IRepeatDocPartProcessor.class,
+				new RepeatDocPartProcessor(config, placeholderReplacer, nullSupplier2));
 		commentProcessors.put(ITableResolver.class, new TableResolver(config, placeholderReplacer));
 		commentProcessors.put(IDisplayIfProcessor.class, new DisplayIfProcessor(config, placeholderReplacer));
 		commentProcessors.put(IReplaceWithProcessor.class, new ReplaceWithProcessor(config, placeholderReplacer));
@@ -355,8 +369,29 @@ public class DocxStamper<T> {
 				lineBreakPlaceholder);
 
 		commentProcessors.put(IRepeatProcessor.class, new RepeatProcessor(conf, placeholderReplacer));
-		commentProcessors.put(IParagraphRepeatProcessor.class, new ParagraphRepeatProcessor(conf, placeholderReplacer));
-		commentProcessors.put(IRepeatDocPartProcessor.class, new RepeatDocPartProcessor(conf, placeholderReplacer));
+		commentProcessors.put(IParagraphRepeatProcessor.class, new ParagraphRepeatProcessor(conf, placeholderReplacer,
+																							() -> {
+																								List<P> collection1;
+																								if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
+																									collection1 = List.of(
+																											ParagraphUtil.create(
+																													configuration.getNullValuesDefault()));
+																								} else {
+																									collection1 = Collections.emptyList();
+																								}
+																								return collection1;
+																							}));
+		commentProcessors.put(IRepeatDocPartProcessor.class, new RepeatDocPartProcessor(conf, placeholderReplacer,
+																						() -> {
+																							if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
+																								P p = ParagraphUtil.create(
+																										configuration.getNullValuesDefault());
+																								return List.of(p);
+																							} else {
+																								throw new DocxStamperException(
+																										"Impossible");
+																							}
+																						}));
 		commentProcessors.put(ITableResolver.class, new TableResolver(conf, placeholderReplacer));
 		commentProcessors.put(IDisplayIfProcessor.class, new DisplayIfProcessor(conf, placeholderReplacer));
 		commentProcessors.put(IReplaceWithProcessor.class, new ReplaceWithProcessor(conf, placeholderReplacer));
