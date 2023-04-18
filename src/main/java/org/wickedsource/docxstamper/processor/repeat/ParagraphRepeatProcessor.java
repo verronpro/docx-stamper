@@ -3,7 +3,6 @@ package org.wickedsource.docxstamper.processor.repeat;
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
-import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -20,11 +19,10 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 	private Map<P, Paragraphs> pToRepeat = new HashMap<>();
 
 	public ParagraphRepeatProcessor(
-			DocxStamperConfiguration config,
 			PlaceholderReplacer placeholderReplacer,
 			Supplier<List<P>> nullSupplier
 	) {
-		super(config, placeholderReplacer);
+		super(placeholderReplacer);
 		onNull = nullSupplier;
 	}
 

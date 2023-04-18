@@ -4,7 +4,6 @@ import jakarta.xml.bind.JAXBElement;
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
-import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -13,12 +12,16 @@ import org.wickedsource.docxstamper.util.ParagraphUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public class TableResolver extends BaseCommentProcessor implements ITableResolver {
 	private final Map<Tbl, StampTable> cols = new HashMap<>();
+	private final Function<Tbl, List<Object>> nullSupplier;
 
-	public TableResolver(DocxStamperConfiguration config, PlaceholderReplacer placeholderReplacer) {
-		super(config, placeholderReplacer);
+	public TableResolver(PlaceholderReplacer placeholderReplacer,
+						 Function<Tbl, List<Object>> nullSupplier) {
+		super(placeholderReplacer);
+		this.nullSupplier = nullSupplier;
 	}
 
 	@Override
@@ -42,10 +45,11 @@ public class TableResolver extends BaseCommentProcessor implements ITableResolve
 
 			if (stampedTable != null) {
 				replaceTableInplace(wordTable, stampedTable);
-			} else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
-				replaceTableWithNullDefault(wordTable);
 			} else {
-				removeTableFromDocument(wordTable);
+				List<Object> tableParentContent = ((ContentAccessor) wordTable.getParent()).getContent();
+				int tablePosition = tableParentContent.indexOf(wordTable);
+				List<Object> toInsert = nullSupplier.apply(wordTable);
+				tableParentContent.set(tablePosition, toInsert);
 			}
 		}
 	}
@@ -69,18 +73,6 @@ public class TableResolver extends BaseCommentProcessor implements ITableResolve
 		} else {
 			rows.remove(firstDataRow);
 		}
-	}
-
-	private void replaceTableWithNullDefault(Tbl wordTable) {
-		ContentAccessor accessor = ((ContentAccessor) wordTable.getParent());
-		int tablePosition = accessor.getContent().indexOf(wordTable);
-		if (tablePosition >= 0) {
-			accessor.getContent().set(tablePosition, ParagraphUtil.create(configuration.getNullValuesDefault()));
-		}
-	}
-
-	private static void removeTableFromDocument(Tbl wordTable) {
-		((ContentAccessor) wordTable.getParent()).getContent().remove(wordTable);
 	}
 
 	private void growAndFillRow(Tr row, List<String> values) {

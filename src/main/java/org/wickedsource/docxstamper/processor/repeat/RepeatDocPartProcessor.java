@@ -7,7 +7,6 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
 import org.jvnet.jaxb2_commons.ppp.Child;
 import org.wickedsource.docxstamper.DocxStamper;
-import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -37,12 +36,11 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 	private final Supplier<List<Object>> onNull;
 
 	public RepeatDocPartProcessor(
-			DocxStamperConfiguration config,
 			PlaceholderReplacer placeholderReplacer,
 			Supplier<DocxStamper<Object>> stamperSupplier,
 			Supplier<List<Object>> nullSupplier
 	) {
-		super(config, placeholderReplacer);
+		super(placeholderReplacer);
 		this.stamperSupplier = stamperSupplier;
 		onNull = nullSupplier;
 	}

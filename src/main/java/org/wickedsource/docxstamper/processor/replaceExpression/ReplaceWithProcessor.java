@@ -2,7 +2,6 @@ package org.wickedsource.docxstamper.processor.replaceExpression;
 
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.R;
-import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -20,11 +19,10 @@ public class ReplaceWithProcessor
 	private final Function<R, List<Object>> nullSupplier;
 
 	public ReplaceWithProcessor(
-			DocxStamperConfiguration config,
 			PlaceholderReplacer placeholderReplacer,
 			Function<R, List<Object>> nullSupplier
 	) {
-		super(config, placeholderReplacer);
+		super(placeholderReplacer);
 		this.nullSupplier = nullSupplier;
 	}
 

@@ -48,56 +48,54 @@ public class DocxStamperConfiguration {
 	private ITypeResolver defaultTypeResolver = new FallbackResolver();
 
 	public DocxStamperConfiguration() {
-		CommentProcessorFactory commentProcessorFactory = (config, placeholderReplacer1) -> {
+		CommentProcessorFactory commentProcessorFactory = (placeholderReplacer) -> {
 			Supplier<List<P>> nullSupplier = () ->
-					config.isReplaceNullValues() && config.getNullValuesDefault() != null
-							? List.of(ParagraphUtil.create(config.getNullValuesDefault()))
+					this.isReplaceNullValues() && this.getNullValuesDefault() != null
+							? List.of(ParagraphUtil.create(this.getNullValuesDefault()))
 							: Collections.emptyList();
-			return new ParagraphRepeatProcessor(config, placeholderReplacer1, nullSupplier);
+			return new ParagraphRepeatProcessor(placeholderReplacer, nullSupplier);
 		};
-		CommentProcessorFactory commentProcessorFactory1 = (config, placeholderReplacer1) -> {
+		CommentProcessorFactory commentProcessorFactory1 = (placeholderReplacer) -> {
 			Supplier<List<Object>> nullSupplier = () -> {
-				if (config.isReplaceNullValues() && config.getNullValuesDefault() != null)
-					return List.of(ParagraphUtil.create(config.getNullValuesDefault()));
+				if (this.isReplaceNullValues() && this.getNullValuesDefault() != null)
+					return List.of(ParagraphUtil.create(this.getNullValuesDefault()));
 				else
 					throw new DocxStamperException("Impossible");
 			};
-			return new RepeatDocPartProcessor(config,
-											  placeholderReplacer1,
+			return new RepeatDocPartProcessor(placeholderReplacer,
 											  () -> new DocxStamper<>(this),
 											  nullSupplier);
 		};
-		commentProcessorsToUse.put(IRepeatProcessor.class,
-								   (config, placeholderReplacer) -> new RepeatProcessor(config,
-																						placeholderReplacer,
-																						(document1, row1) -> {
-																							List<Tr> changes1;
-																							if (config.isReplaceNullValues() && config.getNullValuesDefault() != null) {
-																								Tr rowClone = XmlUtils.deepCopy(
-																										row1);
-																								new ParagraphResolverDocumentWalker(
-																										rowClone,
-																										new Object(),
-																										document1,
-																										placeholderReplacer).walk();
-																								changes1 = List.of(
-																										rowClone);
-																							} else {
-																								changes1 = emptyList();
-																							}
-																							return changes1;
-																						}));
+		commentProcessorsToUse.put(IRepeatProcessor.class, (placeholderReplacer) ->
+				new RepeatProcessor(placeholderReplacer, (document1, row1) -> {
+					List<Tr> changes1;
+					if (this.isReplaceNullValues() && this.getNullValuesDefault() != null) {
+						Tr rowClone = XmlUtils.deepCopy(row1);
+						new ParagraphResolverDocumentWalker(rowClone,
+															new Object(),
+															document1,
+															placeholderReplacer).walk();
+						changes1 = List.of(rowClone);
+					} else {
+						changes1 = emptyList();
+					}
+					return changes1;
+				}));
 		commentProcessorsToUse.put(IParagraphRepeatProcessor.class, commentProcessorFactory);
 		commentProcessorsToUse.put(IRepeatDocPartProcessor.class, commentProcessorFactory1);
-		commentProcessorsToUse.put(ITableResolver.class, TableResolver::new);
+		commentProcessorsToUse.put(ITableResolver.class, (placeholderReplacer1) -> new TableResolver(
+				placeholderReplacer1,
+				wordTable1 -> this.isReplaceNullValues() && this.getNullValuesDefault() != null
+						? List.of(ParagraphUtil.create(
+						this.getNullValuesDefault()))
+						: List.of(wordTable1)));
 		commentProcessorsToUse.put(IDisplayIfProcessor.class, DisplayIfProcessor::new);
 		commentProcessorsToUse.put(IReplaceWithProcessor.class,
-								   (config, placeholderReplacer) -> new ReplaceWithProcessor(config,
-																							 placeholderReplacer,
-																							 run1 -> config.isReplaceNullValues() && config.getNullValuesDefault() != null
-																									 ? List.of(RunUtil.createText(
-																									 config.getNullValuesDefault()))
-																									 : run1.getContent()));
+								   (placeholderReplacer) -> new ReplaceWithProcessor(placeholderReplacer,
+																					 run1 -> this.isReplaceNullValues() && this.getNullValuesDefault() != null
+																							 ? List.of(RunUtil.createText(
+																							 this.getNullValuesDefault()))
+																							 : run1.getContent()));
 	}
 
 	public boolean isReplaceNullValues() {
@@ -312,6 +310,6 @@ public class DocxStamperConfiguration {
 	}
 
 	interface CommentProcessorFactory {
-		Object create(DocxStamperConfiguration config, PlaceholderReplacer placeholderReplacer);
+		Object create(PlaceholderReplacer placeholderReplacer);
 	}
 }

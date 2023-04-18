@@ -44,8 +44,8 @@ public class CustomCommentProcessorTest {
 
 		private P currentParagraph;
 
-		public CustomCommentProcessor(DocxStamperConfiguration config, PlaceholderReplacer placeholderReplacer) {
-			super(config, placeholderReplacer);
+		public CustomCommentProcessor(PlaceholderReplacer placeholderReplacer) {
+			super(placeholderReplacer);
 		}
 
 		public static List<P> getVisitedParagraphs() {

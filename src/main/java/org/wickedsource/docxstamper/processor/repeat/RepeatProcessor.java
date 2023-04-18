@@ -3,7 +3,6 @@ package org.wickedsource.docxstamper.processor.repeat;
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
-import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -21,11 +20,10 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
 	private Map<Tr, CommentWrapper> tableRowsCommentsToRemove = new HashMap<>();
 
 	public RepeatProcessor(
-			DocxStamperConfiguration config,
 			PlaceholderReplacer placeholderReplacer,
 			BiFunction<WordprocessingMLPackage, Tr, List<Tr>> nullSupplier1
 	) {
-		super(config, placeholderReplacer);
+		super(placeholderReplacer);
 		nullSupplier = nullSupplier1;
 	}
 

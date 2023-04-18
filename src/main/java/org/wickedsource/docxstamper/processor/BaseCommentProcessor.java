@@ -3,7 +3,6 @@ package org.wickedsource.docxstamper.processor;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.P;
 import org.docx4j.wml.R;
-import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.CommentWrapper;
@@ -12,7 +11,6 @@ import java.util.Objects;
 
 public abstract class BaseCommentProcessor
 		implements ICommentProcessor {
-	protected final DocxStamperConfiguration configuration;
 	protected final PlaceholderReplacer placeholderReplacer;
 	private P paragraph;
 	private R run;
@@ -20,10 +18,8 @@ public abstract class BaseCommentProcessor
 	private WordprocessingMLPackage document;
 
 	public BaseCommentProcessor(
-			DocxStamperConfiguration config,
 			PlaceholderReplacer placeholderReplacer
 	) {
-		this.configuration = config;
 		this.placeholderReplacer = placeholderReplacer;
 	}
 
