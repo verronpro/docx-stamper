@@ -114,7 +114,6 @@ public class DocxStamper<T> {
 				failOnUnresolvedExpression);
 
 		this.config = config;
-		// this.config.getCommentProcessors().putAll(commentProcessors);
 		this.placeholderReplacer = placeholderReplacer;
 		this.commentProcessorRegistry = commentProcessorRegistry;
 		this.preprocessors = new ArrayList<>();
@@ -223,7 +222,10 @@ public class DocxStamper<T> {
 				new ParagraphRepeatProcessor(config, placeholderReplacer, nullSupplier));
 		commentProcessors.put(
 				IRepeatDocPartProcessor.class,
-				new RepeatDocPartProcessor(config, placeholderReplacer, nullSupplier2));
+				new RepeatDocPartProcessor(config,
+										   placeholderReplacer,
+										   () -> new DocxStamper<>(config),
+										   nullSupplier2));
 		commentProcessors.put(ITableResolver.class, new TableResolver(config, placeholderReplacer));
 		commentProcessors.put(IDisplayIfProcessor.class, new DisplayIfProcessor(config, placeholderReplacer));
 		commentProcessors.put(IReplaceWithProcessor.class, new ReplaceWithProcessor(config, placeholderReplacer));
@@ -381,7 +383,9 @@ public class DocxStamper<T> {
 																								}
 																								return collection1;
 																							}));
-		commentProcessors.put(IRepeatDocPartProcessor.class, new RepeatDocPartProcessor(conf, placeholderReplacer,
+		commentProcessors.put(IRepeatDocPartProcessor.class, new RepeatDocPartProcessor(conf,
+																						placeholderReplacer,
+																						() -> new DocxStamper<>(conf),
 																						() -> {
 																							if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
 																								P p = ParagraphUtil.create(

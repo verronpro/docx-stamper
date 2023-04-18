@@ -16,27 +16,34 @@ import org.wickedsource.docxstamper.util.DocumentUtil;
 import org.wickedsource.docxstamper.util.SectionUtil;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static java.util.stream.Collectors.toMap;
 import static org.wickedsource.docxstamper.util.DocumentUtil.walkObjectsAndImportImages;
 
 public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRepeatDocPartProcessor {
 	public static final ThreadFactory THREAD_FACTORY = Executors.defaultThreadFactory();
 	private static final ObjectFactory objectFactory = Context.getWmlObjectFactory();
+	private final Supplier<DocxStamper<Object>> stamperSupplier;
 	private final Map<CommentWrapper, List<Object>> contexts = new HashMap<>();
 	private final Supplier<List<Object>> onNull;
 
 	public RepeatDocPartProcessor(
 			DocxStamperConfiguration config,
 			PlaceholderReplacer placeholderReplacer,
+			Supplier<DocxStamper<Object>> stamperSupplier,
 			Supplier<List<Object>> nullSupplier
 	) {
 		super(config, placeholderReplacer);
+		this.stamperSupplier = stamperSupplier;
 		onNull = nullSupplier;
 	}
 
@@ -57,7 +64,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 	@SneakyThrows
 	@Override
 	public void commitChanges(WordprocessingMLPackage document) {
-		for (Map.Entry<CommentWrapper, List<Object>> entry : this.contexts.entrySet()) {
+		for (Entry<CommentWrapper, List<Object>> entry : this.contexts.entrySet()) {
 			CommentWrapper commentWrapper = entry.getKey();
 			List<Object> expressionContexts = entry.getValue();
 			ContentAccessor gcp = Objects.requireNonNull(commentWrapper.getParent());
@@ -70,16 +77,17 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 			if (expressionContexts == null)
 				changes = onNull.get();
 			else {
-				Deque<WordprocessingMLPackage> packages = generateDocPartsToAdd(expressionContexts, subTemplate);
-				Map<R, R> replacements = new HashMap<>();
-				packages.forEach(p -> replacements.putAll(walkObjectsAndImportImages(p, document)));
+				Deque<WordprocessingMLPackage> subDocuments = stampSubDocuments(expressionContexts, subTemplate);
+				Map<R, R> replacements = subDocuments
+						.stream()
+						.map(p -> walkObjectsAndImportImages(p, document)) // TODO: remove the side effect here
+						.map(Map::entrySet)
+						.flatMap(Set::stream)
+						.collect(toMap(Entry::getKey, Entry::getValue));
 
 				changes = new ArrayList<>();
-				for (WordprocessingMLPackage wordprocessingMLPackage : packages) {
-					List<Object> os = convertWordToInsertableElements(wordprocessingMLPackage,
-																	  oddNumberOfBreaks,
-																	  previousSectionBreak
-					);
+				for (WordprocessingMLPackage subDocument : subDocuments) {
+					var os = documentAsInsertableElements(subDocument, oddNumberOfBreaks, previousSectionBreak);
 					os.forEach(o -> recursivelyReplaceImages(o, replacements));
 					os.forEach(c -> setParentIfPossible(c, gcp));
 					changes.addAll(os);
@@ -93,29 +101,20 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 		}
 	}
 
-	private Deque<WordprocessingMLPackage> generateDocPartsToAdd(
-			List<Object> expressionContexts,
-			WordprocessingMLPackage subTemplate
-	) throws IOException {
-		Deque<WordprocessingMLPackage> docParts = new ArrayDeque<>();
-		for (Object subContext : expressionContexts) {
-			try {
-				WordprocessingMLPackage subTemplateCopy = copyTemplate(subTemplate);
-				DocxStamper<Object> stamper = new DocxStamper<>(configuration.copy());
-				PipedOutputStream out = new PipedOutputStream();
-				Thread thread = THREAD_FACTORY.newThread(() -> stamper.stamp(subTemplateCopy, subContext, out));
-				thread.start();
-				WordprocessingMLPackage subDocument = WordprocessingMLPackage.load(new PipedInputStream(out));
-				thread.join();
-				docParts.add(subDocument);
-			} catch (Docx4JException | InterruptedException e) {
-				throw new DocxStamperException(e);
-			}
+	private Deque<WordprocessingMLPackage> stampSubDocuments(List<Object> subContexts, WordprocessingMLPackage subTemplate) {
+		Deque<WordprocessingMLPackage> subDocuments = new ArrayDeque<>();
+		for (Object subContext : subContexts) {
+			WordprocessingMLPackage templateCopy = outputWord(os -> copy(subTemplate, os));
+			WordprocessingMLPackage subDocument = outputWord(os -> stamp(subContext,
+																		 templateCopy,
+																		 os
+			));
+			subDocuments.add(subDocument);
 		}
-		return docParts;
+		return subDocuments;
 	}
 
-	private static List<Object> convertWordToInsertableElements(WordprocessingMLPackage subDocument, boolean oddNumberOfBreaks, SectPr previousSectionBreak) {
+	private static List<Object> documentAsInsertableElements(WordprocessingMLPackage subDocument, boolean oddNumberOfBreaks, SectPr previousSectionBreak) {
 		List<Object> inserts = new ArrayList<>(DocumentUtil.allElements(subDocument));
 		// make sure we replicate the previous section break before each repeated doc part
 		if (oddNumberOfBreaks && previousSectionBreak != null) {
@@ -154,25 +153,32 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 			child.setParent(parent);
 	}
 
-	private WordprocessingMLPackage copyTemplate(WordprocessingMLPackage doc) throws IOException {
-		PipedOutputStream out = new PipedOutputStream();
-		Thread thread = THREAD_FACTORY.newThread(() -> trySaving(doc, out));
-		thread.start();
-		try {
-			WordprocessingMLPackage wordprocessingMLPackage = WordprocessingMLPackage.load(new PipedInputStream(out));
+	private WordprocessingMLPackage outputWord(Consumer<OutputStream> outputter) {
+		try (
+				PipedOutputStream os = new PipedOutputStream();
+				PipedInputStream is = new PipedInputStream(os)
+		) {
+			Thread thread = THREAD_FACTORY.newThread(() -> outputter.accept(os));
+			thread.start();
+			WordprocessingMLPackage wordprocessingMLPackage = WordprocessingMLPackage.load(is);
 			thread.join();
 			return wordprocessingMLPackage;
-		} catch (Docx4JException | InterruptedException e) {
+
+		} catch (Docx4JException | InterruptedException | IOException e) {
 			throw new DocxStamperException(e);
 		}
 	}
 
-	private static void trySaving(WordprocessingMLPackage doc, PipedOutputStream out) {
+	private void copy(WordprocessingMLPackage aPackage, OutputStream outputStream) {
 		try {
-			doc.save(out);
+			aPackage.save(outputStream);
 		} catch (Docx4JException e) {
 			throw new DocxStamperException(e);
 		}
+	}
+
+	private void stamp(Object context, WordprocessingMLPackage template, OutputStream outputStream) {
+		stamperSupplier.get().stamp(template, context, outputStream);
 	}
 
 	@Override

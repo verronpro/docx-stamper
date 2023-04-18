@@ -43,30 +43,28 @@ public class DocxStamperConfiguration {
 	private ITypeResolver defaultTypeResolver = new FallbackResolver();
 
 	public DocxStamperConfiguration() {
+		CommentProcessorFactory commentProcessorFactory = (config, placeholderReplacer1) -> {
+			Supplier<List<P>> nullSupplier = () ->
+					config.isReplaceNullValues() && config.getNullValuesDefault() != null
+							? List.of(ParagraphUtil.create(config.getNullValuesDefault()))
+							: Collections.emptyList();
+			return new ParagraphRepeatProcessor(config, placeholderReplacer1, nullSupplier);
+		};
+		CommentProcessorFactory commentProcessorFactory1 = (config, placeholderReplacer1) -> {
+			Supplier<List<Object>> nullSupplier = () -> {
+				if (config.isReplaceNullValues() && config.getNullValuesDefault() != null)
+					return List.of(ParagraphUtil.create(config.getNullValuesDefault()));
+				else
+					throw new DocxStamperException("Impossible");
+			};
+			return new RepeatDocPartProcessor(config,
+											  placeholderReplacer1,
+											  () -> new DocxStamper<>(this),
+											  nullSupplier);
+		};
 		commentProcessorsToUse.put(IRepeatProcessor.class, RepeatProcessor::new);
-		commentProcessorsToUse.put(
-				IParagraphRepeatProcessor.class,
-				(config, placeholderReplacer1) -> {
-					Supplier<List<P>> nullSupplier = () ->
-							config.isReplaceNullValues() && config.getNullValuesDefault() != null
-									? List.of(ParagraphUtil.create(config.getNullValuesDefault()))
-									: Collections.emptyList();
-					return new ParagraphRepeatProcessor(config, placeholderReplacer1,
-														nullSupplier);
-				});
-		commentProcessorsToUse.put(IRepeatDocPartProcessor.class,
-								   (config, placeholderReplacer1) -> new RepeatDocPartProcessor(config,
-																								placeholderReplacer1,
-																								() -> {
-																									if (config.isReplaceNullValues() && config.getNullValuesDefault() != null) {
-																										P p = ParagraphUtil.create(
-																												config.getNullValuesDefault());
-																										return List.of(p);
-																									} else {
-																										throw new DocxStamperException(
-																												"Impossible");
-																									}
-																								}));
+		commentProcessorsToUse.put(IParagraphRepeatProcessor.class, commentProcessorFactory);
+		commentProcessorsToUse.put(IRepeatDocPartProcessor.class, commentProcessorFactory1);
 		commentProcessorsToUse.put(ITableResolver.class, TableResolver::new);
 		commentProcessorsToUse.put(IDisplayIfProcessor.class, DisplayIfProcessor::new);
 		commentProcessorsToUse.put(IReplaceWithProcessor.class, ReplaceWithProcessor::new);
@@ -144,32 +142,6 @@ public class DocxStamperConfiguration {
 	public DocxStamperConfiguration setEvaluationContextConfigurer(EvaluationContextConfigurer evaluationContextConfigurer) {
 		this.evaluationContextConfigurer = evaluationContextConfigurer;
 		return this;
-	}
-
-	/**
-	 * Copy operator for the whole DocxStamperConfiguration, including creating self comment processors instances
-	 * to avoid unexpected resets, since comment processors are stateful their instances cannot be shared over
-	 * multiple stampings.
-	 *
-	 * @return copied DocxStamperConfiguration.
-	 */
-	public DocxStamperConfiguration copy() {
-		DocxStamperConfiguration newConfig = new DocxStamperConfiguration()
-				.setLineBreakPlaceholder(lineBreakPlaceholder)
-				.setEvaluationContextConfigurer(evaluationContextConfigurer)
-				.setFailOnUnresolvedExpression(failOnUnresolvedExpression)
-				.leaveEmptyOnExpressionError(leaveEmptyOnExpressionError)
-				.replaceUnresolvedExpressions(replaceUnresolvedExpressions)
-				.unresolvedExpressionsDefaultValue(unresolvedExpressionsDefaultValue)
-				.replaceNullValues(replaceNullValues)
-				.nullValuesDefault(nullValuesDefault)
-				.setDefaultTypeResolver(defaultTypeResolver);
-
-		typeResolvers.forEach(newConfig::addTypeResolver);
-		expressionFunctions.forEach(newConfig::exposeInterfaceToExpressionLanguage);
-		commentProcessorsToUse.forEach(newConfig::addCommentProcessor);
-
-		return newConfig;
 	}
 
 	/**
