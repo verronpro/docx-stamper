@@ -1,6 +1,8 @@
 package org.wickedsource.docxstamper;
 
+import org.docx4j.XmlUtils;
 import org.docx4j.wml.P;
+import org.docx4j.wml.Tr;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
 import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
@@ -22,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import static java.util.Collections.emptyList;
 
 /**
  * Provides configuration parameters for DocxStamper.
@@ -62,7 +66,26 @@ public class DocxStamperConfiguration {
 											  () -> new DocxStamper<>(this),
 											  nullSupplier);
 		};
-		commentProcessorsToUse.put(IRepeatProcessor.class, RepeatProcessor::new);
+		commentProcessorsToUse.put(IRepeatProcessor.class,
+								   (config, placeholderReplacer) -> new RepeatProcessor(config,
+																						placeholderReplacer,
+																						(document1, row1) -> {
+																							List<Tr> changes1;
+																							if (config.isReplaceNullValues() && config.getNullValuesDefault() != null) {
+																								Tr rowClone = XmlUtils.deepCopy(
+																										row1);
+																								new ParagraphResolverDocumentWalker(
+																										rowClone,
+																										new Object(),
+																										document1,
+																										placeholderReplacer).walk();
+																								changes1 = List.of(
+																										rowClone);
+																							} else {
+																								changes1 = emptyList();
+																							}
+																							return changes1;
+																						}));
 		commentProcessorsToUse.put(IParagraphRepeatProcessor.class, commentProcessorFactory);
 		commentProcessorsToUse.put(IRepeatDocPartProcessor.class, commentProcessorFactory1);
 		commentProcessorsToUse.put(ITableResolver.class, TableResolver::new);

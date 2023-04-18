@@ -32,11 +32,11 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 	public void repeatParagraph(List<Object> objects) {
 		P paragraph = getParagraph();
 
-		List<P> paragraphs = getParagraphsInsideComment(paragraph);
+		Deque<P> paragraphs = getParagraphsInsideComment(paragraph);
 
 		Paragraphs toRepeat = new Paragraphs();
 		toRepeat.commentWrapper = getCurrentCommentWrapper();
-		toRepeat.data = objects;
+		toRepeat.data = new ArrayDeque<>(objects);
 		toRepeat.paragraphs = paragraphs;
 		toRepeat.sectionBreakBefore = SectionUtil.getPreviousSectionBreakIfPresent(paragraph,
 																				   (ContentAccessor) paragraph.getParent());
@@ -51,11 +51,11 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 		pToRepeat.put(paragraph, toRepeat);
 	}
 
-	public static List<P> getParagraphsInsideComment(P paragraph) {
+	public static Deque<P> getParagraphsInsideComment(P paragraph) {
 		BigInteger commentId = null;
 		boolean foundEnd = false;
 
-		List<P> paragraphs = new ArrayList<>();
+		Deque<P> paragraphs = new ArrayDeque<>();
 		paragraphs.add(paragraph);
 
 		for (Object object : paragraph.getContent()) {
@@ -100,7 +100,7 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 			if (index < 0) throw new DocxStamperException("Impossible");
 
 			Paragraphs paragraphsToRepeat = entry.getValue();
-			List<Object> expressionContexts = Objects.requireNonNull(paragraphsToRepeat).data;
+			Deque<Object> expressionContexts = Objects.requireNonNull(paragraphsToRepeat).data;
 			List<P> collection = expressionContexts == null
 					? onNull.get()
 					: generateParagraphsToAdd(document, paragraphsToRepeat, expressionContexts);
@@ -110,12 +110,12 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 		}
 	}
 
-	private List<P> generateParagraphsToAdd(WordprocessingMLPackage document, Paragraphs paragraphs, List<Object> expressionContexts) {
+	private List<P> generateParagraphsToAdd(WordprocessingMLPackage document, Paragraphs paragraphs, Deque<Object> expressionContexts) {
 		List<P> paragraphsToAdd = new ArrayList<>();
-		Object lastExpressionContext = expressionContexts.get(expressionContexts.size() - 1);
+		Object lastExpressionContext = expressionContexts.peekLast();
 
 		for (Object expressionContext : expressionContexts) {
-			P lastParagraph = paragraphs.paragraphs.get(paragraphs.paragraphs.size() - 1);
+			P lastParagraph = paragraphs.paragraphs.peekLast();
 
 			for (P paragraphToClone : paragraphs.paragraphs) {
 				P pClone = XmlUtils.deepCopy(paragraphToClone);
@@ -159,8 +159,8 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 
 	private static class Paragraphs {
 		CommentWrapper commentWrapper;
-		List<Object> data;
-		List<P> paragraphs;
+		Deque<Object> data;
+		Deque<P> paragraphs;
 		// hasOddSectionBreaks is true if the paragraphs to repeat contain an odd number of section breaks
 		// changing the layout, false otherwise
 		boolean hasOddSectionBreaks;

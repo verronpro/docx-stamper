@@ -1,8 +1,10 @@
 package org.wickedsource.docxstamper;
 
+import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.P;
+import org.docx4j.wml.Tr;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
 import org.wickedsource.docxstamper.api.preprocessor.PreProcessor;
@@ -33,6 +35,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.function.Supplier;
+
+import static java.util.Collections.emptyList;
 
 /**
  * <p>
@@ -216,7 +220,11 @@ public class DocxStamper<T> {
 				config.isReplaceNullValues() && config.getNullValuesDefault() != null
 						? List.of(ParagraphUtil.create(config.getNullValuesDefault()))
 						: Collections.emptyList();
-		commentProcessors.put(IRepeatProcessor.class, new RepeatProcessor(config, placeholderReplacer));
+		commentProcessors.put(IRepeatProcessor.class, new RepeatProcessor(config, placeholderReplacer,
+																		  (document1, row1) -> config.isReplaceNullValues() && config.getNullValuesDefault() != null ? clonedStampedRow(
+																				  placeholderReplacer,
+																				  document1,
+																				  row1) : emptyList()));
 		commentProcessors.put(
 				IParagraphRepeatProcessor.class,
 				new ParagraphRepeatProcessor(config, placeholderReplacer, nullSupplier));
@@ -234,6 +242,18 @@ public class DocxStamper<T> {
 		stamper.config.getCommentProcessors().putAll(commentProcessors);
 
 		return stamper;
+	}
+
+	private static List<Tr> clonedStampedRow(PlaceholderReplacer placeholderReplacer, WordprocessingMLPackage document1, Tr row1) {
+		List<Tr> changes1;
+		Tr rowClone = XmlUtils.deepCopy(row1);
+		new ParagraphResolverDocumentWalker(
+				rowClone,
+				new Object(),
+				document1,
+				placeholderReplacer).walk();
+		changes1 = List.of(rowClone);
+		return changes1;
 	}
 
 	public static <T> DocxStamper<T> createRawInstance(DocxStamperConfiguration config) {
@@ -370,14 +390,29 @@ public class DocxStamper<T> {
 				leaveEmptyOnExpressionError,
 				lineBreakPlaceholder);
 
-		commentProcessors.put(IRepeatProcessor.class, new RepeatProcessor(conf, placeholderReplacer));
+		commentProcessors.put(IRepeatProcessor.class, new RepeatProcessor(conf, placeholderReplacer,
+																		  (document1, row1) -> {
+																			  List<Tr> changes1;
+																			  if (conf.isReplaceNullValues() && conf.getNullValuesDefault() != null) {
+																				  Tr rowClone = XmlUtils.deepCopy(row1);
+																				  new ParagraphResolverDocumentWalker(
+																						  rowClone,
+																						  new Object(),
+																						  document1,
+																						  placeholderReplacer).walk();
+																				  changes1 = List.of(rowClone);
+																			  } else {
+																				  changes1 = emptyList();
+																			  }
+																			  return changes1;
+																		  }));
 		commentProcessors.put(IParagraphRepeatProcessor.class, new ParagraphRepeatProcessor(conf, placeholderReplacer,
 																							() -> {
 																								List<P> collection1;
-																								if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
+																								if (conf.isReplaceNullValues() && conf.getNullValuesDefault() != null) {
 																									collection1 = List.of(
 																											ParagraphUtil.create(
-																													configuration.getNullValuesDefault()));
+																													conf.getNullValuesDefault()));
 																								} else {
 																									collection1 = Collections.emptyList();
 																								}
@@ -387,9 +422,9 @@ public class DocxStamper<T> {
 																						placeholderReplacer,
 																						() -> new DocxStamper<>(conf),
 																						() -> {
-																							if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
+																							if (conf.isReplaceNullValues() && conf.getNullValuesDefault() != null) {
 																								P p = ParagraphUtil.create(
-																										configuration.getNullValuesDefault());
+																										conf.getNullValuesDefault());
 																								return List.of(p);
 																							} else {
 																								throw new DocxStamperException(

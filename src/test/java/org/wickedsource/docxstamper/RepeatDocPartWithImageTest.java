@@ -23,11 +23,10 @@ public class RepeatDocPartWithImageTest {
 	public void shouldImportImageDataInTheMainDocument() throws Docx4JException, IOException {
 		var butterfly = new Image(getClass().getResourceAsStream("butterfly.png"));
 		var worldMap = new Image(getClass().getResourceAsStream("map.jpg"));
-		var context = Map.of(
-				"units", Stream.of(butterfly, worldMap)
-							   .map(image -> Map.of("coverImage", image))
-							   .map(map -> Map.of("productionFacility", map))
-							   .toList());
+		var context = Map.of("units", Stream.of(butterfly, worldMap)
+											.map(image -> Map.of("coverImage", image))
+											.map(map -> Map.of("productionFacility", map))
+											.toList());
 
 		var config = new DocxStamperConfiguration()
 				.setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));

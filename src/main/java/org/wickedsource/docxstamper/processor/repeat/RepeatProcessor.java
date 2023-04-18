@@ -9,25 +9,24 @@ import org.wickedsource.docxstamper.processor.CommentProcessingException;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.CommentUtil;
 import org.wickedsource.docxstamper.util.CommentWrapper;
-import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
-import org.wickedsource.docxstamper.util.walk.DocumentWalker;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.BiFunction;
 
 public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProcessor {
 
+	private final BiFunction<WordprocessingMLPackage, Tr, List<Tr>> nullSupplier;
 	private Map<Tr, List<Object>> tableRowsToRepeat = new HashMap<>();
 	private Map<Tr, CommentWrapper> tableRowsCommentsToRemove = new HashMap<>();
 
 	public RepeatProcessor(
 			DocxStamperConfiguration config,
-			PlaceholderReplacer placeholderReplacer
+			PlaceholderReplacer placeholderReplacer,
+			BiFunction<WordprocessingMLPackage, Tr, List<Tr>> nullSupplier1
 	) {
 		super(config, placeholderReplacer);
+		nullSupplier = nullSupplier1;
 	}
 
 	@Override
@@ -42,39 +41,33 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
 	}
 
 	private void repeatRows(final WordprocessingMLPackage document) {
-		for (Tr row : tableRowsToRepeat.keySet()) {
-			List<Object> expressionContexts = tableRowsToRepeat.get(row);
+		for (Map.Entry<Tr, List<Object>> entry : tableRowsToRepeat.entrySet()) {
+			Tr row = entry.getKey();
+			List<Object> expressionContexts = entry.getValue();
+
 			Tbl table = (Tbl) XmlUtils.unwrap(row.getParent());
 			int index = table.getContent().indexOf(row);
 
-			if (expressionContexts != null) {
-				for (final Object expressionContext : expressionContexts) {
+
+			List<Tr> changes;
+			if (expressionContexts == null) {
+				changes = nullSupplier.apply(document, row);
+			} else {
+				changes = new ArrayList<>();
+				for (Object expressionContext : expressionContexts) {
 					Tr rowClone = XmlUtils.deepCopy(row);
 					CommentWrapper commentWrapper = Objects.requireNonNull(tableRowsCommentsToRemove.get(row));
 					Comments.Comment comment = Objects.requireNonNull(commentWrapper.getComment());
 					BigInteger commentId = comment.getId();
 					CommentUtil.deleteCommentFromElement(rowClone, commentId);
-
-					DocumentWalker walker = new BaseDocumentWalker(rowClone) {
-						@Override
-						protected void onParagraph(P paragraph) {
-							placeholderReplacer.resolveExpressionsForParagraph(paragraph, expressionContext, document);
-						}
-					};
-					walker.walk();
-					table.getContent().add(++index, rowClone);
+					new ParagraphResolverDocumentWalker(rowClone,
+														expressionContext,
+														document,
+														this.placeholderReplacer).walk();
+					changes.add(rowClone);
 				}
-			} else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null) {
-				Tr rowClone = XmlUtils.deepCopy(row);
-				Object nullExpressionContext = new Object();
-				DocumentWalker walker = new ParagraphResolverDocumentWalker(
-						rowClone,
-						nullExpressionContext,
-						document,
-						this.placeholderReplacer);
-				walker.walk();
-				((Tbl) row.getParent()).getContent().add(rowClone);
 			}
+			table.getContent().addAll(index + 1, changes);
 			table.getContent().remove(row);
 		}
 	}
