@@ -27,6 +27,7 @@ import org.wickedsource.docxstamper.replace.typeresolver.*;
 import org.wickedsource.docxstamper.replace.typeresolver.image.Image;
 import org.wickedsource.docxstamper.replace.typeresolver.image.ImageResolver;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
+import org.wickedsource.docxstamper.util.RunUtil;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -236,7 +237,11 @@ public class DocxStamper<T> {
 										   nullSupplier2));
 		commentProcessors.put(ITableResolver.class, new TableResolver(config, placeholderReplacer));
 		commentProcessors.put(IDisplayIfProcessor.class, new DisplayIfProcessor(config, placeholderReplacer));
-		commentProcessors.put(IReplaceWithProcessor.class, new ReplaceWithProcessor(config, placeholderReplacer));
+		commentProcessors.put(IReplaceWithProcessor.class, new ReplaceWithProcessor(config, placeholderReplacer,
+																					run1 -> config.isReplaceNullValues() && config.getNullValuesDefault() != null
+																							? List.of(RunUtil.createText(
+																							config.getNullValuesDefault()))
+																							: run1.getContent()));
 
 		stamper.preprocessors = preprocessors;
 		stamper.config.getCommentProcessors().putAll(commentProcessors);
@@ -433,7 +438,11 @@ public class DocxStamper<T> {
 																						}));
 		commentProcessors.put(ITableResolver.class, new TableResolver(conf, placeholderReplacer));
 		commentProcessors.put(IDisplayIfProcessor.class, new DisplayIfProcessor(conf, placeholderReplacer));
-		commentProcessors.put(IReplaceWithProcessor.class, new ReplaceWithProcessor(conf, placeholderReplacer));
+		commentProcessors.put(IReplaceWithProcessor.class, new ReplaceWithProcessor(conf, placeholderReplacer,
+																					run1 -> configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null
+																							? List.of(RunUtil.createText(
+																							configuration.getNullValuesDefault()))
+																							: run1.getContent()));
 
 		stamper.preprocessors = preprocessors;
 

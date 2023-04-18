@@ -8,17 +8,24 @@ import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.RunUtil;
 
+import java.util.List;
+import java.util.function.Function;
+
 import static java.lang.String.format;
 
 public class ReplaceWithProcessor
 		extends BaseCommentProcessor
 		implements IReplaceWithProcessor {
 
+	private final Function<R, List<Object>> nullSupplier;
+
 	public ReplaceWithProcessor(
 			DocxStamperConfiguration config,
-			PlaceholderReplacer placeholderReplacer
+			PlaceholderReplacer placeholderReplacer,
+			Function<R, List<Object>> nullSupplier
 	) {
 		super(config, placeholderReplacer);
+		this.nullSupplier = nullSupplier;
 	}
 
 	@Override
@@ -37,9 +44,13 @@ public class ReplaceWithProcessor
 		if (run == null)
 			throw new DocxStamperException(format("Impossible to put expression %s in a null run", expression));
 
+		List<Object> target;
 		if (expression != null) {
-			RunUtil.setText(run, expression);
-		} else if (configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null)
-			RunUtil.setText(run, configuration.getNullValuesDefault());
+			target = List.of(RunUtil.createText(expression));
+		} else {
+			target = nullSupplier.apply(run);
+		}
+		run.getContent().clear();
+		run.getContent().addAll(target);
 	}
 }

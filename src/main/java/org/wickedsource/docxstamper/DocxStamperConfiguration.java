@@ -18,6 +18,7 @@ import org.wickedsource.docxstamper.processor.table.TableResolver;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.replace.typeresolver.FallbackResolver;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
+import org.wickedsource.docxstamper.util.RunUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -90,7 +91,13 @@ public class DocxStamperConfiguration {
 		commentProcessorsToUse.put(IRepeatDocPartProcessor.class, commentProcessorFactory1);
 		commentProcessorsToUse.put(ITableResolver.class, TableResolver::new);
 		commentProcessorsToUse.put(IDisplayIfProcessor.class, DisplayIfProcessor::new);
-		commentProcessorsToUse.put(IReplaceWithProcessor.class, ReplaceWithProcessor::new);
+		commentProcessorsToUse.put(IReplaceWithProcessor.class,
+								   (config, placeholderReplacer) -> new ReplaceWithProcessor(config,
+																							 placeholderReplacer,
+																							 run1 -> config.isReplaceNullValues() && config.getNullValuesDefault() != null
+																									 ? List.of(RunUtil.createText(
+																									 config.getNullValuesDefault()))
+																									 : run1.getContent()));
 	}
 
 	public boolean isReplaceNullValues() {
