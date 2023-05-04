@@ -6,7 +6,7 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
 import org.jvnet.jaxb2_commons.ppp.Child;
-import org.wickedsource.docxstamper.DocxStamper;
+import org.wickedsource.docxstamper.OpcStamper;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -31,25 +31,24 @@ import static org.wickedsource.docxstamper.util.DocumentUtil.walkObjectsAndImpor
 public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRepeatDocPartProcessor {
 	public static final ThreadFactory THREAD_FACTORY = Executors.defaultThreadFactory();
 	private static final ObjectFactory objectFactory = Context.getWmlObjectFactory();
-	private final Supplier<DocxStamper<Object>> stamperSupplier;
+	private final OpcStamper<WordprocessingMLPackage> stamper;
 	private final Map<CommentWrapper, List<Object>> contexts = new HashMap<>();
-	private final Supplier<List<Object>> onNull;
+	private final Supplier<? extends List<?>> nullSupplier;
 
 	public RepeatDocPartProcessor(
 			PlaceholderReplacer placeholderReplacer,
-			Supplier<DocxStamper<Object>> stamperSupplier,
-			Supplier<List<Object>> nullSupplier
+			OpcStamper<WordprocessingMLPackage> stamper,
+			Supplier<? extends List<?>> nullSupplier
 	) {
 		super(placeholderReplacer);
-		this.stamperSupplier = stamperSupplier;
-		onNull = nullSupplier;
+		this.stamper = stamper;
+		this.nullSupplier = nullSupplier;
 	}
 
 	@Override
 	public void repeatDocPart(List<Object> contexts) {
-		if (contexts == null) {
+		if (contexts == null)
 			contexts = Collections.emptyList();
-		}
 
 		CommentWrapper currentCommentWrapper = getCurrentCommentWrapper();
 		List<Object> repeatElements = currentCommentWrapper.getRepeatElements();
@@ -71,32 +70,39 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 			SectPr previousSectionBreak = SectionUtil.getPreviousSectionBreakIfPresent(repeatElements.get(0), gcp);
 			boolean oddNumberOfBreaks = SectionUtil.isOddNumberOfSectionBreaks(repeatElements);
 
-			List<Object> changes;
-			if (expressionContexts == null)
-				changes = onNull.get();
-			else {
-				Deque<WordprocessingMLPackage> subDocuments = stampSubDocuments(expressionContexts, subTemplate);
-				Map<R, R> replacements = subDocuments
-						.stream()
-						.map(p -> walkObjectsAndImportImages(p, document)) // TODO: remove the side effect here
-						.map(Map::entrySet)
-						.flatMap(Set::stream)
-						.collect(toMap(Entry::getKey, Entry::getValue));
-
-				changes = new ArrayList<>();
-				for (WordprocessingMLPackage subDocument : subDocuments) {
-					var os = documentAsInsertableElements(subDocument, oddNumberOfBreaks, previousSectionBreak);
-					os.forEach(o -> recursivelyReplaceImages(o, replacements));
-					os.forEach(c -> setParentIfPossible(c, gcp));
-					changes.addAll(os);
-				}
-			}
+			List<?> changes = expressionContexts == null
+					? nullSupplier.get()
+					: stampSubDocuments(document,
+										expressionContexts,
+										gcp,
+										subTemplate,
+										previousSectionBreak,
+										oddNumberOfBreaks);
 
 			List<Object> gcpContent = gcp.getContent();
 			int index = gcpContent.indexOf(repeatElements.get(0));
 			gcpContent.addAll(index, changes);
 			gcpContent.removeAll(repeatElements);
 		}
+	}
+
+	private List<Object> stampSubDocuments(WordprocessingMLPackage document, List<Object> expressionContexts, ContentAccessor gcp, WordprocessingMLPackage subTemplate, SectPr previousSectionBreak, boolean oddNumberOfBreaks) {
+		Deque<WordprocessingMLPackage> subDocuments = stampSubDocuments(expressionContexts, subTemplate);
+		Map<R, R> replacements = subDocuments
+				.stream()
+				.map(p -> walkObjectsAndImportImages(p, document)) // TODO: remove the side effect here
+				.map(Map::entrySet)
+				.flatMap(Set::stream)
+				.collect(toMap(Entry::getKey, Entry::getValue));
+
+		var changes = new ArrayList<>();
+		for (WordprocessingMLPackage subDocument : subDocuments) {
+			var os = documentAsInsertableElements(subDocument, oddNumberOfBreaks, previousSectionBreak);
+			os.forEach(o -> recursivelyReplaceImages(o, replacements));
+			os.forEach(c -> setParentIfPossible(c, gcp));
+			changes.addAll(os);
+		}
+		return changes;
 	}
 
 	private Deque<WordprocessingMLPackage> stampSubDocuments(List<Object> subContexts, WordprocessingMLPackage subTemplate) {
@@ -176,7 +182,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 	}
 
 	private void stamp(Object context, WordprocessingMLPackage template, OutputStream outputStream) {
-		stamperSupplier.get().stamp(template, context, outputStream);
+		stamper.stamp(template, context, outputStream);
 	}
 
 	@Override

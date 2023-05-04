@@ -17,9 +17,7 @@ public abstract class BaseCommentProcessor
 	private CommentWrapper currentCommentWrapper;
 	private WordprocessingMLPackage document;
 
-	public BaseCommentProcessor(
-			PlaceholderReplacer placeholderReplacer
-	) {
+	public BaseCommentProcessor(PlaceholderReplacer placeholderReplacer) {
 		this.placeholderReplacer = placeholderReplacer;
 	}
 

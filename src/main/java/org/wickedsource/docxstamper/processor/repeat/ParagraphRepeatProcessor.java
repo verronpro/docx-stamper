@@ -8,6 +8,7 @@ import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.CommentUtil;
 import org.wickedsource.docxstamper.util.CommentWrapper;
+import org.wickedsource.docxstamper.util.ParagraphUtil;
 import org.wickedsource.docxstamper.util.SectionUtil;
 
 import java.math.BigInteger;
@@ -15,15 +16,29 @@ import java.util.*;
 import java.util.function.Supplier;
 
 public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IParagraphRepeatProcessor {
-	private final Supplier<List<P>> onNull;
+	private final Supplier<? extends List<? extends P>> nullSupplier;
 	private Map<P, Paragraphs> pToRepeat = new HashMap<>();
 
 	public ParagraphRepeatProcessor(
 			PlaceholderReplacer placeholderReplacer,
-			Supplier<List<P>> nullSupplier
+			Supplier<? extends List<? extends P>> nullSupplier
 	) {
 		super(placeholderReplacer);
-		onNull = nullSupplier;
+		this.nullSupplier = nullSupplier;
+	}
+
+	public static ParagraphRepeatProcessor newInstance(
+			PlaceholderReplacer placeholderReplacer,
+			Supplier<Optional<String>> nullReplacementSupplier
+	) {
+		return new ParagraphRepeatProcessor(
+				placeholderReplacer,
+				() -> nullReplacementSupplier
+						.get()
+						.map(ParagraphUtil::create)
+						.map(Collections::singletonList)
+						.orElseGet(Collections::emptyList)
+		);
 	}
 
 	@Override
@@ -99,8 +114,8 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 
 			Paragraphs paragraphsToRepeat = entry.getValue();
 			Deque<Object> expressionContexts = Objects.requireNonNull(paragraphsToRepeat).data;
-			List<P> collection = expressionContexts == null
-					? onNull.get()
+			Deque<P> collection = expressionContexts == null
+					? new ArrayDeque<>(nullSupplier.get())
 					: generateParagraphsToAdd(document, paragraphsToRepeat, expressionContexts);
 			restoreFirstSectionBreakIfNeeded(paragraphsToRepeat, collection);
 			parentContent.addAll(index, collection);
@@ -108,8 +123,8 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 		}
 	}
 
-	private List<P> generateParagraphsToAdd(WordprocessingMLPackage document, Paragraphs paragraphs, Deque<Object> expressionContexts) {
-		List<P> paragraphsToAdd = new ArrayList<>();
+	private Deque<P> generateParagraphsToAdd(WordprocessingMLPackage document, Paragraphs paragraphs, Deque<Object> expressionContexts) {
+		Deque<P> paragraphsToAdd = new ArrayDeque<>();
 		Object lastExpressionContext = expressionContexts.peekLast();
 
 		for (Object expressionContext : expressionContexts) {
@@ -136,9 +151,9 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 		return paragraphsToAdd;
 	}
 
-	private static void restoreFirstSectionBreakIfNeeded(Paragraphs paragraphs, List<P> paragraphsToAdd) {
+	private static void restoreFirstSectionBreakIfNeeded(Paragraphs paragraphs, Deque<P> paragraphsToAdd) {
 		if (paragraphs.firstParagraphSectionBreak != null) {
-			P breakP = paragraphsToAdd.get(paragraphsToAdd.size() - 1);
+			P breakP = paragraphsToAdd.getLast();
 			SectionUtil.applySectionBreakToParagraph(paragraphs.firstParagraphSectionBreak, breakP);
 		}
 	}

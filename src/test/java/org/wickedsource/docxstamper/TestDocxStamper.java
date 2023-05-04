@@ -46,7 +46,7 @@ public final class TestDocxStamper<T> {
 	}
 
 	public List<String> stampAndLoadAndExtract(InputStream template, T context) {
-		DocxStamperConfiguration configuration = this.stamper.config.setFailOnUnresolvedExpression(false);
+		DocxStamperConfiguration configuration = this.stamper.configuration.setFailOnUnresolvedExpression(false);
 		return streamElements(template, context, P.class, configuration)
 				.map(this::serialize)
 				.toList();

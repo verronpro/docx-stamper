@@ -27,6 +27,12 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
 		nullSupplier = nullSupplier1;
 	}
 
+	public static List<Tr> stampEmptyContext(PlaceholderReplacer placeholderReplacer, WordprocessingMLPackage document1, Tr row1) {
+		Tr rowClone = XmlUtils.deepCopy(row1);
+		new ParagraphResolverDocumentWalker(rowClone, new Object(), document1, placeholderReplacer).walk();
+		return List.of(rowClone);
+	}
+
 	@Override
 	public void commitChanges(WordprocessingMLPackage document) {
 		repeatRows(document);

@@ -1,57 +1,36 @@
 package org.wickedsource.docxstamper;
 
-import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.wml.P;
-import org.docx4j.wml.Tr;
 import org.wickedsource.docxstamper.api.DocxStamperException;
-import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
 import org.wickedsource.docxstamper.api.preprocessor.PreProcessor;
-import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
-import org.wickedsource.docxstamper.api.typeresolver.TypeResolver;
 import org.wickedsource.docxstamper.api.typeresolver.TypeResolverRegistry;
 import org.wickedsource.docxstamper.el.ExpressionResolver;
-import org.wickedsource.docxstamper.preprocessor.MergeSameStyleRuns;
-import org.wickedsource.docxstamper.preprocessor.RemoveProofErrors;
 import org.wickedsource.docxstamper.processor.CommentProcessorRegistry;
-import org.wickedsource.docxstamper.processor.displayif.DisplayIfProcessor;
-import org.wickedsource.docxstamper.processor.displayif.IDisplayIfProcessor;
-import org.wickedsource.docxstamper.processor.repeat.*;
-import org.wickedsource.docxstamper.processor.replaceExpression.IReplaceWithProcessor;
-import org.wickedsource.docxstamper.processor.replaceExpression.ReplaceWithProcessor;
-import org.wickedsource.docxstamper.processor.table.ITableResolver;
-import org.wickedsource.docxstamper.processor.table.TableResolver;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
-import org.wickedsource.docxstamper.replace.typeresolver.*;
+import org.wickedsource.docxstamper.replace.typeresolver.DateResolver;
+import org.wickedsource.docxstamper.replace.typeresolver.FallbackResolver;
 import org.wickedsource.docxstamper.replace.typeresolver.image.Image;
 import org.wickedsource.docxstamper.replace.typeresolver.image.ImageResolver;
-import org.wickedsource.docxstamper.util.ParagraphUtil;
-import org.wickedsource.docxstamper.util.RunUtil;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.*;
-import java.util.function.Supplier;
-
-import static java.util.Collections.emptyList;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * <p>
  * Main class of the docx-stamper library. This class can be used to "stamp" .docx templates
  * to create a .docx document filled with custom data at runtime.
  * </p>
- *
- * @param <T> the class of the context object used to resolve expressions against.
  */
-public class DocxStamper<T> {
-	protected DocxStamperConfiguration config;
-	private List<PreProcessor> preprocessors;
-	private PlaceholderReplacer placeholderReplacer;
-	private CommentProcessorRegistry commentProcessorRegistry;
+public class DocxStamper<T> implements OpcStamper<WordprocessingMLPackage> {
+	private final List<PreProcessor> preprocessors;
+	private final PlaceholderReplacer placeholderReplacer;
+	private final CommentProcessorRegistry commentProcessorRegistry;
+	protected DocxStamperConfiguration configuration;
 
 	/**
 	 * @deprecated should use DocxStamper.createInstance
@@ -61,26 +40,24 @@ public class DocxStamper<T> {
 		this(new DocxStamperConfiguration());
 	}
 
-	public DocxStamper(DocxStamperConfiguration config) {
-		boolean failOnUnresolvedExpression = config.isFailOnUnresolvedExpression();
-		boolean replaceNullValues = config.isReplaceNullValues();
-		boolean replaceUnresolvedExpressions = config.isReplaceUnresolvedExpressions();
-		boolean leaveEmptyOnExpressionError = config.isLeaveEmptyOnExpressionError();
+	public DocxStamper(DocxStamperConfiguration configuration) {
+		var failOnUnresolvedExpression = configuration.isFailOnUnresolvedExpression();
+		var replaceUnresolvedExpressions = configuration.isReplaceUnresolvedExpressions();
+		var leaveEmptyOnExpressionError = configuration.isLeaveEmptyOnExpressionError();
 
-		String unresolvedExpressionsDefaultValue = config.getUnresolvedExpressionsDefaultValue();
-		String lineBreakPlaceholder = config.getLineBreakPlaceholder();
-		String nullValuesDefault = config.getNullValuesDefault();
+		var unresolvedExpressionsDefaultValue = configuration.getUnresolvedExpressionsDefaultValue();
+		var lineBreakPlaceholder = configuration.getLineBreakPlaceholder();
 
-		EvaluationContextConfigurer evaluationContextConfigurer = config.getEvaluationContextConfigurer();
+		var evaluationContextConfigurer = configuration.getEvaluationContextConfigurer();
 
-		Map<Class<?>, ITypeResolver> typeResolvers = config.getTypeResolvers();
-		Map<Class<?>, Object> expressionFunctions = config.getExpressionFunctions();
+		var typeResolvers = configuration.getTypeResolvers();
+		var expressionFunctions = configuration.getExpressionFunctions();
 
 		var typeResolverRegistry = new TypeResolverRegistry(new FallbackResolver());
 		typeResolverRegistry.registerTypeResolver(Image.class, new ImageResolver());
 		typeResolverRegistry.registerTypeResolver(Date.class, new DateResolver());
 
-		for (Map.Entry<Class<?>, ITypeResolver> entry : typeResolvers.entrySet()) {
+		for (var entry : typeResolvers.entrySet()) {
 			typeResolverRegistry.registerTypeResolver(entry.getKey(), entry.getValue());
 		}
 
@@ -96,8 +73,8 @@ public class DocxStamper<T> {
 		var placeholderReplacer = new PlaceholderReplacer(
 				typeResolverRegistry,
 				expressionResolver,
-				replaceNullValues,
-				nullValuesDefault,
+				configuration.isReplaceNullValues(),
+				configuration.getNullValuesDefault(),
 				failOnUnresolvedExpression,
 				replaceUnresolvedExpressions,
 				unresolvedExpressionsDefaultValue,
@@ -105,446 +82,21 @@ public class DocxStamper<T> {
 				lineBreakPlaceholder
 		);
 
-		for (var entry : config.getCommentProcessorsToUse().entrySet()) {
-			var clazz = entry.getKey();
-			var commentProcessorFactory = entry.getValue();
-			Object instance = commentProcessorFactory.create(placeholderReplacer);
-			commentProcessors.put(clazz, instance);
+		for (var entry : configuration.getCommentProcessorsToUse().entrySet()) {
+			commentProcessors.put(entry.getKey(), entry.getValue().create(placeholderReplacer));
 		}
 
 		var commentProcessorRegistry = new CommentProcessorRegistry(
 				placeholderReplacer,
 				expressionResolver,
 				commentProcessors,
-				failOnUnresolvedExpression);
+				failOnUnresolvedExpression
+		);
 
-		this.config = config;
+		this.configuration = configuration;
 		this.placeholderReplacer = placeholderReplacer;
 		this.commentProcessorRegistry = commentProcessorRegistry;
 		this.preprocessors = new ArrayList<>();
-	}
-
-	public static <T> DocxStamper<T> createInstance(DocxStamperConfiguration conf) {
-		List<TypeResolver> typeResolvers = conf.getTypeResolversList();
-		var typeResolverRegistry1 = new TypeResolverRegistry(new FallbackResolver());
-		for (TypeResolver entry : typeResolvers) {
-			typeResolverRegistry1.registerTypeResolver(entry.resolveType(), entry);
-		}
-
-		ExpressionResolver expressionResolver1 = new ExpressionResolver(
-				conf.isFailOnUnresolvedExpression(),
-				conf.getCommentProcessors(),
-				conf.getExpressionFunctions(),
-				conf.getEvaluationContextConfigurer());
-
-		var placeholderReplacer1 = new PlaceholderReplacer(
-				typeResolverRegistry1,
-				expressionResolver1,
-				conf.isReplaceNullValues(),
-				conf.getNullValuesDefault(),
-				conf.isFailOnUnresolvedExpression(),
-				conf.isReplaceUnresolvedExpressions(),
-				conf.getUnresolvedExpressionsDefaultValue(),
-				conf.isLeaveEmptyOnExpressionError(),
-				conf.getLineBreakPlaceholder());
-
-
-		var commentProcessors1 = new HashMap<Class<?>, Object>();
-		for (var entry : conf.getCommentProcessorsToUse().entrySet()) {
-			commentProcessors1.put(entry.getKey(),
-								   entry.getValue()
-										.create(placeholderReplacer1));
-		}
-
-		var commentProcessorRegistry1 = new CommentProcessorRegistry(
-				placeholderReplacer1,
-				expressionResolver1,
-				conf.getCommentProcessors(),
-				conf.isFailOnUnresolvedExpression());
-
-		DocxStamper<T> stamper1 = new DocxStamper<>();
-		stamper1.config = conf;
-		stamper1.config.getCommentProcessors().putAll(commentProcessors1);
-		stamper1.placeholderReplacer = placeholderReplacer1;
-		stamper1.commentProcessorRegistry = commentProcessorRegistry1;
-		DocxStamper<T> stamper = stamper1;
-
-		var typeResolverRegistry = new TypeResolverRegistry(new FallbackResolver());
-		typeResolverRegistry.registerTypeResolver(Image.class, new ImageResolver());
-		typeResolverRegistry.registerTypeResolver(LocalDate.class, new LocalDateResolver());
-		typeResolverRegistry.registerTypeResolver(LocalDateTime.class, new LocalDateTimeResolver());
-		typeResolverRegistry.registerTypeResolver(LocalTime.class, new LocalTimeResolver());
-		typeResolverRegistry.registerTypeResolver(Date.class, new DateResolver());
-
-		List<PreProcessor> preprocessors = new ArrayList<>();
-		preprocessors.add(new RemoveProofErrors());
-		preprocessors.add(new MergeSameStyleRuns());
-
-		Map<Class<?>, Object> commentProcessors = new HashMap<>(conf.getCommentProcessors());
-		Map<Class<?>, Object> expressionFunctions = new HashMap<>(conf.getExpressionFunctions());
-
-		EvaluationContextConfigurer evaluationContextConfigurer = conf.getEvaluationContextConfigurer();
-
-		boolean failOnUnresolvedExpression = conf.isFailOnUnresolvedExpression();
-		boolean replaceNullValues = conf.isReplaceNullValues();
-		boolean replaceUnresolvedExpressions = conf.isReplaceUnresolvedExpressions();
-		boolean leaveEmptyOnExpressionError = conf.isLeaveEmptyOnExpressionError();
-
-		String nullValuesDefault = conf.getNullValuesDefault();
-		String unresolvedExpressionsDefaultValue = conf.getUnresolvedExpressionsDefaultValue();
-		String lineBreakPlaceholder = conf.getLineBreakPlaceholder();
-
-		ExpressionResolver expressionResolver = new ExpressionResolver(
-				failOnUnresolvedExpression,
-				commentProcessors,
-				expressionFunctions,
-				evaluationContextConfigurer);
-
-		PlaceholderReplacer placeholderReplacer = new PlaceholderReplacer(
-				typeResolverRegistry,
-				expressionResolver,
-				replaceNullValues,
-				nullValuesDefault,
-				failOnUnresolvedExpression,
-				replaceUnresolvedExpressions,
-				unresolvedExpressionsDefaultValue,
-				leaveEmptyOnExpressionError,
-				lineBreakPlaceholder);
-
-		Supplier<List<P>> nullSupplier = () ->
-				conf.isReplaceNullValues() && conf.getNullValuesDefault() != null
-						? List.of(ParagraphUtil.create(conf.getNullValuesDefault()))
-						: Collections.emptyList();
-
-		Supplier<List<Object>> nullSupplier2 = () ->
-				conf.isReplaceNullValues() && conf.getNullValuesDefault() != null
-						? List.of(ParagraphUtil.create(conf.getNullValuesDefault()))
-						: Collections.emptyList();
-		commentProcessors.put(
-				IRepeatProcessor.class,
-				new RepeatProcessor(placeholderReplacer,
-									(document, row) -> conf.isReplaceNullValues() && conf.getNullValuesDefault() != null
-											? clonedStampedRow(placeholderReplacer, document, row)
-											: emptyList()));
-		commentProcessors.put(
-				IParagraphRepeatProcessor.class,
-				new ParagraphRepeatProcessor(placeholderReplacer, nullSupplier));
-		commentProcessors.put(
-				IRepeatDocPartProcessor.class,
-				new RepeatDocPartProcessor(placeholderReplacer, () -> new DocxStamper<>(conf), nullSupplier2));
-		commentProcessors.put(ITableResolver.class, new TableResolver(placeholderReplacer,
-																	  wordTable1 -> conf.isReplaceNullValues() && conf.getNullValuesDefault() != null
-																			  ? List.of(ParagraphUtil.create(
-																			  conf.getNullValuesDefault()))
-																			  : List.of(wordTable1)));
-		commentProcessors.put(IDisplayIfProcessor.class, new DisplayIfProcessor(placeholderReplacer));
-		commentProcessors.put(
-				IReplaceWithProcessor.class,
-				new ReplaceWithProcessor(placeholderReplacer,
-										 run -> conf.isReplaceNullValues() && conf.getNullValuesDefault() != null
-												 ? List.of(RunUtil.createText(conf.getNullValuesDefault()))
-												 : run.getContent()));
-
-		stamper.preprocessors = preprocessors;
-		stamper.config.getCommentProcessors().putAll(commentProcessors);
-
-		return stamper;
-	}
-
-	private static List<Tr> clonedStampedRow(PlaceholderReplacer placeholderReplacer, WordprocessingMLPackage document1, Tr row1) {
-		List<Tr> changes1;
-		Tr rowClone = XmlUtils.deepCopy(row1);
-		new ParagraphResolverDocumentWalker(
-				rowClone,
-				new Object(),
-				document1,
-				placeholderReplacer).walk();
-		changes1 = List.of(rowClone);
-		return changes1;
-	}
-
-	public static <T> DocxStamper<T> createRawInstance(DocxStamperConfiguration config) {
-		List<TypeResolver> typeResolvers = config.getTypeResolversList();
-		var typeResolverRegistry1 = new TypeResolverRegistry(new FallbackResolver());
-		for (TypeResolver entry : typeResolvers) {
-			typeResolverRegistry1.registerTypeResolver(entry.resolveType(), entry);
-		}
-
-		ExpressionResolver expressionResolver = new ExpressionResolver(
-				config.isFailOnUnresolvedExpression(),
-				config.getCommentProcessors(),
-				config.getExpressionFunctions(),
-				config.getEvaluationContextConfigurer());
-
-		var placeholderReplacer1 = new PlaceholderReplacer(
-				typeResolverRegistry1,
-				expressionResolver,
-				config.isReplaceNullValues(),
-				config.getNullValuesDefault(),
-				config.isFailOnUnresolvedExpression(),
-				config.isReplaceUnresolvedExpressions(),
-				config.getUnresolvedExpressionsDefaultValue(),
-				config.isLeaveEmptyOnExpressionError(),
-				config.getLineBreakPlaceholder());
-
-
-		var commentProcessors = new HashMap<Class<?>, Object>();
-		for (var entry : config.getCommentProcessorsToUse().entrySet()) {
-			commentProcessors.put(entry.getKey(),
-								  entry.getValue()
-									   .create(placeholderReplacer1));
-		}
-
-		var commentProcessorRegistry1 = new CommentProcessorRegistry(
-				placeholderReplacer1,
-				expressionResolver,
-				config.getCommentProcessors(),
-				config.isFailOnUnresolvedExpression());
-
-		DocxStamper<T> stamper = new DocxStamper<>();
-		stamper.config = config;
-		stamper.config.getCommentProcessors().putAll(commentProcessors);
-		stamper.placeholderReplacer = placeholderReplacer1;
-		stamper.commentProcessorRegistry = commentProcessorRegistry1;
-		return stamper;
-	}
-
-	public static <T> DocxStamper<T> createInstance() {
-		DocxStamperConfiguration configuration = new DocxStamperConfiguration();
-		List<TypeResolver> typeResolvers = configuration.getTypeResolversList();
-		var typeResolverRegistry1 = new TypeResolverRegistry(new FallbackResolver());
-		for (TypeResolver entry : typeResolvers) {
-			typeResolverRegistry1.registerTypeResolver(entry.resolveType(), entry);
-		}
-
-		ExpressionResolver expressionResolver1 = new ExpressionResolver(
-				configuration.isFailOnUnresolvedExpression(),
-				configuration.getCommentProcessors(),
-				configuration.getExpressionFunctions(),
-				configuration.getEvaluationContextConfigurer());
-
-		var placeholderReplacer1 = new PlaceholderReplacer(
-				typeResolverRegistry1,
-				expressionResolver1,
-				configuration.isReplaceNullValues(),
-				configuration.getNullValuesDefault(),
-				configuration.isFailOnUnresolvedExpression(),
-				configuration.isReplaceUnresolvedExpressions(),
-				configuration.getUnresolvedExpressionsDefaultValue(),
-				configuration.isLeaveEmptyOnExpressionError(),
-				configuration.getLineBreakPlaceholder());
-
-
-		var commentProcessors1 = new HashMap<Class<?>, Object>();
-		for (var entry : configuration.getCommentProcessorsToUse().entrySet()) {
-			commentProcessors1.put(entry.getKey(),
-								   entry.getValue()
-										.create(placeholderReplacer1));
-		}
-
-		var commentProcessorRegistry1 = new CommentProcessorRegistry(
-				placeholderReplacer1,
-				expressionResolver1,
-				configuration.getCommentProcessors(),
-				configuration.isFailOnUnresolvedExpression());
-
-		DocxStamper<T> stamper1 = new DocxStamper<>();
-		stamper1.config = configuration;
-		stamper1.config.getCommentProcessors().putAll(commentProcessors1);
-		stamper1.placeholderReplacer = placeholderReplacer1;
-		stamper1.commentProcessorRegistry = commentProcessorRegistry1;
-		DocxStamper<T> stamper = stamper1;
-
-		var typeResolverRegistry = new TypeResolverRegistry(new FallbackResolver());
-		typeResolverRegistry.registerTypeResolver(Image.class, new ImageResolver());
-		typeResolverRegistry.registerTypeResolver(LocalDate.class, new LocalDateResolver());
-		typeResolverRegistry.registerTypeResolver(LocalDateTime.class, new LocalDateTimeResolver());
-		typeResolverRegistry.registerTypeResolver(LocalTime.class, new LocalTimeResolver());
-		typeResolverRegistry.registerTypeResolver(Date.class, new DateResolver());
-
-		List<PreProcessor> preprocessors = new ArrayList<>();
-		preprocessors.add(new RemoveProofErrors());
-		preprocessors.add(new MergeSameStyleRuns());
-
-		DocxStamperConfiguration conf = stamper.config;
-		boolean failOnUnresolvedExpression = conf.isFailOnUnresolvedExpression();
-		boolean replaceNullValues = conf.isReplaceNullValues();
-		boolean replaceUnresolvedExpressions = conf.isReplaceUnresolvedExpressions();
-		boolean leaveEmptyOnExpressionError = conf.isLeaveEmptyOnExpressionError();
-		String nullValuesDefault = conf.getNullValuesDefault();
-		String unresolvedExpressionsDefaultValue = conf.getUnresolvedExpressionsDefaultValue();
-		String lineBreakPlaceholder = conf.getLineBreakPlaceholder();
-		Map<Class<?>, Object> commentProcessors = new HashMap<>(conf.getCommentProcessors());
-		Map<Class<?>, Object> expressionFunctions = conf.getExpressionFunctions();
-		EvaluationContextConfigurer evaluationContextConfigurer = conf.getEvaluationContextConfigurer();
-
-		ExpressionResolver expressionResolver = new ExpressionResolver(
-				failOnUnresolvedExpression,
-				commentProcessors,
-				expressionFunctions,
-				evaluationContextConfigurer);
-
-		PlaceholderReplacer placeholderReplacer = new PlaceholderReplacer(
-				typeResolverRegistry,
-				expressionResolver,
-				replaceNullValues,
-				nullValuesDefault,
-				failOnUnresolvedExpression,
-				replaceUnresolvedExpressions,
-				unresolvedExpressionsDefaultValue,
-				leaveEmptyOnExpressionError,
-				lineBreakPlaceholder);
-
-		commentProcessors.put(
-				IRepeatProcessor.class,
-				new RepeatProcessor(
-						placeholderReplacer,
-						(document1, row1) -> {
-							List<Tr> changes1;
-							if (conf.isReplaceNullValues() && conf.getNullValuesDefault() != null) {
-								Tr rowClone = XmlUtils.deepCopy(row1);
-								new ParagraphResolverDocumentWalker(rowClone,
-																	new Object(),
-																	document1,
-																	placeholderReplacer).walk();
-								changes1 = List.of(rowClone);
-							} else {
-								changes1 = emptyList();
-							}
-							return changes1;
-						}));
-		commentProcessors.put(
-				IParagraphRepeatProcessor.class,
-				new ParagraphRepeatProcessor(
-						placeholderReplacer,
-						() -> conf.isReplaceNullValues() && conf.getNullValuesDefault() != null
-								? List.of(ParagraphUtil.create(conf.getNullValuesDefault()))
-								: Collections.emptyList()));
-		commentProcessors.put(
-				IRepeatDocPartProcessor.class,
-				new RepeatDocPartProcessor(
-						placeholderReplacer,
-						() -> new DocxStamper<>(conf),
-						() -> {
-							if (conf.isReplaceNullValues() && conf.getNullValuesDefault() != null) {
-								return List.of(ParagraphUtil.create(conf.getNullValuesDefault()));
-							} else {
-								throw new DocxStamperException("Impossible");
-							}
-						}));
-		commentProcessors.put(
-				ITableResolver.class,
-				new TableResolver(placeholderReplacer,
-								  wordTable1 -> conf.isReplaceNullValues() && conf.getNullValuesDefault() != null
-										  ? List.of(ParagraphUtil.create(
-										  conf.getNullValuesDefault()))
-										  : List.of(wordTable1)));
-		commentProcessors.put(
-				IDisplayIfProcessor.class,
-				new DisplayIfProcessor(placeholderReplacer));
-		commentProcessors.put(
-				IReplaceWithProcessor.class,
-				new ReplaceWithProcessor(
-						placeholderReplacer,
-						run1 -> configuration.isReplaceNullValues() && configuration.getNullValuesDefault() != null
-								? List.of(RunUtil.createText(configuration.getNullValuesDefault()))
-								: run1.getContent()));
-
-		stamper.preprocessors = preprocessors;
-
-		return stamper;
-	}
-
-	private static <T> DocxStamper<T> createRawInstance() {
-		DocxStamperConfiguration configuration = new DocxStamperConfiguration();
-		List<TypeResolver> typeResolvers = configuration.getTypeResolversList();
-		var typeResolverRegistry = new TypeResolverRegistry(new FallbackResolver());
-		for (TypeResolver entry : typeResolvers) {
-			typeResolverRegistry.registerTypeResolver(entry.resolveType(), entry);
-		}
-
-		ExpressionResolver expressionResolver = new ExpressionResolver(
-				configuration.isFailOnUnresolvedExpression(),
-				configuration.getCommentProcessors(),
-				configuration.getExpressionFunctions(),
-				configuration.getEvaluationContextConfigurer());
-
-		var placeholderReplacer1 = new PlaceholderReplacer(
-				typeResolverRegistry,
-				expressionResolver,
-				configuration.isReplaceNullValues(),
-				configuration.getNullValuesDefault(),
-				configuration.isFailOnUnresolvedExpression(),
-				configuration.isReplaceUnresolvedExpressions(),
-				configuration.getUnresolvedExpressionsDefaultValue(),
-				configuration.isLeaveEmptyOnExpressionError(),
-				configuration.getLineBreakPlaceholder());
-
-
-		var commentProcessors = new HashMap<Class<?>, Object>();
-		for (var entry : configuration.getCommentProcessorsToUse().entrySet()) {
-			commentProcessors.put(entry.getKey(),
-								  entry.getValue()
-									   .create(placeholderReplacer1));
-		}
-
-		var commentProcessorRegistry1 = new CommentProcessorRegistry(
-				placeholderReplacer1,
-				expressionResolver,
-				configuration.getCommentProcessors(),
-				configuration.isFailOnUnresolvedExpression());
-
-		DocxStamper<T> stamper = new DocxStamper<>();
-		stamper.config = configuration;
-		stamper.config.getCommentProcessors().putAll(commentProcessors);
-		stamper.placeholderReplacer = placeholderReplacer1;
-		stamper.commentProcessorRegistry = commentProcessorRegistry1;
-		return stamper;
-	}
-
-	public static <T> DocxStamper<T> createRawInstance(DocxStamperConfiguration config, ITypeResolver<Object> defaultResolver, List<TypeResolver> typeResolvers) {
-		var typeResolverRegistry = new TypeResolverRegistry(defaultResolver);
-		for (TypeResolver entry : typeResolvers) {
-			typeResolverRegistry.registerTypeResolver(entry.resolveType(), entry);
-		}
-
-		ExpressionResolver expressionResolver = new ExpressionResolver(
-				config.isFailOnUnresolvedExpression(),
-				config.getCommentProcessors(),
-				config.getExpressionFunctions(),
-				config.getEvaluationContextConfigurer());
-
-		var placeholderReplacer = new PlaceholderReplacer(
-				typeResolverRegistry,
-				expressionResolver,
-				config.isReplaceNullValues(),
-				config.getNullValuesDefault(),
-				config.isFailOnUnresolvedExpression(),
-				config.isReplaceUnresolvedExpressions(),
-				config.getUnresolvedExpressionsDefaultValue(),
-				config.isLeaveEmptyOnExpressionError(),
-				config.getLineBreakPlaceholder());
-
-
-		var commentProcessors = new HashMap<Class<?>, Object>();
-		for (var entry : config.getCommentProcessorsToUse().entrySet()) {
-			commentProcessors.put(entry.getKey(),
-								  entry.getValue()
-									   .create(placeholderReplacer));
-		}
-
-		var commentProcessorRegistry = new CommentProcessorRegistry(
-				placeholderReplacer,
-				expressionResolver,
-				config.getCommentProcessors(),
-				config.isFailOnUnresolvedExpression());
-
-		DocxStamper<T> stamper = new DocxStamper<>();
-		stamper.config = config;
-		stamper.config.getCommentProcessors().putAll(commentProcessors);
-		stamper.placeholderReplacer = placeholderReplacer;
-		stamper.commentProcessorRegistry = commentProcessorRegistry;
-		return stamper;
 	}
 
 	/**
@@ -580,7 +132,7 @@ public class DocxStamper<T> {
 	 * @param out         the output stream in which to write the resulting .docx document.
 	 * @throws DocxStamperException in case of an error.
 	 */
-	public void stamp(InputStream template, T contextRoot, OutputStream out) throws DocxStamperException {
+	public void stamp(InputStream template, Object contextRoot, OutputStream out) throws DocxStamperException {
 		try {
 			WordprocessingMLPackage document = WordprocessingMLPackage.load(template);
 			stamp(document, contextRoot, out);
@@ -588,6 +140,7 @@ public class DocxStamper<T> {
 			throw new DocxStamperException(e);
 		}
 	}
+
 
 	/**
 	 * Same as stamp(InputStream, T, OutputStream) except that you may pass in a DOCX4J document as a template instead
@@ -598,7 +151,8 @@ public class DocxStamper<T> {
 	 * @param out         the output stream in which to write the resulting .docx document.
 	 * @throws DocxStamperException in case of an error.
 	 */
-	public void stamp(WordprocessingMLPackage document, T contextRoot, OutputStream out) throws DocxStamperException {
+	@Override
+	public void stamp(WordprocessingMLPackage document, Object contextRoot, OutputStream out) throws DocxStamperException {
 		try {
 			preprocess(document);
 			processComments(document, contextRoot);
@@ -616,11 +170,13 @@ public class DocxStamper<T> {
 		}
 	}
 
-	private void processComments(final WordprocessingMLPackage document, T contextObject) {
+	private void processComments(final WordprocessingMLPackage document, Object contextObject) {
 		commentProcessorRegistry.runProcessors(document, contextObject);
 	}
 
-	private void replaceExpressions(WordprocessingMLPackage document, T contextObject) {
+	private void replaceExpressions(WordprocessingMLPackage document, Object contextObject) {
 		placeholderReplacer.resolveExpressions(document, contextObject);
 	}
+
+
 }

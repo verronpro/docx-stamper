@@ -37,8 +37,8 @@ public class PlaceholderReplacer {
 	public PlaceholderReplacer(
 			TypeResolverRegistry typeResolverRegistry,
 			ExpressionResolver resolver,
-			boolean replaceNullValues1,
-			String nullValuesDefault1,
+			boolean replaceNullValues,
+			String nullValuesDefault,
 			boolean failOnUnresolvedExpression1,
 			boolean replaceUnresolvedExpressions1,
 			String unresolvedExpressionsDefaultValue1,
@@ -47,8 +47,8 @@ public class PlaceholderReplacer {
 	) {
 		this.typeResolverRegistry = typeResolverRegistry;
 		this.expressionResolver = resolver;
-		this.replaceNullValues = replaceNullValues1;
-		this.nullValuesDefault = nullValuesDefault1;
+		this.replaceNullValues = replaceNullValues;
+		this.nullValuesDefault = nullValuesDefault;
 		this.failOnUnresolvedExpression = failOnUnresolvedExpression1;
 		this.replaceUnresolvedExpressions = replaceUnresolvedExpressions1;
 		this.unresolvedExpressionsDefaultValue = unresolvedExpressionsDefaultValue1;
@@ -87,9 +87,9 @@ public class PlaceholderReplacer {
 					logger.debug(String.format("Replaced expression '%s' with value provided by TypeResolver %s",
 											   placeholder,
 											   resolver.getClass()));
-				} else if (isReplaceNullValues()) {
+				} else if (replaceNullValues) {
 					ITypeResolver resolver = typeResolverRegistry.getDefaultResolver();
-					R replacementObject = resolver.resolve(document, getNullValuesDefault());
+					R replacementObject = resolver.resolve(document, nullValuesDefault);
 					replace(paragraphWrapper, placeholder, replacementObject);
 					logger.debug(String.format("Replaced expression '%s' with value provided by TypeResolver %s",
 											   placeholder,
@@ -129,14 +129,6 @@ public class PlaceholderReplacer {
 		p.replace(placeholder, replacementRun == null ? RunUtil.create("") : replacementRun);
 	}
 
-	private boolean isReplaceNullValues() {
-		return replaceNullValues;
-	}
-
-	private String getNullValuesDefault() {
-		return nullValuesDefault;
-	}
-
 	private boolean isFailOnUnresolvedExpression() {
 		return failOnUnresolvedExpression;
 	}
@@ -170,5 +162,4 @@ public class PlaceholderReplacer {
 			replace(paragraphWrapper, lineBreakPlaceholder(), run);
 		}
 	}
-
 }
