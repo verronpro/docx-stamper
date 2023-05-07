@@ -1,18 +1,28 @@
 package org.wickedsource.docxstamper;
 
+import jakarta.xml.bind.JAXBElement;
+import lombok.SneakyThrows;
 import org.docx4j.TextUtils;
 import org.docx4j.TraversalUtil;
+import org.docx4j.dml.CTBlip;
+import org.docx4j.dml.CTBlipFillProperties;
+import org.docx4j.dml.Graphic;
+import org.docx4j.dml.GraphicData;
+import org.docx4j.dml.picture.Pic;
+import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.util.RunCollector;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
-import java.util.Optional;
-import java.util.TreeSet;
+import java.security.MessageDigest;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -23,6 +33,7 @@ import static java.util.stream.Collectors.joining;
 public final class TestDocxStamper<T> {
 
 	private final DocxStamper<T> stamper;
+	private WordprocessingMLPackage document;
 
 	public TestDocxStamper() {
 		this(new DocxStamperConfiguration()
@@ -31,103 +42,6 @@ public final class TestDocxStamper<T> {
 
 	public TestDocxStamper(DocxStamperConfiguration config) {
 		stamper = new DocxStamper<>(config);
-	}
-
-	/**
-	 * Stamps the given template resolving the expressions within the template against the specified context.
-	 * Returns the resulting document after it has been saved and loaded again to ensure that changes in the Docx4j
-	 * object structure were really transported into the XML of the .docx file.
-	 */
-	public WordprocessingMLPackage stampAndLoad(InputStream template, T context) throws IOException, Docx4JException {
-		OutputStream out = IOStreams.getOutputStream();
-		stamper.stamp(template, context, out);
-		InputStream in = IOStreams.getInputStream(out);
-		return WordprocessingMLPackage.load(in);
-	}
-
-	public List<String> stampAndLoadAndExtract(InputStream template, T context) {
-		DocxStamperConfiguration configuration = this.stamper.configuration.setFailOnUnresolvedExpression(false);
-		return streamElements(template, context, P.class, configuration)
-				.map(this::serialize)
-				.toList();
-	}
-
-	private <C> Stream<C> streamElements(InputStream template, T context, Class<C> clazz, DocxStamperConfiguration configuration) {
-		Stream<C> elements;
-		try {
-			var out = IOStreams.getOutputStream();
-			var stamper = new DocxStamper<T>(configuration);
-			stamper.stamp(template, context, out);
-			var in = IOStreams.getInputStream(out);
-			var document = WordprocessingMLPackage.load(in);
-			var visitor = newCollector(clazz);
-			var content = document.getMainDocumentPart().getContent();
-			TraversalUtil.visit(content, visitor);
-			elements = visitor.elements();
-
-		} catch (Docx4JException | IOException e) {
-			throw new RuntimeException(e);
-		}
-		return elements;
-	}
-
-	private String serialize(P p) {
-		String runs = extractDocumentRuns(p);
-		return Optional.ofNullable(p.getPPr())
-					   .map(ppr -> "%s//%s".formatted(runs, serialize(ppr)))
-					   .orElse(runs);
-	}
-
-	private <C> DocxCollector<C> newCollector(Class<C> type) {
-		return new DocxCollector<>(type);
-	}
-
-	private static String extractDocumentRuns(Object p) {
-		var runCollector = new RunCollector();
-		TraversalUtil.visit(p, runCollector);
-		return runCollector.runs()
-						   .filter(r -> !r.getContent().isEmpty())
-						   .filter(r -> !TextUtils.getText(r).isEmpty())
-						   .map(TestDocxStamper::serialize)
-						   .collect(joining());
-	}
-
-	private String serialize(PPr pPr) {
-		var set = new TreeSet<String>();
-		if (pPr.getJc() != null) set.add("jc=" + pPr.getJc().getVal().value());
-		if (pPr.getInd() != null) set.add("ind=" + pPr.getInd().getLeft().intValue());
-		if (pPr.getKeepLines() != null) set.add("keepLines=" + pPr.getKeepLines().isVal());
-		if (pPr.getKeepNext() != null) set.add("keepNext=" + pPr.getKeepNext().isVal());
-		if (pPr.getOutlineLvl() != null) set.add("outlineLvl=" + pPr.getOutlineLvl().getVal().intValue());
-		if (pPr.getPageBreakBefore() != null) set.add("pageBreakBefore=" + pPr.getPageBreakBefore().isVal());
-		if (pPr.getPBdr() != null) set.add("pBdr=xxx");
-		if (pPr.getPPrChange() != null) set.add("pPrChange=xxx");
-		if (pPr.getRPr() != null) set.add("rPr={" + serialize(pPr.getRPr()) + "}");
-		if (pPr.getSectPr() != null) set.add("sectPr={" + serialize(pPr.getSectPr()) + "}");
-		if (pPr.getShd() != null) set.add("shd=xxx");
-		if (pPr.getSpacing() != null) set.add("spacing=xxx");
-		if (pPr.getSuppressAutoHyphens() != null) set.add("suppressAutoHyphens=xxx");
-		if (pPr.getSuppressLineNumbers() != null) set.add("suppressLineNumbers=xxx");
-		if (pPr.getSuppressOverlap() != null) set.add("suppressOverlap=xxx");
-		if (pPr.getTabs() != null) set.add("tabs=xxx");
-		if (pPr.getTextAlignment() != null) set.add("textAlignment=xxx");
-		if (pPr.getTextDirection() != null) set.add("textDirection=xxx");
-		if (pPr.getTopLinePunct() != null) set.add("topLinePunct=xxx");
-		if (pPr.getWidowControl() != null) set.add("widowControl=xxx");
-		if (pPr.getWordWrap() != null) set.add("wordWrap=xxx");
-		if (pPr.getFramePr() != null) set.add("framePr=xxx");
-		if (pPr.getDivId() != null) set.add("divId=xxx");
-		if (pPr.getCnfStyle() != null) set.add("cnfStyle=xxx");
-		return String.join(",", set);
-	}
-
-	private static String serialize(R run) {
-		var runPresentation = Optional.ofNullable(run.getRPr());
-		var runText = TextUtils.getText(run);
-		return runPresentation
-				.map(TestDocxStamper::serialize)
-				.map(s -> "|%s/%s|".formatted(runText, s))
-				.orElse(runText);
 	}
 
 	private static String serialize(RPrAbstract rPr) {
@@ -164,6 +78,176 @@ public final class TestDocxStamper<T> {
 		return String.join(",", set);
 	}
 
+	public static String humanReadableByteCountSI(long bytes) {
+		if (-1000 < bytes && bytes < 1000) return bytes + "B";
+
+		CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+		while (bytes <= -999_950 || bytes >= 999_950) {
+			bytes /= 1000;
+			ci.next();
+		}
+		return String.format(Locale.US, "%.1f%cB", bytes / 1000.0, ci.current());
+	}
+
+	@SneakyThrows
+	private static String sha1b64(byte[] imageBytes) {
+		MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
+		Base64.Encoder encoder = Base64.getEncoder();
+		byte[] digest = messageDigest.digest(imageBytes);
+		return encoder.encodeToString(digest);
+	}
+
+	private String extractDocumentRuns(Object p) {
+		var runCollector = new RunCollector();
+		TraversalUtil.visit(p, runCollector);
+		return runCollector
+				.runs()
+				.filter(r -> !r.getContent().isEmpty())
+				.map(this::serialize)
+				.collect(joining());
+	}
+
+	private String serialize(R run) {
+		var runPresentation = Optional
+				.ofNullable(run.getRPr())
+				.map(TestDocxStamper::serialize);
+
+		String serialized = serialize(run.getContent());
+		if (serialized.isEmpty())
+			return "";
+		if (runPresentation.isEmpty())
+			return serialized;
+		return "|%s/%s|".formatted(serialized, runPresentation.get());
+	}
+
+	private String serialize(Object o) {
+		if (o instanceof JAXBElement<?> jaxbElement)
+			return serialize(jaxbElement.getValue());
+		if (o instanceof List<?> list)
+			return list.stream().map(this::serialize).collect(joining());
+		if (o instanceof Text text)
+			return TextUtils.getText(text);
+		if (o instanceof Drawing drawing)
+			return serialize(drawing.getAnchorOrInline());
+		if (o instanceof Inline inline)
+			return serialize(inline.getGraphic());
+		if (o instanceof Graphic graphic)
+			return serialize(graphic.getGraphicData());
+		if (o instanceof GraphicData graphicData)
+			return serialize(graphicData.getPic());
+		if (o instanceof Pic pic)
+			return serialize(pic.getBlipFill());
+		if (o instanceof CTBlipFillProperties blipFillProperties)
+			return serialize(blipFillProperties.getBlip());
+		if (o instanceof CTBlip blip)
+			return serialize(blip);
+		if (o instanceof R.LastRenderedPageBreak)
+			return ""; // do not serialize
+		if (o instanceof Br)
+			return "|BR|";
+		if (o == null)
+			throw new RuntimeException("Unsupported run content: NULL");
+		throw new RuntimeException("Unsupported run content: " + o.getClass());
+	}
+
+	private String serialize(CTBlip blip) {
+		var image = document
+				.getParts()
+				.getParts()
+				.entrySet()
+				.stream()
+				.filter(e -> e.getKey().getName().contains(blip.getEmbed()))
+				.map(Map.Entry::getValue)
+				.findFirst()
+				.map(BinaryPartAbstractImage.class::cast)
+				.orElseThrow();
+		String imageContentType = image.getContentType();
+		byte[] imageBytes = image.getBytes();
+		return blip.getEmbed() +
+				":" + imageContentType +
+				":" + humanReadableByteCountSI(imageBytes.length) +
+				":sha1=" + sha1b64(imageBytes);
+	}
+
+	/**
+	 * Stamps the given template resolving the expressions within the template against the specified context.
+	 * Returns the resulting document after it has been saved and loaded again to ensure that changes in the Docx4j
+	 * object structure were really transported into the XML of the .docx file.
+	 */
+	public WordprocessingMLPackage stampAndLoad(InputStream template, T context) throws IOException, Docx4JException {
+		OutputStream out = IOStreams.getOutputStream();
+		stamper.stamp(template, context, out);
+		InputStream in = IOStreams.getInputStream(out);
+		return WordprocessingMLPackage.load(in);
+	}
+
+	public List<String> stampAndLoadAndExtract(InputStream template, T context) {
+		DocxStamperConfiguration configuration = this.stamper.configuration.setFailOnUnresolvedExpression(false);
+		return streamElements(template, context, P.class, configuration)
+				.map(this::serializeParagraph)
+				.toList();
+	}
+
+	private <C> Stream<C> streamElements(InputStream template, T context, Class<C> clazz, DocxStamperConfiguration configuration) {
+		Stream<C> elements;
+		try {
+			var out = IOStreams.getOutputStream();
+			var stamper = new DocxStamper<T>(configuration);
+			stamper.stamp(template, context, out);
+			var in = IOStreams.getInputStream(out);
+			document = WordprocessingMLPackage.load(in);
+			var visitor = newCollector(clazz);
+			var mainDocumentPart = document.getMainDocumentPart();
+			var content = mainDocumentPart.getContent();
+			TraversalUtil.visit(content, visitor);
+			elements = visitor.elements();
+		} catch (Docx4JException | IOException e) {
+			throw new RuntimeException(e);
+		}
+		return elements;
+	}
+
+	private String serializeParagraph(P p) {
+		String runs = extractDocumentRuns(p);
+		return Optional
+				.ofNullable(p.getPPr())
+				.map(ppr -> "%s//%s".formatted(runs, serialize(ppr)))
+				.orElse(runs);
+	}
+
+	private <C> DocxCollector<C> newCollector(Class<C> type) {
+		return new DocxCollector<>(type);
+	}
+
+	private String serialize(PPr pPr) {
+		var set = new TreeSet<String>();
+		if (pPr.getJc() != null) set.add("jc=" + pPr.getJc().getVal().value());
+		if (pPr.getInd() != null) set.add("ind=" + pPr.getInd().getLeft().intValue());
+		if (pPr.getKeepLines() != null) set.add("keepLines=" + pPr.getKeepLines().isVal());
+		if (pPr.getKeepNext() != null) set.add("keepNext=" + pPr.getKeepNext().isVal());
+		if (pPr.getOutlineLvl() != null) set.add("outlineLvl=" + pPr.getOutlineLvl().getVal().intValue());
+		if (pPr.getPageBreakBefore() != null) set.add("pageBreakBefore=" + pPr.getPageBreakBefore().isVal());
+		if (pPr.getPBdr() != null) set.add("pBdr=xxx");
+		if (pPr.getPPrChange() != null) set.add("pPrChange=xxx");
+		if (pPr.getRPr() != null) set.add("rPr={" + serialize(pPr.getRPr()) + "}");
+		if (pPr.getSectPr() != null) set.add("sectPr={" + serialize(pPr.getSectPr()) + "}");
+		if (pPr.getShd() != null) set.add("shd=xxx");
+		if (pPr.getSpacing() != null) set.add("spacing=xxx");
+		if (pPr.getSuppressAutoHyphens() != null) set.add("suppressAutoHyphens=xxx");
+		if (pPr.getSuppressLineNumbers() != null) set.add("suppressLineNumbers=xxx");
+		if (pPr.getSuppressOverlap() != null) set.add("suppressOverlap=xxx");
+		if (pPr.getTabs() != null) set.add("tabs=xxx");
+		if (pPr.getTextAlignment() != null) set.add("textAlignment=xxx");
+		if (pPr.getTextDirection() != null) set.add("textDirection=xxx");
+		if (pPr.getTopLinePunct() != null) set.add("topLinePunct=xxx");
+		if (pPr.getWidowControl() != null) set.add("widowControl=xxx");
+		if (pPr.getWordWrap() != null) set.add("wordWrap=xxx");
+		if (pPr.getFramePr() != null) set.add("framePr=xxx");
+		if (pPr.getDivId() != null) set.add("divId=xxx");
+		if (pPr.getCnfStyle() != null) set.add("cnfStyle=xxx");
+		return String.join(",", set);
+	}
+
 	private String serialize(SectPr sectPr) {
 		var set = new TreeSet<String>();
 		if (sectPr.getEGHdrFtrReferences() != null) set.add("eGHdrFtrReferences=xxx");
@@ -192,9 +276,10 @@ public final class TestDocxStamper<T> {
 	}
 
 	public <C> List<String> stampAndLoadAndExtract(InputStream template, T context, Class<C> clazz) {
-		return streamElements(template, context, clazz,
-							  new DocxStamperConfiguration().setFailOnUnresolvedExpression(false))
-				.map(TestDocxStamper::extractDocumentRuns)
+		var configuration = new DocxStamperConfiguration()
+				.setFailOnUnresolvedExpression(false);
+		return streamElements(template, context, clazz, configuration)
+				.map(this::extractDocumentRuns)
 				.toList();
 	}
 }

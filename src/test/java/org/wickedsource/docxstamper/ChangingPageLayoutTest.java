@@ -19,11 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ChangingPageLayoutTest {
 	@Test
 	public void shouldKeepSectionBreakOrientationInRepeatParagraphWithoutSectionBreakInsideComment() {
-		var context = Map.of(
-				"repeatValues", List.of(
-						new Name("Homer"),
-						new Name("Marge")
-				));
+		var context = Map.of("repeatValues", List.of(new Name("Homer"), new Name("Marge")));
 
 		var template = getClass().getResourceAsStream("ChangingPageLayoutOutsideRepeatParagraphTest.docx");
 		var config = new DocxStamperConfiguration()
@@ -36,10 +32,10 @@ public class ChangingPageLayoutTest {
 				"//sectPr={docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}}",
 				"Second page is portrait, layout change should survive to repeatParagraph processor (Homer).",
 				"",
-				"Without a section break changing the layout in between, but a page break instead.",
+				"Without a section break changing the layout in between, but a page break instead.|BR|",
 				"Second page is portrait, layout change should survive to repeatParagraph processor (Marge).",
 				"",
-				"Without a section break changing the layout in between, but a page break instead.",
+				"Without a section break changing the layout in between, but a page break instead.|BR|",
 				"//sectPr={docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}}",
 				"Fourth page is set to landscape again.");
 		assertIterableEquals(expected, result);

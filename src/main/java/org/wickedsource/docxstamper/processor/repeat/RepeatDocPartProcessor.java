@@ -8,10 +8,12 @@ import org.docx4j.wml.*;
 import org.jvnet.jaxb2_commons.ppp.Child;
 import org.wickedsource.docxstamper.OpcStamper;
 import org.wickedsource.docxstamper.api.DocxStamperException;
+import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.DocumentUtil;
+import org.wickedsource.docxstamper.util.ParagraphUtil;
 import org.wickedsource.docxstamper.util.SectionUtil;
 
 import java.io.IOException;
@@ -25,6 +27,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toMap;
 import static org.wickedsource.docxstamper.util.DocumentUtil.walkObjectsAndImportImages;
 
@@ -35,7 +38,7 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 	private final Map<CommentWrapper, List<Object>> contexts = new HashMap<>();
 	private final Supplier<? extends List<?>> nullSupplier;
 
-	public RepeatDocPartProcessor(
+	private RepeatDocPartProcessor(
 			PlaceholderReplacer placeholderReplacer,
 			OpcStamper<WordprocessingMLPackage> stamper,
 			Supplier<? extends List<?>> nullSupplier
@@ -43,6 +46,14 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
 		super(placeholderReplacer);
 		this.stamper = stamper;
 		this.nullSupplier = nullSupplier;
+	}
+
+	public static ICommentProcessor newInstance(PlaceholderReplacer pr, OpcStamper<WordprocessingMLPackage> stamper, String nullReplacementValue) {
+		return new RepeatDocPartProcessor(pr, stamper, () -> singletonList(ParagraphUtil.create(nullReplacementValue)));
+	}
+
+	public static ICommentProcessor newInstance(PlaceholderReplacer pr, OpcStamper<WordprocessingMLPackage> stamper) {
+		return new RepeatDocPartProcessor(pr, stamper, Collections::emptyList);
 	}
 
 	@Override

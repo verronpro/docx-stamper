@@ -11,6 +11,8 @@ import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
 
 import java.util.Random;
 
+import static org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage.createImagePart;
+
 /**
  * This ITypeResolver allows context objects to return objects of type Image. An expression that resolves to an Image
  * object will be replaced by an actual image in the resulting .docx document. The image will be put as an inline into
@@ -28,7 +30,8 @@ public class ImageResolver implements ITypeResolver<Image> {
 			return createRunWithImage(
 					image.getFilename(),
 					image.getAltText(),
-					image.getMaxWidth(), BinaryPartAbstractImage.createImagePart(document, image.getImageBytes())
+					image.getMaxWidth(),
+					createImagePart(document, image.getImageBytes())
 			);
 		} catch (Exception e) {
 			throw new DocxStamperException("Error while adding image to document!", e);

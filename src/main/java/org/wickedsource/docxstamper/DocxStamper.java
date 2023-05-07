@@ -15,7 +15,6 @@ import org.wickedsource.docxstamper.replace.typeresolver.image.ImageResolver;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -82,7 +81,7 @@ public class DocxStamper<T> implements OpcStamper<WordprocessingMLPackage> {
 				lineBreakPlaceholder
 		);
 
-		for (var entry : configuration.getCommentProcessorsToUse().entrySet()) {
+		for (var entry : configuration.getCommentProcessors().entrySet()) {
 			commentProcessors.put(entry.getKey(), entry.getValue().create(placeholderReplacer));
 		}
 
@@ -96,7 +95,7 @@ public class DocxStamper<T> implements OpcStamper<WordprocessingMLPackage> {
 		this.configuration = configuration;
 		this.placeholderReplacer = placeholderReplacer;
 		this.commentProcessorRegistry = commentProcessorRegistry;
-		this.preprocessors = new ArrayList<>();
+		this.preprocessors = configuration.getPreprocessors().stream().toList();
 	}
 
 	/**

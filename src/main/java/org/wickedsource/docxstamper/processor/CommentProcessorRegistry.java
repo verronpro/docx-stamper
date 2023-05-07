@@ -100,13 +100,9 @@ public class CommentProcessorRegistry {
 			T expressionContext,
 			P paragraph
 	) {
-		return CommentUtil.getCommentFor(paragraph, document)
-						  .flatMap(c -> this.runCommentProcessors(comments,
-																  expressionContext,
-																  c,
-																  paragraph,
-																  null,
-																  document));
+		return CommentUtil
+				.getCommentFor(paragraph, document)
+				.flatMap(c -> this.runCommentProcessors(comments, expressionContext, c, paragraph, null, document));
 	}
 
 	/**

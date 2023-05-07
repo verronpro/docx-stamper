@@ -4,6 +4,7 @@ import jakarta.xml.bind.JAXBElement;
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
+import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -18,10 +19,18 @@ public class TableResolver extends BaseCommentProcessor implements ITableResolve
 	private final Map<Tbl, StampTable> cols = new HashMap<>();
 	private final Function<Tbl, List<Object>> nullSupplier;
 
-	public TableResolver(PlaceholderReplacer placeholderReplacer,
-						 Function<Tbl, List<Object>> nullSupplier) {
+	private TableResolver(PlaceholderReplacer placeholderReplacer,
+						  Function<Tbl, List<Object>> nullSupplier) {
 		super(placeholderReplacer);
 		this.nullSupplier = nullSupplier;
+	}
+
+	public static ICommentProcessor newInstance(PlaceholderReplacer pr, String nullReplacementValue) {
+		return new TableResolver(pr, table -> List.of(ParagraphUtil.create(nullReplacementValue)));
+	}
+
+	public static ICommentProcessor newInstance(PlaceholderReplacer pr) {
+		return new TableResolver(pr, List::of);
 	}
 
 	@Override

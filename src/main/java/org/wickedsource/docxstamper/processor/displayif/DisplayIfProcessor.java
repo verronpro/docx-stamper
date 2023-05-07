@@ -5,6 +5,7 @@ import org.docx4j.wml.P;
 import org.docx4j.wml.Tbl;
 import org.docx4j.wml.Tc;
 import org.docx4j.wml.Tr;
+import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -19,8 +20,12 @@ public class DisplayIfProcessor extends BaseCommentProcessor implements IDisplay
 	private List<Tbl> tablesToBeRemoved = new ArrayList<>();
 	private List<Tr> tableRowsToBeRemoved = new ArrayList<>();
 
-	public DisplayIfProcessor(PlaceholderReplacer placeholderReplacer) {
+	private DisplayIfProcessor(PlaceholderReplacer placeholderReplacer) {
 		super(placeholderReplacer);
+	}
+
+	public static ICommentProcessor newInstance(PlaceholderReplacer pr) {
+		return new DisplayIfProcessor(pr);
 	}
 
 	@Override

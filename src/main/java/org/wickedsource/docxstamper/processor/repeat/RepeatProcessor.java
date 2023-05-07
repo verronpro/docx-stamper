@@ -3,6 +3,7 @@ package org.wickedsource.docxstamper.processor.repeat;
 import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
+import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.processor.CommentProcessingException;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
@@ -13,13 +14,15 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.function.BiFunction;
 
+import static java.util.Collections.emptyList;
+
 public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProcessor {
 
 	private final BiFunction<WordprocessingMLPackage, Tr, List<Tr>> nullSupplier;
 	private Map<Tr, List<Object>> tableRowsToRepeat = new HashMap<>();
 	private Map<Tr, CommentWrapper> tableRowsCommentsToRemove = new HashMap<>();
 
-	public RepeatProcessor(
+	private RepeatProcessor(
 			PlaceholderReplacer placeholderReplacer,
 			BiFunction<WordprocessingMLPackage, Tr, List<Tr>> nullSupplier1
 	) {
@@ -27,10 +30,19 @@ public class RepeatProcessor extends BaseCommentProcessor implements IRepeatProc
 		nullSupplier = nullSupplier1;
 	}
 
-	public static List<Tr> stampEmptyContext(PlaceholderReplacer placeholderReplacer, WordprocessingMLPackage document1, Tr row1) {
+	public static ICommentProcessor newInstanceWithNullReplacement(PlaceholderReplacer pr) {
+		return new RepeatProcessor(pr, (document, row) -> RepeatProcessor.stampEmptyContext(pr, document, row));
+	}
+
+	public static List<Tr> stampEmptyContext(PlaceholderReplacer placeholderReplacer, WordprocessingMLPackage document, Tr row1) {
 		Tr rowClone = XmlUtils.deepCopy(row1);
-		new ParagraphResolverDocumentWalker(rowClone, new Object(), document1, placeholderReplacer).walk();
+		Object emptyContext = new Object();
+		new ParagraphResolverDocumentWalker(rowClone, emptyContext, document, placeholderReplacer).walk();
 		return List.of(rowClone);
+	}
+
+	public static ICommentProcessor newInstance(PlaceholderReplacer pr) {
+		return new RepeatProcessor(pr, (document, row) -> emptyList());
 	}
 
 	@Override

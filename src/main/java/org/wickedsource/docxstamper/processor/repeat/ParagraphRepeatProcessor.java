@@ -4,6 +4,7 @@ import org.docx4j.XmlUtils;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
 import org.wickedsource.docxstamper.api.DocxStamperException;
+import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.CommentUtil;
@@ -15,11 +16,13 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static java.util.Collections.singletonList;
+
 public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IParagraphRepeatProcessor {
 	private final Supplier<? extends List<? extends P>> nullSupplier;
 	private Map<P, Paragraphs> pToRepeat = new HashMap<>();
 
-	public ParagraphRepeatProcessor(
+	private ParagraphRepeatProcessor(
 			PlaceholderReplacer placeholderReplacer,
 			Supplier<? extends List<? extends P>> nullSupplier
 	) {
@@ -27,18 +30,12 @@ public class ParagraphRepeatProcessor extends BaseCommentProcessor implements IP
 		this.nullSupplier = nullSupplier;
 	}
 
-	public static ParagraphRepeatProcessor newInstance(
-			PlaceholderReplacer placeholderReplacer,
-			Supplier<Optional<String>> nullReplacementSupplier
-	) {
-		return new ParagraphRepeatProcessor(
-				placeholderReplacer,
-				() -> nullReplacementSupplier
-						.get()
-						.map(ParagraphUtil::create)
-						.map(Collections::singletonList)
-						.orElseGet(Collections::emptyList)
-		);
+	public static ICommentProcessor newInstance(PlaceholderReplacer pr, String nullReplacement) {
+		return new ParagraphRepeatProcessor(pr, () -> singletonList(ParagraphUtil.create(nullReplacement)));
+	}
+
+	public static ICommentProcessor newInstance(PlaceholderReplacer placeholderReplacer) {
+		return new ParagraphRepeatProcessor(placeholderReplacer, Collections::emptyList);
 	}
 
 	@Override

@@ -1,10 +1,11 @@
 package org.wickedsource.docxstamper;
 
 import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
+import org.wickedsource.docxstamper.api.preprocessor.PreProcessor;
 import org.wickedsource.docxstamper.api.typeresolver.ITypeResolver;
-import org.wickedsource.docxstamper.api.typeresolver.TypeResolver;
 import org.wickedsource.docxstamper.el.NoOpEvaluationContextConfigurer;
-import org.wickedsource.docxstamper.processor.ProcessorFactory;
+import org.wickedsource.docxstamper.preprocessor.MergeSameStyleRuns;
+import org.wickedsource.docxstamper.preprocessor.RemoveProofErrors;
 import org.wickedsource.docxstamper.processor.displayif.IDisplayIfProcessor;
 import org.wickedsource.docxstamper.processor.repeat.IParagraphRepeatProcessor;
 import org.wickedsource.docxstamper.processor.repeat.IRepeatDocPartProcessor;
@@ -14,20 +15,17 @@ import org.wickedsource.docxstamper.processor.table.ITableResolver;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.replace.typeresolver.FallbackResolver;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Provides configuration parameters for DocxStamper.
  */
 public class DocxStamperConfiguration {
 
-	private final Map<Class<?>, CommentProcessorFactory> commentProcessorsToUse = new HashMap<>();
-	private final Map<Class<?>, Object> commentProcessors = new HashMap<>();
+	private final Map<Class<?>, CommentProcessorFactory> commentProcessors = new HashMap<>();
 	private final Map<Class<?>, ITypeResolver> typeResolvers = new HashMap<>();
 	private final Map<Class<?>, Object> expressionFunctions = new HashMap<>();
+	private final List<PreProcessor> preprocessors = new ArrayList<>();
 	private String lineBreakPlaceholder;
 	private EvaluationContextConfigurer evaluationContextConfigurer = new NoOpEvaluationContextConfigurer();
 	private boolean failOnUnresolvedExpression = true;
@@ -39,13 +37,17 @@ public class DocxStamperConfiguration {
 	private ITypeResolver defaultTypeResolver = new FallbackResolver();
 
 	public DocxStamperConfiguration() {
-		ProcessorFactory pf = new ProcessorFactory(this);
-		commentProcessorsToUse.put(IRepeatProcessor.class, pf::repeat);
-		commentProcessorsToUse.put(IParagraphRepeatProcessor.class, pf::repeatParagraph);
-		commentProcessorsToUse.put(IRepeatDocPartProcessor.class, pf::repeatDocPart);
-		commentProcessorsToUse.put(ITableResolver.class, pf::tableResolver);
-		commentProcessorsToUse.put(IDisplayIfProcessor.class, pf::displayIf);
-		commentProcessorsToUse.put(IReplaceWithProcessor.class, pf::replaceWith);
+		org.wickedsource.docxstamper.processor.CommentProcessorFactory pf = new org.wickedsource.docxstamper.processor.CommentProcessorFactory(
+				this);
+		commentProcessors.put(IRepeatProcessor.class, pf::repeat);
+		commentProcessors.put(IParagraphRepeatProcessor.class, pf::repeatParagraph);
+		commentProcessors.put(IRepeatDocPartProcessor.class, pf::repeatDocPart);
+		commentProcessors.put(ITableResolver.class, pf::tableResolver);
+		commentProcessors.put(IDisplayIfProcessor.class, pf::displayIf);
+		commentProcessors.put(IReplaceWithProcessor.class, pf::replaceWith);
+
+		preprocessors.add(new RemoveProofErrors());
+		preprocessors.add(new MergeSameStyleRuns());
 	}
 
 	public boolean isReplaceNullValues() {
@@ -102,10 +104,6 @@ public class DocxStamperConfiguration {
 	public DocxStamperConfiguration setLineBreakPlaceholder(String lineBreakPlaceholder) {
 		this.lineBreakPlaceholder = lineBreakPlaceholder;
 		return this;
-	}
-
-	public Map<Class<?>, Object> getCommentProcessors() {
-		return commentProcessors;
 	}
 
 	public Map<Class<?>, Object> getExpressionFunctions() {
@@ -223,7 +221,7 @@ public class DocxStamperConfiguration {
 			Class<?> interfaceClass,
 			CommentProcessorFactory commentProcessorFactory
 	) {
-		this.commentProcessorsToUse.put(interfaceClass, commentProcessorFactory);
+		this.commentProcessors.put(interfaceClass, commentProcessorFactory);
 		return this;
 	}
 
@@ -234,11 +232,11 @@ public class DocxStamperConfiguration {
 	 */
 	@Deprecated(forRemoval = true, since = "1.6.4")
 	public <T> DocxStamper<T> build() {
-		return new DocxStamper<T>(this);
+		return new DocxStamper<>(this);
 	}
 
-	public Map<Class<?>, CommentProcessorFactory> getCommentProcessorsToUse() {
-		return commentProcessorsToUse;
+	public Map<Class<?>, CommentProcessorFactory> getCommentProcessors() {
+		return commentProcessors;
 	}
 
 	Map<Class<?>, ITypeResolver> getTypeResolvers() {
@@ -254,15 +252,8 @@ public class DocxStamperConfiguration {
 		return this;
 	}
 
-	public void putCommentProcessor(Class<?> key, Object processorInstance) {
-		this.commentProcessors.put(key, processorInstance);
-	}
-
-	public List<TypeResolver> getTypeResolversList() {
-		return typeResolvers.entrySet()
-							.stream()
-							.map((e) -> TypeResolver.raw(e.getKey(), e.getValue()))
-							.toList();
+	public List<PreProcessor> getPreprocessors() {
+		return preprocessors;
 	}
 
 	interface CommentProcessorFactory {

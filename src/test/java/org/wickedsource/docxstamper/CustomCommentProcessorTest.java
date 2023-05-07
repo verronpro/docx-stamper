@@ -22,8 +22,8 @@ public class CustomCommentProcessorTest {
 	public void test() throws Docx4JException, IOException {
 		var template = getClass().getResourceAsStream("CustomCommentProcessorTest.docx");
 
-		var config = new DocxStamperConfiguration();
-		config.addCommentProcessor(ICustomCommentProcessor.class, CustomCommentProcessor::new);
+		var config = new DocxStamperConfiguration()
+				.addCommentProcessor(ICustomCommentProcessor.class, CustomCommentProcessor::new);
 
 		var stamper = new TestDocxStamper<>(config);
 		stamper.stampAndLoad(template, new EmptyContext());

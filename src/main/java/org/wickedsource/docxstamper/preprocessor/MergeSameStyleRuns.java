@@ -9,6 +9,7 @@ import org.docx4j.wml.RPr;
 import org.wickedsource.docxstamper.api.preprocessor.PreProcessor;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,14 +20,13 @@ public class MergeSameStyleRuns implements PreProcessor {
 		public void apply(R element, Object parent, List<Object> siblings) {
 			RPr rPr = element.getRPr();
 			int currentIndex = siblings.indexOf(element);
-			int nextIndex = currentIndex + 1;
-			List<R> similarStyleConcurrentRun = new ArrayList<>(List.of(element));
-			while (siblings.size() > nextIndex
-					&& siblings.get(nextIndex) instanceof R nextRun
-					&& Objects.equals(nextRun.getRPr(), rPr)) {
-				similarStyleConcurrentRun.add(nextRun);
-				nextIndex++;
-			}
+			List<R> similarStyleConcurrentRun = siblings
+					.stream()
+					.skip(currentIndex)
+					.takeWhile(o -> o instanceof R run && Objects.equals(run.getRPr(), rPr))
+					.map(R.class::cast)
+					.toList();
+
 			if (similarStyleConcurrentRun.size() > 1)
 				similarStyleConcurrentRuns.add(similarStyleConcurrentRun);
 		}
@@ -38,13 +38,14 @@ public class MergeSameStyleRuns implements PreProcessor {
 		TraversalUtil.visit(mainDocumentPart, visitor);
 		for (List<R> similarStyleConcurrentRun : similarStyleConcurrentRuns) {
 			R firstRun = similarStyleConcurrentRun.get(0);
-			List<Object> firstRunContent = firstRun.getContent();
-			ContentAccessor firstRunParent = (ContentAccessor) firstRun.getParent();
-			for (int i = 1; i < similarStyleConcurrentRun.size(); i++) {
-				R r = similarStyleConcurrentRun.get(i);
+			var firstRunContent = new LinkedHashSet<>(firstRun.getContent());
+			var firstRunParentContent = ((ContentAccessor) firstRun.getParent()).getContent();
+			for (R r : similarStyleConcurrentRun.subList(1, similarStyleConcurrentRun.size())) {
+				firstRunParentContent.remove(r);
 				firstRunContent.addAll(r.getContent());
-				firstRunParent.getContent().remove(r);
 			}
+			firstRun.getContent().clear();
+			firstRun.getContent().addAll(firstRunContent);
 		}
 	}
 }
