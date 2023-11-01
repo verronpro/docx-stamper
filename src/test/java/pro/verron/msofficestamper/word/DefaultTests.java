@@ -1,4 +1,4 @@
-package org.wickedsource.docxstamper;
+package pro.verron.msofficestamper.word;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -7,6 +7,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.el.NoOpEvaluationContextConfigurer;
 import org.wickedsource.docxstamper.replace.typeresolver.image.Image;
 import pro.verron.msofficestamper.Functions;
@@ -34,11 +35,11 @@ import static pro.verron.msofficestamper.utils.context.Contexts.*;
 public class DefaultTests {
 
     private static Arguments replaceWordWithIntegrationTest() {
-        return of("replaceWordWithIntegrationTest",
-                  new DocxStamperConfiguration(),
-                  name("Simpsons"),
-                  docx(of("IntegrationReplaceWordWithIntegrationTest.docx")),
-                  """
+        return Arguments.of("replaceWordWithIntegrationTest",
+                            new DocxStamperConfiguration(),
+                            name("Simpsons"),
+                            docx(of("IntegrationReplaceWordWithIntegrationTest.docx")),
+                            """
                           ReplaceWordWith Integration
                           ❬This variable ❬name❘b=true❭❬ ❘b=true❭should be resolved to the value Simpsons.❘b=true❭
                           This variable ❬name❘b=true❭ should be resolved to the value Simpsons.

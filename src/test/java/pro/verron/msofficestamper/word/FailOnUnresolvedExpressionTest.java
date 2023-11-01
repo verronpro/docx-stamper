@@ -1,7 +1,9 @@
-package org.wickedsource.docxstamper;
+package pro.verron.msofficestamper.word;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.wickedsource.docxstamper.DocxStamper;
+import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.UnresolvedExpressionException;
 
 import java.io.ByteArrayOutputStream;
@@ -18,7 +20,7 @@ class FailOnUnresolvedExpressionTest {
         var context = new Name("Homer");
         try (var template = docx(Path.of("FailOnUnresolvedExpressionTest" +
                                          ".docx"))) {
-            var stamper = new DocxStamper<Name>();
+            var stamper = new DocxStamper<Name>(new DocxStamperConfiguration());
             var outputStream = new ByteArrayOutputStream();
             assertThrows(UnresolvedExpressionException.class, () -> stamper.stamp(template, context, outputStream));
         }

@@ -1,7 +1,8 @@
-package org.wickedsource.docxstamper;
+package pro.verron.msofficestamper.word;
 
 import org.docx4j.dml.wordprocessingDrawing.Anchor;
 import org.junit.jupiter.api.Test;
+import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import pro.verron.msofficestamper.utils.TestDocxStamper;
 
 import java.nio.file.Path;

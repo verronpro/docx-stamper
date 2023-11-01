@@ -1,4 +1,4 @@
-package org.wickedsource.docxstamper.util;
+package pro.verron.msofficestamper.word.util;
 
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -8,6 +8,9 @@ import org.docx4j.wml.Tc;
 import org.docx4j.wml.Tr;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.wickedsource.docxstamper.util.DocumentUtil;
+import org.wickedsource.docxstamper.util.ObjectDeleter;
+import org.wickedsource.docxstamper.util.ParagraphWrapper;
 import pro.verron.msofficestamper.utils.IOStreams;
 
 import java.io.IOException;
@@ -15,9 +18,9 @@ import java.util.List;
 
 import static java.nio.file.Path.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 import static org.wickedsource.docxstamper.util.DocumentUtil.getParagraphsFromObject;
 import static org.wickedsource.docxstamper.util.DocumentUtil.getTableFromObject;
+import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 
 @DisplayName("Utilities - Deletion tools")
 class ObjectDeleterTest {

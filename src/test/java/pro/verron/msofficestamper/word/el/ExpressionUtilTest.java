@@ -1,7 +1,8 @@
-package org.wickedsource.docxstamper.el;
+package pro.verron.msofficestamper.word.el;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.wickedsource.docxstamper.el.ExpressionUtil;
 
 import java.util.List;
 

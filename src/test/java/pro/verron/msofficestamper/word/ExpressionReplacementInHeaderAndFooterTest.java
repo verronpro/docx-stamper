@@ -1,4 +1,4 @@
-package org.wickedsource.docxstamper;
+package pro.verron.msofficestamper.word;
 
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -9,6 +9,7 @@ import org.docx4j.openpackaging.parts.relationships.RelationshipsPart;
 import org.docx4j.relationships.Relationship;
 import org.docx4j.wml.P;
 import org.junit.jupiter.api.Test;
+import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.util.ParagraphWrapper;
 import pro.verron.msofficestamper.utils.TestDocxStamper;
 

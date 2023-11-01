@@ -1,6 +1,7 @@
-package org.wickedsource.docxstamper;
+package pro.verron.msofficestamper.word;
 
 import org.junit.jupiter.api.Test;
+import org.wickedsource.docxstamper.DocxStamperConfiguration;
 import org.wickedsource.docxstamper.api.DocxStamperException;
 import pro.verron.msofficestamper.utils.TestDocxStamper;
 import pro.verron.msofficestamper.utils.context.NullishContext;

@@ -1,4 +1,4 @@
-package org.wickedsource.docxstamper.util;
+package pro.verron.msofficestamper.word.util;
 
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -6,6 +6,7 @@ import org.docx4j.wml.P;
 import org.docx4j.wml.R;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.wickedsource.docxstamper.util.RunUtil;
 import pro.verron.msofficestamper.utils.IOStreams;
 
 import java.io.IOException;

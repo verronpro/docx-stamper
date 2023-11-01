@@ -1,4 +1,4 @@
-package org.wickedsource.docxstamper.replace;
+package pro.verron.msofficestamper.word.replace;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
