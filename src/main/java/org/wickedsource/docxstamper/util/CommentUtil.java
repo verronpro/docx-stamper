@@ -194,7 +194,7 @@ public class CommentUtil {
     /**
      * Returns the string value of the specified comment object.
      *
-     * @param comment a {@link org.wickedsource.docxstamper.util.CommentWrapper} object
+     * @param comment a {@link CommentWrapper} object
      */
     public static void deleteComment(CommentWrapper comment) {
         CommentRangeEnd end = comment.getCommentRangeEnd();

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Replaces expressions in a document with the values provided by the {@link org.wickedsource.docxstamper.el.ExpressionResolver}.
+ * Replaces expressions in a document with the values provided by the {@link ExpressionResolver}.
  *
  * @author joseph
  * @version $Id: $Id

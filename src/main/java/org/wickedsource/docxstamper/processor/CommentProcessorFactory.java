@@ -34,7 +34,7 @@ public class CommentProcessorFactory {
 	/**
 	 * Creates a new CommentProcessorFactory with default configuration.
 	 *
-	 * @param pr a {@link org.wickedsource.docxstamper.replace.PlaceholderReplacer} object
+	 * @param pr a {@link PlaceholderReplacer} object
 	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
 	 */
 	public ICommentProcessor repeatParagraph(PlaceholderReplacer pr) {
@@ -47,7 +47,7 @@ public class CommentProcessorFactory {
 	/**
 	 * Creates a new CommentProcessorFactory with default configuration.
 	 *
-	 * @param pr a {@link org.wickedsource.docxstamper.replace.PlaceholderReplacer} object
+	 * @param pr a {@link PlaceholderReplacer} object
 	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
 	 */
 	public ICommentProcessor repeatDocPart(PlaceholderReplacer pr) {
@@ -64,7 +64,7 @@ public class CommentProcessorFactory {
 	/**
 	 * Creates a new CommentProcessorFactory with default configuration.
 	 *
-	 * @param pr a {@link org.wickedsource.docxstamper.replace.PlaceholderReplacer} object
+	 * @param pr a {@link PlaceholderReplacer} object
 	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
 	 */
 	public ICommentProcessor repeat(PlaceholderReplacer pr) {
@@ -77,7 +77,7 @@ public class CommentProcessorFactory {
 	/**
 	 * Creates a new CommentProcessorFactory with default configuration.
 	 *
-	 * @param pr a {@link org.wickedsource.docxstamper.replace.PlaceholderReplacer} object
+	 * @param pr a {@link PlaceholderReplacer} object
 	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
 	 */
 	public ICommentProcessor tableResolver(PlaceholderReplacer pr) {
@@ -90,7 +90,7 @@ public class CommentProcessorFactory {
 	/**
 	 * Creates a new CommentProcessorFactory with default configuration.
 	 *
-	 * @param pr a {@link org.wickedsource.docxstamper.replace.PlaceholderReplacer} object
+	 * @param pr a {@link PlaceholderReplacer} object
 	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
 	 */
 	public ICommentProcessor displayIf(PlaceholderReplacer pr) {
@@ -100,7 +100,7 @@ public class CommentProcessorFactory {
 	/**
 	 * Creates a new CommentProcessorFactory with default configuration.
 	 *
-	 * @param pr a {@link org.wickedsource.docxstamper.replace.PlaceholderReplacer} object
+	 * @param pr a {@link PlaceholderReplacer} object
 	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
 	 */
 	public ICommentProcessor replaceWith(PlaceholderReplacer pr) {
