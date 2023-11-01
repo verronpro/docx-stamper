@@ -1,5 +1,7 @@
-package pro.verron.docxstamper;
+package pro.verron.msofficestamper;
 
+import org.docx4j.openpackaging.packages.PresentationMLPackage;
+import org.docx4j.openpackaging.packages.SpreadsheetMLPackage;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.wickedsource.docxstamper.DocxStamper;
 import org.wickedsource.docxstamper.DocxStamperConfiguration;
@@ -23,7 +25,7 @@ public class StamperFactory {
 	 *
 	 * @return a new DocxStamper
 	 */
-	public OpcStamper<WordprocessingMLPackage> newDocxStamper() {
+	public OpcStamper<WordprocessingMLPackage> word() {
 		DocxStamperConfiguration configuration = new DocxStamperConfiguration();
 		configuration.addPreprocessor(new RemoveProofErrors());
 		configuration.addPreprocessor(new MergeSameStyleRuns());
@@ -36,8 +38,16 @@ public class StamperFactory {
 	 *
 	 * @return a new DocxStamper
 	 */
-	public OpcStamper<WordprocessingMLPackage> nopreprocessingDocxStamper() {
-		DocxStamperConfiguration configuration = new DocxStamperConfiguration();
-		return new DocxStamper<>(configuration);
-	}
+    public OpcStamper<WordprocessingMLPackage> rawWord() {
+        DocxStamperConfiguration configuration = new DocxStamperConfiguration();
+        return new WordStamper(new DocxStamper<>(configuration));
+    }
+
+    public OpcStamper<SpreadsheetMLPackage> excel() {
+        return new ExcelStamper();
+    }
+
+    public OpcStamper<PresentationMLPackage> powerpoint() {
+        return new PowerpointStamper();
+    }
 }

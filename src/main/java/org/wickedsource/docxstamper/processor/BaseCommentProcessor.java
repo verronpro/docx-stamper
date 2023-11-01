@@ -57,17 +57,6 @@ public abstract class BaseCommentProcessor implements ICommentProcessor {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * @deprecated the document is passed to the processor through the commitChange method now,
-	 * and will probably pe passed through the constructor in the future
-	 */
-	@Deprecated(since = "1.6.5", forRemoval = true)
-	@Override
-	public void setDocument(WordprocessingMLPackage document) {
-		this.document = document;
-	}
-
-	/**
 	 * <p>Getter for the field <code>currentCommentWrapper</code>.</p>
 	 *
 	 * @return a {@link org.wickedsource.docxstamper.util.CommentWrapper} object

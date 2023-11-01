@@ -20,7 +20,7 @@ import org.wickedsource.docxstamper.replace.typeresolver.LocalDateTimeResolver;
 import org.wickedsource.docxstamper.replace.typeresolver.LocalTimeResolver;
 import org.wickedsource.docxstamper.replace.typeresolver.image.Image;
 import org.wickedsource.docxstamper.replace.typeresolver.image.ImageResolver;
-import pro.verron.docxstamper.OpcStamper;
+import pro.verron.msofficestamper.OpcStamper;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -50,7 +50,7 @@ public class DocxStamper<T> implements OpcStamper<WordprocessingMLPackage> {
 	/**
 	 * Creates a new DocxStamper with the default configuration.
 	 *
-	 * @deprecated since 1.6.4, use {@link pro.verron.docxstamper.StamperFactory#newDocxStamper()} or {@link pro.verron.docxstamper.StamperFactory#nopreprocessingDocxStamper()} instead.
+	 * @deprecated since 1.6.4, use {@link pro.verron.msofficestamper.StamperFactory#newDocxStamper()} or {@link pro.verron.msofficestamper.StamperFactory#nopreprocessingDocxStamper()} instead.
 	 */
 	@Deprecated(since = "1.6.4", forRemoval = true)
 	public DocxStamper() {

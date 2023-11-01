@@ -1,4 +1,4 @@
-package pro.verron.docxstamper;
+package pro.verron.msofficestamper;
 
 public class Functions {
 

@@ -2,20 +2,20 @@ package org.wickedsource.docxstamper;
 
 import org.docx4j.dml.wordprocessingDrawing.Anchor;
 import org.junit.jupiter.api.Test;
-import pro.verron.docxstamper.utils.TestDocxStamper;
+import pro.verron.msofficestamper.utils.TestDocxStamper;
 
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
-import static org.wickedsource.docxstamper.DefaultTests.getResource;
+import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 
 class ExpressionReplacementInTextBoxesTest {
 	@Test
     void expressionReplacementInTextBoxesTest() {
 		var context = new Name("Bart Simpson");
-		var template = getResource(Path.of("ExpressionReplacementInTextBoxesTest" +
-										   ".docx"));
+		var template = docx(Path.of("ExpressionReplacementInTextBoxesTest" +
+                                    ".docx"));
 		var stamper = new TestDocxStamper<Name>(new DocxStamperConfiguration().setFailOnUnresolvedExpression(false));
 		var actual = stamper.stampAndLoadAndExtract(template, context, Anchor.class);
 		List<String> expected = List.of(

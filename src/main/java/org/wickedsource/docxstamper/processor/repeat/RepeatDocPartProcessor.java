@@ -13,7 +13,7 @@ import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.DocumentUtil;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
 import org.wickedsource.docxstamper.util.SectionUtil;
-import pro.verron.docxstamper.OpcStamper;
+import pro.verron.msofficestamper.OpcStamper;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -32,7 +32,7 @@ import static org.wickedsource.docxstamper.util.DocumentUtil.walkObjectsAndImpor
 
 /**
  * This class is responsible for processing the &lt;ds:repeat&gt; tag.
- * It uses the {@link pro.verron.docxstamper.OpcStamper} to stamp the sub document and then
+ * It uses the {@link pro.verron.msofficestamper.OpcStamper} to stamp the sub document and then
  * copies the resulting sub document to the correct position in the
  * main document.
  *

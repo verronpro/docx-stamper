@@ -11,7 +11,7 @@ import org.wickedsource.docxstamper.processor.repeat.RepeatProcessor;
 import org.wickedsource.docxstamper.processor.replaceExpression.ReplaceWithProcessor;
 import org.wickedsource.docxstamper.processor.table.TableResolver;
 import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
-import pro.verron.docxstamper.OpcStamper;
+import pro.verron.msofficestamper.OpcStamper;
 
 /**
  * Factory class to create the correct comment processor for a given comment.

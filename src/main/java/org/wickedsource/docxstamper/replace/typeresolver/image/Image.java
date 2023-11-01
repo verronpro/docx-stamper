@@ -1,16 +1,24 @@
 package org.wickedsource.docxstamper.replace.typeresolver.image;
 
-import org.apache.commons.io.IOUtils;
+import org.wickedsource.docxstamper.api.DocxStamperException;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * This class describes an image which will be inserted into document.
- *
- * @author joseph
- * @version $Id: $Id
+ * Represents an image that can be inserted into a document.
+ * <p>
+ * The image can be created from an {@link InputStream} or from a byte array.
+ * If the image is created from an {@link InputStream}, the {@link InputStream} will be closed after the image
+ * has been created.
+ * If the image is created from a byte array, the byte array will be copied and the original byte array will not
+ * be modified.
+ * The image can be created with a maximum width. If the image is wider than the maximum width, it will be scaled
+ * down to the maximum width while keeping the aspect ratio.
+ * If the image is smaller than the maximum width, it will not be scaled up.
+ * If the image is created without a maximum width, it will not be scaled at all.
+ * The maximum width is measured in twips (1/20th of a point).
+ * </p>
  */
 public class Image {
 
@@ -18,65 +26,45 @@ public class Image {
     private Integer maxWidth;
 
     /**
-     * <p>Constructor for Image.</p>
+     * Creates an image from the given {@link InputStream}.
      *
-     * @param in - content of the image as InputStream
-     * @throws java.io.IOException if any.
+     * @param in the {@link InputStream} to read the image from.
      */
-    public Image(InputStream in) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        IOUtils.copy(in, out);
-        this.imageBytes = out.toByteArray();
+    public Image(InputStream in) {
+        this(in, null);
     }
 
     /**
-     * <p>Constructor for Image.</p>
+     * Creates an image from the given {@link InputStream} and scales it down to the given maximum width.
      *
-     * @param in - content of the image as InputStream
-     * @param maxWidth - max width of the image in twip
-     * @throws java.io.IOException if any.
+     * @param in       the {@link InputStream} to read the image from.
+     * @param maxWidth the maximum width of the image in twips (1/20th of a point).
      */
-    public Image(InputStream in, Integer maxWidth) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        IOUtils.copy(in, out);
-        this.imageBytes = out.toByteArray();
-        this.maxWidth = maxWidth;
+    public Image(InputStream in, Integer maxWidth) {
+        this(allBytes(in), maxWidth);
     }
 
-    /**
-     * <p>Constructor for Image.</p>
-     *
-     * @param imageBytes - content of the image as array of the bytes
-     */
     public Image(byte[] imageBytes) {
         this.imageBytes = imageBytes;
     }
 
-    /**
-     * <p>Constructor for Image.</p>
-     *
-     * @param imageBytes - content of the image as array of the bytes
-     * @param maxWidth - max width of the image in twip
-     */
     public Image(byte[] imageBytes, Integer maxWidth) {
         this.imageBytes = imageBytes;
         this.maxWidth = maxWidth;
     }
 
-    /**
-     * <p>Getter for the field <code>maxWidth</code>.</p>
-     *
-     * @return a {@link java.lang.Integer} object
-     */
+    private static byte[] allBytes(InputStream in) {
+        try {
+            return in.readAllBytes();
+        } catch (IOException e) {
+            throw new DocxStamperException("Failed to read stream", e);
+        }
+    }
+
     public Integer getMaxWidth() {
         return maxWidth;
     }
 
-    /**
-     * <p>Getter for the field <code>imageBytes</code>.</p>
-     *
-     * @return an array of {@link byte} objects
-     */
     public byte[] getImageBytes() {
         return imageBytes;
     }

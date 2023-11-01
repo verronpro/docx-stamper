@@ -8,14 +8,14 @@ import org.docx4j.wml.Tc;
 import org.docx4j.wml.Tr;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import pro.verron.docxstamper.utils.IOStreams;
+import pro.verron.msofficestamper.utils.IOStreams;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 
+import static java.nio.file.Path.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.wickedsource.docxstamper.DefaultTests.getResource;
+import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 import static org.wickedsource.docxstamper.util.DocumentUtil.getParagraphsFromObject;
 import static org.wickedsource.docxstamper.util.DocumentUtil.getTableFromObject;
 
@@ -24,8 +24,8 @@ class ObjectDeleterTest {
 
     @Test
     void deletesCorrectGlobalParagraphs() throws Docx4JException, IOException {
-        var template = getResource(Path.of("util","ObjectDeleterTest" +
-                                           "-globalParagraphs.docx"));
+        var template = docx(of(
+                "UtilObjectDeleterTest-globalParagraphs.docx"));
         var in = WordprocessingMLPackage.load(template);
         var coordinates = getParagraphsFromObject(in);
 
@@ -34,9 +34,10 @@ class ObjectDeleterTest {
         ObjectDeleter.deleteParagraph(coordinates.get(3));
 
         var document = saveAndLoadDocument(in);
-        assertEquals(2, document.getMainDocumentPart()
-                .getContent()
-                .size());
+        assertEquals(2,
+                     document.getMainDocumentPart()
+                             .getContent()
+                             .size());
         assertEquals("This is the second paragraph.",
                      new ParagraphWrapper((P) document.getMainDocumentPart()
                              .getContent()
@@ -65,12 +66,11 @@ class ObjectDeleterTest {
 
     @Test
     void deletesCorrectParagraphsInTableCells() throws Docx4JException, IOException {
-        var template = getResource(
-                Path.of("util","ObjectDeleterTest-paragraphsInTableCells" +
-                               ".docx"));
+        var template = docx(of(
+                "UtilObjectDeleterTest-paragraphsInTableCells.docx"));
         var document = WordprocessingMLPackage.load(template);
-        final List<P> coordinates = getParagraphsFromObject(
-                getTableFromObject(document));
+        final List<P> coordinates = getParagraphsFromObject(getTableFromObject(
+                document));
 
         ObjectDeleter.deleteParagraph(coordinates.get(1));
         ObjectDeleter.deleteParagraph(coordinates.get(2));
@@ -87,9 +87,10 @@ class ObjectDeleterTest {
                      new ParagraphWrapper((P) cellCoordinates.get(0)
                              .getContent()
                              .get(0)).getText());
-        assertEquals("", new ParagraphWrapper((P) cellCoordinates.get(1)
-                .getContent()
-                .get(0)).getText());
+        assertEquals("",
+                     new ParagraphWrapper((P) cellCoordinates.get(1)
+                             .getContent()
+                             .get(0)).getText());
         assertEquals("3 This is the second paragraph.",
                      new ParagraphWrapper((P) cellCoordinates.get(2)
                              .getContent()
@@ -114,8 +115,8 @@ class ObjectDeleterTest {
 
     @Test
     void deletesCorrectGlobalTables() throws Docx4JException, IOException {
-        var template = getResource(Path.of("util","ObjectDeleterTest-tables" +
-                                                  ".docx"));
+        var template = docx(of(
+                "UtilObjectDeleterTest-tables" + ".docx"));
         var document = WordprocessingMLPackage.load(template);
         var coordinates = DocumentUtil.getTableFromObject(document);
 
@@ -130,28 +131,31 @@ class ObjectDeleterTest {
 
         List<Tc> cellCoordinates = DocumentUtil.getTableCellsFromObject(
                 savedDocument);
-        assertEquals("This", new ParagraphWrapper((P) cellCoordinates.get(0)
-                .getContent()
-                .get(0)).getText());
-        assertEquals("Table", new ParagraphWrapper((P) cellCoordinates.get(1)
-                .getContent()
-                .get(0)).getText());
-        assertEquals("Stays", new ParagraphWrapper((P) cellCoordinates.get(2)
-                .getContent()
-                .get(0)).getText());
-        assertEquals("!", new ParagraphWrapper((P) cellCoordinates.get(3)
-                .getContent()
-                .get(0)).getText());
-        assertEquals("This table stays", new ParagraphWrapper(
-                (P) cellCoordinates.get(4)
-                        .getContent()
-                        .get(0)).getText());
+        assertEquals("This",
+                     new ParagraphWrapper((P) cellCoordinates.get(0)
+                             .getContent()
+                             .get(0)).getText());
+        assertEquals("Table",
+                     new ParagraphWrapper((P) cellCoordinates.get(1)
+                             .getContent()
+                             .get(0)).getText());
+        assertEquals("Stays",
+                     new ParagraphWrapper((P) cellCoordinates.get(2)
+                             .getContent()
+                             .get(0)).getText());
+        assertEquals("!",
+                     new ParagraphWrapper((P) cellCoordinates.get(3)
+                             .getContent()
+                             .get(0)).getText());
+        assertEquals("This table stays",
+                     new ParagraphWrapper((P) cellCoordinates.get(4)
+                             .getContent()
+                             .get(0)).getText());
     }
 
     @Test
     void deletesCorrectTableRows() throws Docx4JException, IOException {
-        var template = getResource(Path.of("util","ObjectDeleterTest" +
-                                                  "-tableRows.docx"));
+        var template = docx(of("UtilObjectDeleterTest" + "-tableRows.docx"));
         var document = WordprocessingMLPackage.load(template);
         var rowCoordinates = DocumentUtil.getTableRowsFromObject(document);
 
@@ -166,23 +170,29 @@ class ObjectDeleterTest {
 
         List<Tc> cellCoordinates = DocumentUtil.getTableCellsFromObject(
                 savedDocument);
-        assertEquals("This row", new ParagraphWrapper((P) cellCoordinates.get(0)
-                .getContent()
-                .get(0)).getText());
-        assertEquals("Stays!", new ParagraphWrapper((P) cellCoordinates.get(1)
-                .getContent()
-                .get(0)).getText());
-        assertEquals("This row", new ParagraphWrapper((P) cellCoordinates.get(2)
-                .getContent()
-                .get(0)).getText());
-        assertEquals("Stays!", new ParagraphWrapper((P) cellCoordinates.get(3)
-                .getContent()
-                .get(0)).getText());
-        assertEquals("This row", new ParagraphWrapper((P) cellCoordinates.get(4)
-                .getContent()
-                .get(0)).getText());
-        assertEquals("Stays!", new ParagraphWrapper((P) cellCoordinates.get(5)
-                .getContent()
-                .get(0)).getText());
+        assertEquals("This row",
+                     new ParagraphWrapper((P) cellCoordinates.get(0)
+                             .getContent()
+                             .get(0)).getText());
+        assertEquals("Stays!",
+                     new ParagraphWrapper((P) cellCoordinates.get(1)
+                             .getContent()
+                             .get(0)).getText());
+        assertEquals("This row",
+                     new ParagraphWrapper((P) cellCoordinates.get(2)
+                             .getContent()
+                             .get(0)).getText());
+        assertEquals("Stays!",
+                     new ParagraphWrapper((P) cellCoordinates.get(3)
+                             .getContent()
+                             .get(0)).getText());
+        assertEquals("This row",
+                     new ParagraphWrapper((P) cellCoordinates.get(4)
+                             .getContent()
+                             .get(0)).getText());
+        assertEquals("Stays!",
+                     new ParagraphWrapper((P) cellCoordinates.get(5)
+                             .getContent()
+                             .get(0)).getText());
     }
 }

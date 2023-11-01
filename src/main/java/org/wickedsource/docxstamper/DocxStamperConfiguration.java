@@ -23,33 +23,48 @@ import java.util.*;
  * @version $Id: $Id
  */
 public class DocxStamperConfiguration {
-
-    private final Map<Class<?>, CommentProcessorBuilder> commentProcessors = new HashMap<>();
-    private final Map<Class<?>, ITypeResolver<?>> typeResolvers = new HashMap<>();
-    private final Map<Class<?>, Object> expressionFunctions = new HashMap<>();
-    private final List<PreProcessor> preprocessors = new ArrayList<>();
+    private final Map<Class<?>, CommentProcessorBuilder> commentProcessors;
+    private final Map<Class<?>, ITypeResolver<?>> typeResolvers;
+    private final Map<Class<?>, Object> expressionFunctions;
+    private final List<PreProcessor> preprocessors;
     private String lineBreakPlaceholder;
-    private EvaluationContextConfigurer evaluationContextConfigurer = new DefaultEvaluationContextConfigurer();
-    private boolean failOnUnresolvedExpression = true;
-    private boolean leaveEmptyOnExpressionError = false;
-    private boolean replaceUnresolvedExpressions = false;
-    private String unresolvedExpressionsDefaultValue = null;
-    private boolean replaceNullValues = false;
-    private String nullValuesDefault = null;
-    private ITypeResolver<Object> defaultTypeResolver = new FallbackResolver();
-    private SpelParserConfiguration spelParserConfiguration = new SpelParserConfiguration();
+    private EvaluationContextConfigurer evaluationContextConfigurer;
+    private boolean failOnUnresolvedExpression;
+    private boolean leaveEmptyOnExpressionError;
+    private boolean replaceUnresolvedExpressions;
+    private String unresolvedExpressionsDefaultValue;
+    private boolean replaceNullValues;
+    private String nullValuesDefault;
+    private ITypeResolver<Object> defaultTypeResolver;
+    private SpelParserConfiguration spelParserConfiguration;
 
     /**
      * Creates a new configuration with default values.
      */
     public DocxStamperConfiguration() {
         CommentProcessorFactory pf = new CommentProcessorFactory(this);
-        commentProcessors.put(IRepeatProcessor.class, pf::repeat);
-        commentProcessors.put(IParagraphRepeatProcessor.class, pf::repeatParagraph);
-        commentProcessors.put(IRepeatDocPartProcessor.class, pf::repeatDocPart);
-        commentProcessors.put(ITableResolver.class, pf::tableResolver);
-        commentProcessors.put(IDisplayIfProcessor.class, pf::displayIf);
-        commentProcessors.put(IReplaceWithProcessor.class, pf::replaceWith);
+
+        var commentProcessorsMap = new HashMap<Class<?>, CommentProcessorBuilder>();
+        commentProcessorsMap.put(IRepeatProcessor.class, pf::repeat);
+        commentProcessorsMap.put(IParagraphRepeatProcessor.class, pf::repeatParagraph);
+        commentProcessorsMap.put(IRepeatDocPartProcessor.class, pf::repeatDocPart);
+        commentProcessorsMap.put(ITableResolver.class, pf::tableResolver);
+        commentProcessorsMap.put(IDisplayIfProcessor.class, pf::displayIf);
+        commentProcessorsMap.put(IReplaceWithProcessor.class, pf::replaceWith);
+
+        commentProcessors = commentProcessorsMap;
+        defaultTypeResolver = new FallbackResolver();
+        spelParserConfiguration = new SpelParserConfiguration();
+        nullValuesDefault = null;
+        replaceNullValues = false;
+        unresolvedExpressionsDefaultValue = null;
+        replaceUnresolvedExpressions = false;
+        leaveEmptyOnExpressionError = false;
+        failOnUnresolvedExpression = true;
+        evaluationContextConfigurer = new DefaultEvaluationContextConfigurer();
+        preprocessors = new ArrayList<>();
+        expressionFunctions = new HashMap<>();
+        typeResolvers = new HashMap<>();
     }
 
     /**

@@ -10,13 +10,13 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.wickedsource.docxstamper.DefaultTests.getResource;
+import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 
 @DisplayName("Utilities - Comments")
 class CommentUtilTest {
 	@Test
 	void onlyParagraphsWithCommentRangeStartAreCommented() throws Docx4JException {
-		var in = getResource(Path.of("util","CommentUtilTest.docx"));
+		var in = docx(Path.of("UtilCommentUtilTest.docx"));
 		var document = WordprocessingMLPackage.load(in);
 
 		P p1 = (P) document.getMainDocumentPart().getContent().get(0);

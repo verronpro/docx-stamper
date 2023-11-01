@@ -1,4 +1,4 @@
-package pro.verron.docxstamper.commentProcessors;
+package pro.verron.msofficestamper.commentProcessors;
 
 import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 

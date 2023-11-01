@@ -1,4 +1,4 @@
-package pro.verron.docxstamper.utils.context;
+package pro.verron.msofficestamper.utils.context;
 
 import java.util.Objects;
 

@@ -206,7 +206,6 @@ public class CommentProcessorRegistry {
             ((ICommentProcessor) processor).setCurrentRun(run);
             ((ICommentProcessor) processor).setCurrentCommentWrapper(
                     commentWrapper);
-            ((ICommentProcessor) processor).setDocument(document);
         }
 
         try {

@@ -10,14 +10,14 @@ import java.io.InputStream;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.wickedsource.docxstamper.DefaultTests.getResource;
+import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 
 class FailOnUnresolvedExpressionTest {
     @Test
     void fails() throws IOException {
         var context = new Name("Homer");
-        try (var template = getResource(Path.of("FailOnUnresolvedExpressionTest" +
-                                                ".docx"))) {
+        try (var template = docx(Path.of("FailOnUnresolvedExpressionTest" +
+                                         ".docx"))) {
             var stamper = new DocxStamper<Name>();
             var outputStream = new ByteArrayOutputStream();
             assertThrows(UnresolvedExpressionException.class, () -> stamper.stamp(template, context, outputStream));
@@ -27,7 +27,7 @@ class FailOnUnresolvedExpressionTest {
     @Test
     void doesNotFail() throws IOException {
         Name context = new Name("Homer");
-        try (InputStream template = getResource(Path.of(
+        try (InputStream template = docx(Path.of(
                 "FailOnUnresolvedExpressionTest.docx"))) {
             var config = new DocxStamperConfiguration()
                     .setFailOnUnresolvedExpression(false);

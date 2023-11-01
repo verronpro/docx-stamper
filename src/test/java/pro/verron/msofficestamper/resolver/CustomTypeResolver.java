@@ -1,7 +1,7 @@
-package pro.verron.docxstamper.resolver;
+package pro.verron.msofficestamper.resolver;
 
 import org.wickedsource.docxstamper.replace.typeresolver.AbstractToTextResolver;
-import pro.verron.docxstamper.utils.context.Contexts;
+import pro.verron.msofficestamper.utils.context.Contexts;
 
 public class CustomTypeResolver extends AbstractToTextResolver<Contexts.CustomType> {
     @Override

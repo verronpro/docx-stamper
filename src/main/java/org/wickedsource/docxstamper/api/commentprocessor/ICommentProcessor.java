@@ -65,25 +65,13 @@ public interface ICommentProcessor {
 
 	/**
 	 * Passes the comment range wrapper that is currently being processed
-	 * (i.e. the start and end of comment that in the .docx template.
+	 * (i.e. the start and end of comment that in the .docx template).
 	 * This method is always called BEFORE the custom methods of the custom comment
 	 * processor interface are called.
 	 *
 	 * @param commentWrapper of the currently processed comment within the template.
 	 */
 	void setCurrentCommentWrapper(CommentWrapper commentWrapper);
-
-	/**
-	 * Passes the processed document, in order to make all linked data (images, etc) available
-	 * to processors that need it (example : repeatDocPart)
-	 *
-	 * @param document DocX template being processed.
-	 * @deprecated the document is passed to the processor through the commitChange method now,
-	 * and will probably pe passed through the constructor in the future
-	 */
-
-	@Deprecated(since = "1.6.5", forRemoval = true)
-	void setDocument(WordprocessingMLPackage document);
 
 	/**
 	 * Resets all state in the comment processor so that it can be re-used in another stamping process.

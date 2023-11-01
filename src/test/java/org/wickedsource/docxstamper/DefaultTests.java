@@ -9,48 +9,35 @@ import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.wickedsource.docxstamper.el.NoOpEvaluationContextConfigurer;
 import org.wickedsource.docxstamper.replace.typeresolver.image.Image;
-import pro.verron.docxstamper.Functions;
-import pro.verron.docxstamper.accessors.SimpleGetter;
-import pro.verron.docxstamper.commentProcessors.CustomCommentProcessor;
-import pro.verron.docxstamper.commentProcessors.ICustomCommentProcessor;
-import pro.verron.docxstamper.resolver.CustomTypeResolver;
-import pro.verron.docxstamper.utils.TestDocxStamper;
-import pro.verron.docxstamper.utils.context.Contexts;
+import pro.verron.msofficestamper.Functions;
+import pro.verron.msofficestamper.accessors.SimpleGetter;
+import pro.verron.msofficestamper.commentProcessors.CustomCommentProcessor;
+import pro.verron.msofficestamper.commentProcessors.ICustomCommentProcessor;
+import pro.verron.msofficestamper.resolver.CustomTypeResolver;
+import pro.verron.msofficestamper.utils.TestDocxStamper;
+import pro.verron.msofficestamper.utils.context.Contexts;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static java.nio.file.Path.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.junit.jupiter.params.provider.Arguments.of;
-import static pro.verron.docxstamper.utils.context.Contexts.*;
+import static pro.verron.msofficestamper.utils.ResourceUtils.*;
+import static pro.verron.msofficestamper.utils.context.Contexts.*;
 
 @DisplayName("Core Features")
 
 public class DefaultTests {
 
-    public static InputStream getResource(Path path) {
-        try {
-            var testRoot = Path.of("test", "sources");
-            var resolve = testRoot.resolve(path);
-            return Files.newInputStream(resolve);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static Arguments replaceWordWithIntegrationTest() {
         return of("replaceWordWithIntegrationTest",
                   new DocxStamperConfiguration(),
                   name("Simpsons"),
-                  getResource(Path.of("integration",
-                                      "ReplaceWordWithIntegrationTest.docx")),
+                  docx(of("IntegrationReplaceWordWithIntegrationTest.docx")),
                   """
                           ReplaceWordWith Integration
                           ❬This variable ❬name❘b=true❭❬ ❘b=true❭should be resolved to the value Simpsons.❘b=true❭
@@ -67,7 +54,7 @@ public class DefaultTests {
                         role("Kent Brockman", "Harry Shearer"),
                         role("Disco Stu", "Hank Azaria"),
                         role("Krusty the Clown", "Dan Castellaneta")),
-                  getResource(Path.of("RepeatTableRowTest.docx")),
+                  docx(of("RepeatTableRowTest.docx")),
                   """
                           ❬Repeating Table Rows❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                           ❬❬List of Simpsons characters❘b=true❭❘b=true,spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
@@ -85,7 +72,7 @@ public class DefaultTests {
                           Hank Azaria
                           Krusty the Clown
                           Dan Castellaneta
-                                                                     
+
                           ❬There are ❬6❘lang=de-DE❭ characters in the above table.❘lang=de-DE,spacing={after=140,afterLines=140,before=140,beforeLines=140,line=140,lineRule=140}❭""");
     }
 
@@ -93,7 +80,7 @@ public class DefaultTests {
         return of("Ternary operators should function",
                   new DocxStamperConfiguration(),
                   name("Homer"),
-                  getResource(Path.of("TernaryOperatorTest.docx")),
+                  docx(of("TernaryOperatorTest.docx")),
                   """
                           Expression Replacement with ternary operator
                           This paragraph is untouched.
@@ -106,7 +93,7 @@ public class DefaultTests {
         return of("White spaces should be preserved",
                   new DocxStamperConfiguration(),
                   name("Homer Simpson"),
-                  getResource(Path.of("TabsIndentationTest.docx")),
+                  docx(of("TabsIndentationTest.docx")),
                   """
                           ❬❬Tab❘lang=en-US❭❬|TAB|❘lang=en-US❭❬Homer Simpson❘lang=en-US❭❘lang=en-US❭
                           ❬❬Space❘lang=en-US❭❬ ❘lang=en-US❭❬Homer Simpson❘lang=en-US❭❘lang=en-US❭""");
@@ -116,7 +103,7 @@ public class DefaultTests {
         return of("Tabulation should be preserved",
                   new DocxStamperConfiguration(),
                   name("Homer Simpson"),
-                  getResource(Path.of("TabsIndentationTest.docx")),
+                  docx(of("TabsIndentationTest.docx")),
                   """
                           ❬❬Tab❘lang=en-US❭❬|TAB|❘lang=en-US❭❬Homer Simpson❘lang=en-US❭❘lang=en-US❭
                           ❬❬Space❘lang=en-US❭❬ ❘lang=en-US❭❬Homer Simpson❘lang=en-US❭❘lang=en-US❭""");
@@ -126,7 +113,7 @@ public class DefaultTests {
         return of("Do not replace 'null' values",
                   new DocxStamperConfiguration().replaceNullValues(false),
                   name(null),
-                  getResource(Path.of("ReplaceNullExpressionTest" + ".docx")),
+                  docx(of("ReplaceNullExpressionTest" + ".docx")),
                   "I am ${name}.");
     }
 
@@ -134,35 +121,19 @@ public class DefaultTests {
         return of("Do replace 'null' values",
                   new DocxStamperConfiguration().replaceNullValues(true),
                   name(null),
-                  getResource(Path.of("ReplaceNullExpressionTest.docx")),
+                  docx(of("ReplaceNullExpressionTest.docx")),
                   "I am .");
     }
 
     private static Arguments repeatTableRowKeepsFormatTest() {
         return of("repeatTableRowKeepsFormatTest",
                   new DocxStamperConfiguration(),
-                  new Show(List.of(new CharacterRecord(1,
-                                                       "st",
-                                                       "Homer Simpson",
-                                                       "Dan Castellaneta"),
-                                   new CharacterRecord(2,
-                                                       "nd",
-                                                       "Marge Simpson",
-                                                       "Julie Kavner"),
-                                   new CharacterRecord(3,
-                                                       "rd",
-                                                       "Bart Simpson",
-                                                       "Nancy Cartwright"),
-                                   new CharacterRecord(4,
-                                                       "th",
-                                                       "Lisa Simpson",
-                                                       "Yeardley Smith"),
-                                   new CharacterRecord(5,
-                                                       "th",
-                                                       "Maggie Simpson",
-                                                       "Julie Kavner"))),
-                  getResource(Path.of("integration",
-                                      "RepeatTableRowKeepsFormatTest.docx")),
+                  show(character(1, "st", "Homer Simpson", "Dan Castellaneta"),
+                       character(2, "nd", "Marge Simpson", "Julie Kavner"),
+                       character(3, "rd", "Bart Simpson", "Nancy Cartwright"),
+                       character(4, "th", "Lisa Simpson", "Yeardley Smith"),
+                       character(5, "th", "Maggie Simpson", "Julie Kavner")),
+                  docx(of("IntegrationRepeatTableRowKeepsFormatTest.docx")),
                   """
                           1❬st❘vertAlign=superscript❭ Homer Simpson-❬Dan Castellaneta❘b=true❭
                           2❬nd❘vertAlign=superscript❭ Marge Simpson-❬Julie Kavner❘b=true❭
@@ -173,25 +144,13 @@ public class DefaultTests {
     }
 
     private static Arguments repeatParagraphTest() {
-        var context = new Contexts.Characters(List.of(new Contexts.Role(
-                                                              "Homer Simpson",
-                                                              "Dan Castellaneta"),
-                                                      new Contexts.Role(
-                                                              "Marge Simpson",
-                                                              "Julie Kavner"),
-                                                      new Contexts.Role(
-                                                              "Bart Simpson",
-                                                              "Nancy Cartwright"),
-                                                      new Contexts.Role(
-                                                              "Kent Brockman",
-                                                              "Harry Shearer"),
-                                                      new Contexts.Role(
-                                                              "Disco Stu",
-                                                              "Hank Azaria"),
-                                                      new Contexts.Role(
-                                                              "Krusty the Clown",
-                                                              "Dan Castellaneta")));
-        var template = getResource(Path.of("RepeatParagraphTest.docx"));
+        var context = roles(role("Homer Simpson", "Dan Castellaneta"),
+                            role("Marge Simpson", "Julie Kavner"),
+                            role("Bart Simpson", "Nancy Cartwright"),
+                            role("Kent Brockman", "Harry Shearer"),
+                            role("Disco Stu", "Hank Azaria"),
+                            role("Krusty the Clown", "Dan Castellaneta"));
+        var template = docx(of("RepeatParagraphTest.docx"));
         var expected = """
                 ❬Repeating Paragraphs❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬❬List of Simpsons characters❘b=true❭❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
@@ -207,7 +166,7 @@ public class DefaultTests {
                 Hank Azaria
                 Krusty the Clown
                 Dan Castellaneta
-                     
+
                 ❬There are ❬6❘lang=de-DE❭ characters.❘spacing={after=140,afterLines=140,before=140,beforeLines=140,line=140,lineRule=140}❭""";
 
         return arguments("repeatParagraphTest",
@@ -218,20 +177,21 @@ public class DefaultTests {
     }
 
     private static Arguments repeatDocPartWithImageTestShouldImportImageDataInTheMainDocument() {
-        var context = Map.of("units", Stream.of(getImage(Path.of("butterfly" +
-                                                                 ".png")),
-                                                getImage(Path.of("map.jpg")))
-                .map(image -> Map.of("coverImage", image))
-                .map(map -> Map.of("productionFacility", map))
-                .toList());
-        var template = getResource(Path.of("RepeatDocPartWithImageTest.docx"));
+        var context = Map.of("units",
+                             Stream.of(new Image(png(of("butterfly.png"))),
+                                       new Image(jpg(of("map.jpg"))))
+                                     .map(image -> Map.of("coverImage", image))
+                                     .map(map -> Map.of("productionFacility",
+                                                        map))
+                                     .toList());
+        var template = docx(of("RepeatDocPartWithImageTest.docx"));
         var expected = """
-                                
+
                 rId11:image/png:193.6kB:sha1=t8UNAmo7yJgZJk9g7pLLIb3AvCA=:cy=$d:6120130
                 rId12:image/jpeg:407.5kB:sha1=Ujo3UzL8WmeZN/1K6weBydaI73I=:cy=$d:6120130
-                                
-                                
-                                
+
+
+
                 Always rendered:
                 rId13:image/png:193.6kB:sha1=t8UNAmo7yJgZJk9g7pLLIb3AvCA=:cy=$d:6120130
                 """;
@@ -246,22 +206,14 @@ public class DefaultTests {
                 expected);
     }
 
-    private static Image getImage(Path path) {
-        try {
-            return new Image(getResource(path));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static Arguments repeatDocPartWithImagesInSourceTestshouldReplicateImageFromTheMainDocumentInTheSubTemplate() {
         return of(
                 "repeatDocPartWithImagesInSourceTestshouldReplicateImageFromTheMainDocumentInTheSubTemplate",
                 new DocxStamperConfiguration().setEvaluationContextConfigurer((StandardEvaluationContext ctx) -> ctx.addPropertyAccessor(
                         new MapAccessor())),
-                Contexts.subDocPartContext(),
-                getResource(Path.of("RepeatDocPartWithImagesInSourceTest" +
-                                    ".docx")),
+                subDocParts(singletonMap("name", "first doc part"),
+                            singletonMap("name", "second doc part")),
+                docx(of("RepeatDocPartWithImagesInSourceTest" + ".docx")),
                 """
                         This is not repeated
                         This should be repeated : first doc part
@@ -276,18 +228,13 @@ public class DefaultTests {
     private static Arguments repeatDocPartTest() {
         return of("repeatDocPartTest",
                   new DocxStamperConfiguration(),
-                  new Characters(List.of(new Role("Homer Simpson",
-                                                  "Dan Castellaneta"),
-                                         new Role("Marge Simpson",
-                                                  "Julie Kavner"),
-                                         new Role("Bart Simpson",
-                                                  "Nancy Cartwright"),
-                                         new Role("Kent Brockman",
-                                                  "Harry Shearer"),
-                                         new Role("Disco Stu", "Hank Azaria"),
-                                         new Role("Krusty the Clown",
-                                                  "Dan Castellaneta"))),
-                  getResource(Path.of("RepeatDocPartTest.docx")),
+                  roles(role("Homer Simpson", "Dan Castellaneta"),
+                        role("Marge Simpson", "Julie Kavner"),
+                        role("Bart Simpson", "Nancy Cartwright"),
+                        role("Kent Brockman", "Harry Shearer"),
+                        role("Disco Stu", "Hank Azaria"),
+                        role("Krusty the Clown", "Dan Castellaneta")),
+                  docx(of("RepeatDocPartTest.docx")),
                   """
                           Repeating Doc Part
                           ❬❬List ❘b=true❭❬of❘b=true❭❬ Simpsons ❘b=true❭❬characters❘b=true❭❘b=true,spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
@@ -318,11 +265,12 @@ public class DefaultTests {
                           There are 6 characters.""");
     }
 
+
     private static Arguments repeatDocPartNestingTest() {
         return of("repeatDocPartNestingTest",
                   new DocxStamperConfiguration(),
-                  Contexts.schoolContext(),
-                  getResource(Path.of("RepeatDocPartNestingTest.docx")),
+                  schoolContext("South Park Primary School", 3, 3, 5, "Bruce"),
+                  docx(of("RepeatDocPartNestingTest.docx")),
                   """
                           ❬Repeating ❬N❘lang=en-US❭ested Doc Part ❘suppressAutoHyphens=xxx,widowControl=xxx❭
                           ❬List of All the s❬tu❘lang=en-US❭❬dent’s of all grades❘lang=null❭❘lang=null,suppressAutoHyphens=xxx,widowControl=xxx❭
@@ -479,32 +427,32 @@ public class DefaultTests {
 
 
     private static Arguments repeatDocPartAndCommentProcessorsIsolationTest_repeatDocPartShouldNotUseSameCommentProcessorInstancesForSubtemplate() {
-        var context = Contexts.tableContext();
-        var template = getResource(
-                Path.of("RepeatDocPartAndCommentProcessorsIsolationTest.docx"));
+        var context = tableContext();
+        var template = docx(of(
+                "RepeatDocPartAndCommentProcessorsIsolationTest.docx"));
         var expected = """
                 This will stay untouched.
-                                
+
                 firstTable value1
                 firstTable value2
-                                
+
                 This will also stay untouched.
-                                
+
                 Repeating paragraph :
-                                
+
                 repeatDocPart value1
                 Repeating paragraph :
-                                
+
                 repeatDocPart value2
                 Repeating paragraph :
-                                
+
                 repeatDocPart value3
-                                
+
                 secondTable value1
                 secondTable value2
                 secondTable value3
                 secondTable value4
-                                
+
                 This will stay untouched too.""";
 
         var config = new DocxStamperConfiguration();
@@ -524,38 +472,35 @@ public class DefaultTests {
                 "changingPageLayoutTest_shouldKeepSectionBreakOrientationInRepeatParagraphWithoutSectionBreakInsideComment",
                 new DocxStamperConfiguration().setEvaluationContextConfigurer(
                         ctx -> ctx.addPropertyAccessor(new MapAccessor())),
-                Map.of("repeatValues",
-                       List.of(new Name("Homer"), new Name("Marge"))),
-                getResource(Path.of(
-                        "ChangingPageLayoutOutsideRepeatParagraphTest.docx")),
+                coupleContext(),
+                docx(of("ChangingPageLayoutOutsideRepeatParagraphTest.docx")),
                 """
                         First page is landscape.
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
                         Second page is portrait, layout change should survive to repeatParagraph processor (Homer).
-                                        
+
                         Without a section break changing the layout in between, but a page break instead.|BR|
                         Second page is portrait, layout change should survive to repeatParagraph processor (Marge).
-                                        
+
                         Without a section break changing the layout in between, but a page break instead.|BR|
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                         Fourth page is set to landscape again.""");
     }
 
     private static Arguments changingPageLayoutTest_shouldKeepSectionBreakOrientationInRepeatParagraphWithSectionBreakInsideComment() {
-        var context = Contexts.coupleContext();
-        var template = getResource(
-                Path.of("ChangingPageLayoutInRepeatParagraphTest.docx"));
+        var context = coupleContext();
+        var template = docx(of("ChangingPageLayoutInRepeatParagraphTest.docx"));
         var expected = """
                 First page is landscape.
-                                
+
                 ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
                 Second page is portrait, layout change should survive to repeatParagraph processor (Homer).
-                                
+
                 ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                 ❬With a page break changing the layout in between.❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
                 Second page is portrait, layout change should survive to repeatParagraph processor (Marge).
-                                
+
                 ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                 With a page break changing the layout in between.
                 ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
@@ -577,20 +522,18 @@ public class DefaultTests {
                 "changingPageLayoutTest_shouldKeepPageBreakOrientationInRepeatDocPartWithSectionBreaksInsideComment",
                 new DocxStamperConfiguration().setEvaluationContextConfigurer(
                         ctx -> ctx.addPropertyAccessor(new MapAccessor())),
-                Map.of("repeatValues",
-                       List.of(new Name("Homer"), new Name("Marge"))),
-                getResource(Path.of("ChangingPageLayoutInRepeatDocPartTest" +
-                                    ".docx")),
+                coupleContext(),
+                docx(of("ChangingPageLayoutInRepeatDocPartTest" + ".docx")),
                 """
                         First page is portrait.
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                         Second page is landscape, layout change should survive to repeatDocPart (Homer).
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
                         ❬With a break setting the layout to portrait in between.❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                         Second page is landscape, layout change should survive to repeatDocPart (Marge).
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
                         ❬With a break setting the layout to portrait in between.❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
@@ -602,26 +545,23 @@ public class DefaultTests {
                 "changingPageLayoutTest_shouldKeepPageBreakOrientationInRepeatDocPartWithSectionBreaksInsideCommentAndTableAsLastElement",
                 new DocxStamperConfiguration().setEvaluationContextConfigurer(
                         ctx -> ctx.addPropertyAccessor(new MapAccessor())),
-                Map.of("repeatValues",
-                       List.of(new Name("Homer"), new Name("Marge"))),
-                getResource(
-                        Path.of(
-                                "ChangingPageLayoutInRepeatDocPartWithTableLastElementTest.docx")),
+                coupleContext(),
+                docx(of("ChangingPageLayoutInRepeatDocPartWithTableLastElementTest.docx")),
                 """
                         First page is portrait.
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                         Second page is landscape, layout change should survive to repeatDocPart (Homer).
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
                         With a break setting the layout to portrait in between.
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                         Second page is landscape, layout change should survive to repeatDocPart (Marge).
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
                         With a break setting the layout to portrait in between.
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
                         Fourth page is set to landscape again.""");
@@ -632,13 +572,11 @@ public class DefaultTests {
                 "changingPageLayoutTest_shouldKeepPageBreakOrientationInRepeatDocPartWithoutSectionBreaksInsideComment",
                 new DocxStamperConfiguration().setEvaluationContextConfigurer(
                         ctx -> ctx.addPropertyAccessor(new MapAccessor())),
-                Map.of("repeatValues",
-                       List.of(new Name("Homer"), new Name("Marge"))),
-                getResource(Path.of(
-                        "ChangingPageLayoutOutsideRepeatDocPartTest.docx")),
+                coupleContext(),
+                docx(of("ChangingPageLayoutOutsideRepeatDocPartTest.docx")),
                 """
                         First page is landscape.
-                                        
+
                         ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
                         Second page is portrait, layout change should survive to repeatDocPart (Homer).
                         |BR|
@@ -651,19 +589,18 @@ public class DefaultTests {
     }
 
     private static Arguments conditionalDisplayOfParagraphsTest_processorExpressionsInCommentsAreResolved() {
-        var context = new Contexts.Name("Homer");
-        var template = getResource(Path.of(
-                "ConditionalDisplayOfParagraphsTest.docx"));
+        var context = name("Homer");
+        var template = docx(of("ConditionalDisplayOfParagraphsTest.docx"));
         var expected = """
                 ❬Conditional Display of Paragraphs❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬❬This paragraph stays untouched.❘lang=de-DE❭❘lang=de-DE❭
                 ❬❬This paragraph stays untouched.❘lang=de-DE❭❘lang=de-DE,spacing={after=140,afterLines=140,before=140,beforeLines=140,line=140,lineRule=140}❭
                 ❬❬Conditional Display of paragraphs also works in tables❘b=true❭❘b=true❭
                 This paragraph stays untouched.
-                                                                                                                            
+
                 ❬❬Also works in nested tables❘b=true❭❘b=true❭
                 This paragraph stays untouched.
-                                                                                                                            
+
                 ❬❘spacing={after=140,afterLines=140,before=140,beforeLines=140,line=140,lineRule=140}❭""";
 
         return arguments(
@@ -675,20 +612,19 @@ public class DefaultTests {
     }
 
     private static Arguments conditionalDisplayOfParagraphsTest_inlineProcessorExpressionsAreResolved() {
-        var context = new Contexts.Name("Homer");
-        var template = getResource(
-                Path.of("ConditionalDisplayOfParagraphsWithoutCommentTest" +
-                        ".docx"));
+        var context = name("Homer");
+        var template = docx(of(
+                "ConditionalDisplayOfParagraphsWithoutCommentTest" + ".docx"));
         var expected = """
                 Conditional Display of Paragraphs
                 This paragraph stays untouched.
                 This paragraph stays untouched.
                 ❬❬Conditional Display of paragraphs also works in tables❘b=true❭❘b=true❭
                 This paragraph stays untouched.
-                                
+
                 ❬❬Also works in nested tables❘b=true❭❘b=true❭
                 This paragraph stays untouched.
-                                
+
                 """;
         return arguments(
                 "conditionalDisplayOfParagraphsTest_inlineProcessorExpressionsAreResolved",
@@ -699,10 +635,9 @@ public class DefaultTests {
     }
 
     private static Arguments conditionalDisplayOfParagraphsTest_unresolvedInlineProcessorExpressionsAreRemoved() {
-        var context = new Contexts.Name("Bart");
-        var template = getResource(
-                Path.of("ConditionalDisplayOfParagraphsWithoutCommentTest" +
-                        ".docx"));
+        var context = name("Bart");
+        var template = docx(of(
+                "ConditionalDisplayOfParagraphsWithoutCommentTest" + ".docx"));
         var expected = """
                 Conditional Display of Paragraphs
                 This paragraph stays untouched.
@@ -714,7 +649,7 @@ public class DefaultTests {
                 ❬❬Also works in nested tables❘b=true❭❘b=true❭
                 This paragraph stays untouched.
                 This paragraph is only included if the name is „Bart“.
-                                
+
                 """;
         return arguments(
                 "conditionalDisplayOfParagraphsTest_unresolvedInlineProcessorExpressionsAreRemoved",
@@ -725,9 +660,8 @@ public class DefaultTests {
     }
 
     private static Arguments conditionalDisplayOfTableRowsTest() {
-        var context = new Contexts.Name("Homer");
-        var template = getResource(Path.of("ConditionalDisplayOfTableRowsTest" +
-                                           ".docx"));
+        var context = name("Homer");
+        var template = docx(of("ConditionalDisplayOfTableRowsTest" + ".docx"));
         var expected = """
                 ❬Conditional Display of Table Rows❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬❬This paragraph stays untouched.❘lang=de-DE❭❘lang=de-DE❭
@@ -735,7 +669,7 @@ public class DefaultTests {
                 This row stays untouched.
                 ❬❬Also works on nested Tables❘b=true❭❘b=true❭
                 This row stays untouched.
-                                                                                                                            
+
                 ❬❘spacing={after=140,afterLines=140,before=140,beforeLines=140,line=140,lineRule=140}❭""";
         return arguments("conditionalDisplayOfTableRowsTest",
                          new DocxStamperConfiguration(),
@@ -745,21 +679,20 @@ public class DefaultTests {
     }
 
     private static Arguments conditionalDisplayOfTablesBug32Test() {
-        var context = new Contexts.Name("Homer");
-        var template = getResource(Path.of(
-                "ConditionalDisplayOfTablesBug32Test.docx"));
+        var context = Contexts.name("Homer");
+        var template = docx(of("ConditionalDisplayOfTablesBug32Test.docx"));
         var expected = """
                 ❬Conditional Display of Tables❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬This paragraph stays untouched.❘lang=de-DE❭
-                                 
+
                 ❬This table stays untouched.❘widowControl=xxx❭
                 ❬❘widowControl=xxx❭
                 ❬❘widowControl=xxx❭
                 ❬❘widowControl=xxx❭
-                                 
+
                 ❬❬Also works on nested tables❘b=true❭❘b=true,widowControl=xxx❭
                 ❬❘b=true,widowControl=xxx❭
-                                 
+
                 ❬❬This paragraph stays untouched.❘lang=de-DE❭❘spacing={after=140,afterLines=140,before=140,beforeLines=140,line=140,lineRule=140}❭""";
         return arguments("conditionalDisplayOfTablesBug32Test",
                          new DocxStamperConfiguration(),
@@ -769,21 +702,20 @@ public class DefaultTests {
     }
 
     private static Arguments conditionalDisplayOfTablesTest() {
-        var context = new Contexts.Name("Homer");
-        var template = getResource(Path.of("ConditionalDisplayOfTablesTest" +
-                                           ".docx"));
+        var context = Contexts.name("Homer");
+        var template = docx(of("ConditionalDisplayOfTablesTest" + ".docx"));
         var expected = """
                 ❬Conditional Display of Tables❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬❬This paragraph stays untouched.❘lang=de-DE❭❘lang=de-DE❭
-                                                                                                                                                                                   
+
                 This table stays untouched.
-                                                                                                                                                                                   
-                                                                                                                                                                                   
-                                                                                                                                                                                   
-                                                                                                                                                                                   
+
+
+
+
                 ❬❬Also works on nested tables❘b=true❭❘b=true❭
                 ❬❘b=true❭
-                                                                                                                                                                                   
+
                 ❬❬This paragraph stays untouched.❘lang=de-DE❭❘lang=de-DE,spacing={after=140,afterLines=140,before=140,beforeLines=140,line=140,lineRule=140}❭""";
         return arguments("conditionalDisplayOfTablesTest",
                          new DocxStamperConfiguration(),
@@ -793,9 +725,8 @@ public class DefaultTests {
     }
 
     private static Arguments customEvaluationContextConfigurerTest_customEvaluationContextConfigurerIsHonored() {
-        var context = new Contexts.EmptyContext();
-        var template = getResource(Path.of(
-                "CustomEvaluationContextConfigurerTest.docx"));
+        var context = empty();
+        var template = docx(of("CustomEvaluationContextConfigurerTest.docx"));
         var expected = """
                 ❬Custom EvaluationContextConfigurer Test❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬❬This paragraph stays untouched.❘lang=de-DE❭❘lang=de-DE❭
@@ -813,8 +744,8 @@ public class DefaultTests {
     }
 
     private static Arguments customExpressionFunctionTest() {
-        var context = new Contexts.Name("Homer Simpson");
-        var template = getResource(Path.of("CustomExpressionFunction.docx"));
+        var context = name("Homer Simpson");
+        var template = docx(of("CustomExpressionFunction.docx"));
         var expected = """
                 ❬Custom Expression Function❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬❬This paragraph is untouched.❘lang=de-DE❭❘lang=de-DE❭
@@ -836,7 +767,7 @@ public class DefaultTests {
                                  CustomType.class,
                                  new CustomTypeResolver()),
                          new Context(new CustomType()),
-                         getResource(Path.of("CustomTypeResolverTest.docx")),
+                         docx(of("CustomTypeResolverTest.docx")),
                          """
                                  ❬Custom TypeResolver Test❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                                  ❬This paragraph is untouched.❘lang=de-DE❭
@@ -845,8 +776,8 @@ public class DefaultTests {
     }
 
     private static Arguments dateReplacementTest() {
-        var context = Contexts.nowContext();
-        var template = getResource(Path.of("DateReplacementTest.docx"));
+        var context = nowContext();
+        var template = docx(of("DateReplacementTest.docx"));
         var defaultFormat = new SimpleDateFormat("dd.MM.yyyy");
         var formattedDate = defaultFormat.format(context.date());
         var expected = """
@@ -861,9 +792,9 @@ public class DefaultTests {
     }
 
     private static Arguments expressionReplacementInGlobalParagraphsTest() {
-        var context = new Contexts.Name("Homer Simpson");
-        var template = getResource(
-                Path.of("ExpressionReplacementInGlobalParagraphsTest.docx"));
+        var context = name("Homer Simpson");
+        var template = docx(of(
+                "ExpressionReplacementInGlobalParagraphsTest.docx"));
         var expected = """
                 ❬Expression Replacement in global paragraphs❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬❬This paragraph is untouched.❘lang=de-DE❭❘lang=de-DE❭
@@ -879,9 +810,8 @@ public class DefaultTests {
     }
 
     private static Arguments expressionReplacementInTablesTest() {
-        var context = new Contexts.Name("Bart Simpson");
-        var template = getResource(Path.of("ExpressionReplacementInTablesTest" +
-                                           ".docx"));
+        var context = name("Bart Simpson");
+        var template = docx(of("ExpressionReplacementInTablesTest" + ".docx"));
 
         var expected = """
                 ❬Expression Replacement in Tables❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
@@ -894,7 +824,7 @@ public class DefaultTests {
                 Bart Simpson
                 This should not resolve:
                 ${foo}
-                                                                                                                            
+
                 ❬❘spacing={after=140,afterLines=140,before=140,beforeLines=140,line=140,lineRule=140}❭""";
         DocxStamperConfiguration config = new DocxStamperConfiguration().setFailOnUnresolvedExpression(
                 false);
@@ -906,9 +836,8 @@ public class DefaultTests {
     }
 
     private static Arguments expressionReplacementWithFormattingTest() {
-        var context = new Contexts.Name("Homer Simpson");
-        var template = getResource(
-                Path.of("ExpressionReplacementWithFormattingTest.docx"));
+        var context = name("Homer Simpson");
+        var template = docx(of("ExpressionReplacementWithFormattingTest.docx"));
         var expected = """
                  Expression Replacement with text format
                 The text format should be kept intact when an expression is replaced.
@@ -935,9 +864,8 @@ public class DefaultTests {
     }
 
     private static Arguments expressionWithSurroundingSpacesTest() {
-        var spacyContext = new Contexts.SpacyContext();
-        var template = getResource(Path.of(
-                "ExpressionWithSurroundingSpacesTest.docx"));
+        var spacyContext = spacy();
+        var template = docx(of("ExpressionWithSurroundingSpacesTest.docx"));
         var expected = """
                 ❬Expression Replacement when expression has leading and/or trailing spaces❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 When an expression within a paragraph is resolved, the spaces between the replacement and the surrounding text should be as expected. The following paragraphs should all look the same.
@@ -956,9 +884,8 @@ public class DefaultTests {
     }
 
     private static Arguments expressionReplacementWithCommentsTest() {
-        var context = new Contexts.Name("Homer Simpson");
-        var template = getResource(Path.of(
-                "ExpressionReplacementWithCommentsTest.docx"));
+        var context = name("Homer Simpson");
+        var template = docx(of("ExpressionReplacementWithCommentsTest.docx"));
         var expected = """
                 ❬Expression Replacement with comments❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 This paragraph is untouched.
@@ -977,10 +904,8 @@ public class DefaultTests {
      * <p>test.</p>
      */
     private static Arguments imageReplacementInGlobalParagraphsTest() {
-        var context = new Contexts.ImageContext(getImage(Path.of("monalisa" +
-                                                                 ".jpg")));
-        var template = getResource(Path.of(
-                "ImageReplacementInGlobalParagraphsTest.docx"));
+        var context = imageContext(new Image(jpg(of("monalisa.jpg"))));
+        var template = docx(of("ImageReplacementInGlobalParagraphsTest.docx"));
         var expected = """
                 ❬Image Replacement in global paragraphs❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬❬This paragraph is untouched.❘lang=de-DE❭❘lang=de-DE❭
@@ -994,10 +919,8 @@ public class DefaultTests {
     }
 
     private static Arguments imageReplacementInGlobalParagraphsTestWithMaxWidth() {
-        var context = new Contexts.ImageContext(getImage(Path.of("monalisa" +
-                                                                 ".jpg"), 1000));
-        var template = getResource(Path.of(
-                "ImageReplacementInGlobalParagraphsTest.docx"));
+        var context = imageContext(new Image(jpg(of("monalisa.jpg")), 1000));
+        var template = docx(of("ImageReplacementInGlobalParagraphsTest.docx"));
         var expected = """
                 ❬Image Replacement in global paragraphs❘spacing={after=120,afterLines=120,before=120,beforeLines=120,line=120,lineRule=120}❭
                 ❬❬This paragraph is untouched.❘lang=de-DE❭❘lang=de-DE❭
@@ -1010,18 +933,9 @@ public class DefaultTests {
                          expected);
     }
 
-    private static Image getImage(Path path, int size) {
-        try {
-            return new Image(getResource(path), size);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static Arguments leaveEmptyOnExpressionErrorTest() {
-        var context = new Contexts.Name("Homer Simpson");
-        var template = getResource(Path.of("LeaveEmptyOnExpressionErrorTest" +
-                                           ".docx"));
+        var context = name("Homer Simpson");
+        var template = docx(of("LeaveEmptyOnExpressionErrorTest" + ".docx"));
         var expected = """
                 Leave me empty .
                 ❬❘u=single❭""";
@@ -1038,8 +952,8 @@ public class DefaultTests {
     private static Arguments lineBreakReplacementTest() {
         var config = new DocxStamperConfiguration();
         config.setLineBreakPlaceholder("#");
-        var context = new Contexts.Name(null);
-        var template = getResource(Path.of("LineBreakReplacementTest.docx"));
+        var context = name(null);
+        var template = docx(of("LineBreakReplacementTest.docx"));
         var expected = """
                 ❬❬Line Break Replacement❘lang=en-US❭❘lang=en-US❭
                 ❬❬This paragraph is untouched.❘lang=en-US❭❘lang=en-US❭
@@ -1053,21 +967,21 @@ public class DefaultTests {
     }
 
     private static Arguments mapAccessorAndReflectivePropertyAccessorTest_shouldResolveMapAndPropertyPlaceholders() {
-        var context = Contexts.mapAndReflectiveContext();
-        var template = getResource(
-                Path.of("MapAccessorAndReflectivePropertyAccessorTest.docx"));
+        var context = mapAndReflectiveContext();
+        var template = docx(of(
+                "MapAccessorAndReflectivePropertyAccessorTest.docx"));
         var expected = """
                 Flat string : Flat string has been resolved
-                               
+
                 Values
-                               
+
                 first value
-                               
-                               
+
+
                 second value
-                               
-                               
-                               
+
+
+
                 Paragraph start
                 first value
                 Paragraph end
@@ -1095,16 +1009,16 @@ public class DefaultTests {
     }
 
     private static Arguments nullPointerResolutionTest_testWithDefaultSpel() {
-        var context = Contexts.nullishContext();
-        var template = getResource(Path.of("NullPointerResolution.docx"));
+        var context = nullishContext();
+        var template = docx(of("NullPointerResolution.docx"));
         var expected = """
                 Deal with null references
-                                
+
                 Deal with: Fullish1
                 Deal with: Fullish2
                 Deal with: Fullish3
                 Deal with: Fullish5
-                                
+
                 Deal with: Nullish value!!
                 Deal with: ${nullish.value ?: "Nullish value!!"}
                 Deal with: ${nullish.li[0] ?: "Nullish value!!"}
@@ -1126,9 +1040,8 @@ public class DefaultTests {
                          new DocxStamperConfiguration().addCommentProcessor(
                                  ICustomCommentProcessor.class,
                                  CustomCommentProcessor::new),
-                         Contexts.empty(),
-                         getResource(Path.of("CustomCommentProcessorTest" +
-                                             ".docx")),
+                         empty(),
+                         docx(of("CustomCommentProcessorTest" + ".docx")),
                          """
                                  Custom CommentProcessor Test
                                  Visited.
@@ -1137,16 +1050,16 @@ public class DefaultTests {
     }
 
     private static Arguments nullPointerResolutionTest_testWithCustomSpel() {
-        var context = Contexts.nullishContext();
-        var template = getResource(Path.of("NullPointerResolution.docx"));
+        var context = nullishContext();
+        var template = docx(of("NullPointerResolution.docx"));
         var expected = """
                 Deal with null references
-                                
+
                 Deal with: Fullish1
                 Deal with: Fullish2
                 Deal with: Fullish3
                 Deal with: Fullish5
-                                
+
                 Deal with: Nullish value!!
                 Deal with: Nullish value!!
                 Deal with: Nullish value!!

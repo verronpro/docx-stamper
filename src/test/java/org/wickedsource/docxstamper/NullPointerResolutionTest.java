@@ -2,16 +2,16 @@ package org.wickedsource.docxstamper;
 
 import org.junit.jupiter.api.Test;
 import org.wickedsource.docxstamper.api.DocxStamperException;
-import pro.verron.docxstamper.utils.TestDocxStamper;
-import pro.verron.docxstamper.utils.context.NullishContext;
-import pro.verron.docxstamper.utils.context.SubContext;
+import pro.verron.msofficestamper.utils.TestDocxStamper;
+import pro.verron.msofficestamper.utils.context.NullishContext;
+import pro.verron.msofficestamper.utils.context.SubContext;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.wickedsource.docxstamper.DefaultTests.getResource;
+import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 
 class NullPointerResolutionTest {
     @Test
@@ -21,7 +21,7 @@ class NullPointerResolutionTest {
                                                 "Fullish5"));
         var context = new NullishContext("Fullish1", subContext, null, null);
         try (var template =
-                     getResource(Path.of("NullPointerResolution.docx"))) {
+                     docx(Path.of("NullPointerResolution.docx"))) {
             var stamper = new TestDocxStamper<NullishContext>(
                     new DocxStamperConfiguration());
             assertThrows(

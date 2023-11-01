@@ -1,4 +1,4 @@
-package pro.verron.docxstamper.utils;
+package pro.verron.msofficestamper.utils;
 
 import org.docx4j.utils.TraversalUtilVisitor;
 import org.docx4j.wml.R;

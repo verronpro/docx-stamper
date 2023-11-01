@@ -10,20 +10,20 @@ import org.docx4j.relationships.Relationship;
 import org.docx4j.wml.P;
 import org.junit.jupiter.api.Test;
 import org.wickedsource.docxstamper.util.ParagraphWrapper;
-import pro.verron.docxstamper.utils.TestDocxStamper;
+import pro.verron.msofficestamper.utils.TestDocxStamper;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.wickedsource.docxstamper.DefaultTests.getResource;
+import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 
 class ExpressionReplacementInHeaderAndFooterTest {
 	@Test
     void expressionReplacementInHeaderAndFooterTest() throws Docx4JException,
 			IOException {
 		var context = new Name("Homer Simpson");
-		var template = getResource(
+		var template = docx(
 				Path.of("ExpressionReplacementInHeaderAndFooterTest.docx"));
 		var stamper = new TestDocxStamper<Name>(new DocxStamperConfiguration().setFailOnUnresolvedExpression(false));
 		var document = stamper.stampAndLoad(template, context);

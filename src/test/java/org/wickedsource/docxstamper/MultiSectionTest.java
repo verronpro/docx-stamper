@@ -6,21 +6,21 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.R;
 import org.junit.jupiter.api.Test;
 import org.wickedsource.docxstamper.util.DocumentUtil;
-import pro.verron.docxstamper.utils.TestDocxStamper;
+import pro.verron.msofficestamper.utils.TestDocxStamper;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.wickedsource.docxstamper.DefaultTests.getResource;
+import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 
 class MultiSectionTest {
 
 	@Test
     void expressionsInMultipleSections() throws Docx4JException, IOException {
 		var context = new NamesContext("Homer", "Marge");
-		var template = getResource(Path.of("MultiSectionTest.docx"));
+		var template = docx(Path.of("MultiSectionTest.docx"));
 		var stamper = new TestDocxStamper<NamesContext>(
 				new DocxStamperConfiguration());
 		var document = stamper.stampAndLoad(template, context);

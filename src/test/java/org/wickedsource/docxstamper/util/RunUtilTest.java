@@ -6,20 +6,21 @@ import org.docx4j.wml.P;
 import org.docx4j.wml.R;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import pro.verron.docxstamper.utils.IOStreams;
+import pro.verron.msofficestamper.utils.IOStreams;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static java.nio.file.Path.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.wickedsource.docxstamper.DefaultTests.getResource;
+import static pro.verron.msofficestamper.utils.ResourceUtils.docx;
 
 @DisplayName("Utilities - Docx Run Methods")
 class RunUtilTest {
 
 	@Test
 	void getTextReturnsTextOfRun() throws Docx4JException {
-		var document = loadDocument(Path.of("util","singleRun.docx"));
+		var document = loadDocument(of("UtilsingleRun.docx"));
 		var paragraph = (P) document.getMainDocumentPart().getContent().get(0);
 		var run = (R) paragraph.getContent().get(0);
 		assertEquals("This is the only run of text in this document.", RunUtil.getText(run));
@@ -32,13 +33,13 @@ class RunUtilTest {
 	 * @throws Docx4JException if any.
 	 */
 	public WordprocessingMLPackage loadDocument(Path path) throws Docx4JException {
-		var in = getResource(path);
+		var in = docx(path);
 		return WordprocessingMLPackage.load(in);
 	}
 
 	@Test
 	void getTextReturnsValueDefinedBySetText() throws Docx4JException, IOException {
-		var input = loadDocument(Path.of("util","singleRun.docx"));
+		var input = loadDocument(of("UtilsingleRun.docx"));
 		var paragraphIn = (P) input.getMainDocumentPart().getContent().get(0);
 		var runIn = (R) paragraphIn.getContent().get(0);
 		RunUtil.setText(runIn, "The text of this run was changed.");

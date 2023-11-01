@@ -1,8 +1,11 @@
-package pro.verron.docxstamper.utils.context;
+package pro.verron.msofficestamper.utils.context;
 
 import org.wickedsource.docxstamper.replace.typeresolver.image.Image;
 
 import java.util.*;
+import java.util.stream.IntStream;
+
+import static java.util.Arrays.stream;
 
 /**
  * <p>Contexts class.</p>
@@ -23,8 +26,7 @@ public class Contexts {
      * @return a {@link java.lang.Object} object
      */
     public static Object empty() {
-        record EmptyContext() {
-        }
+        record EmptyContext() {}
         return new EmptyContext();
     }
 
@@ -42,7 +44,8 @@ public class Contexts {
     public static Object names(String... names) {
         record Name(String name) {}
         record Names(List<Name> names) {}
-        return new Names(Arrays.stream(names).map(Name::new).toList());
+        return new Names(stream(names).map(Name::new)
+                                 .toList());
     }
 
     /**
@@ -50,7 +53,7 @@ public class Contexts {
      *
      * @param character       a {@link java.lang.String} object
      * @param danCastellaneta a {@link java.lang.String} object
-     * @return a {@link pro.verron.docxstamper.utils.context.Contexts.Role} object
+     * @return a {@link pro.verron.msofficestamper.utils.context.Contexts.Role} object
      */
     public static Role role(String character, String danCastellaneta) {
         return new Role(character, danCastellaneta);
@@ -59,46 +62,71 @@ public class Contexts {
     /**
      * <p>roles.</p>
      *
-     * @param roles a {@link pro.verron.docxstamper.utils.context.Contexts.Role} object
-     * @return a {@link pro.verron.docxstamper.utils.context.Contexts.Characters} object
+     * @param roles a {@link pro.verron.msofficestamper.utils.context.Contexts.Role} object
+     * @return a {@link pro.verron.msofficestamper.utils.context.Contexts.Characters} object
      */
     public static Characters roles(Role... roles) {
-        return new Characters(List.of(roles));
+        return roles(List.of(roles));
     }
 
-    public static HashMap<String, Object> subDocPartContext() {
+    public static HashMap<String, Object> subDocParts(
+            Map<String, Object>... subParts
+    ) {
         var context = new HashMap<String, Object>();
         var subDocParts = new ArrayList<Map<String, Object>>();
-
-        var firstPart = new HashMap<String, Object>();
-        firstPart.put("name", "first doc part");
-        subDocParts.add(firstPart);
-
-        var secondPart = new HashMap<String, Object>();
-        secondPart.put("name", "second doc part");
-        subDocParts.add(secondPart);
+        stream(subParts).map(HashMap::new)
+                .forEach(subDocParts::add);
 
         context.put("subDocParts", subDocParts);
         return context;
     }
 
-    public static SchoolContext schoolContext() {
-        List<Grade> grades = new ArrayList<>();
-        for (int grade1 = 0; grade1 < 3; grade1++) {
-            var classes = new ArrayList<AClass>();
-            for (int classroom1 = 0; classroom1 < 3; classroom1++) {
-                var students = new ArrayList<Student>();
-                for (int i = 0; i < 5; i++) {
-                    students.add(new Student(i, "Bruce·No" + i, 1 + i));
-                }
-                classes.add(new AClass(classroom1, students));
-            }
-            grades.add(new Grade(grade1, classes));
-        }
-        return new SchoolContext("South Park Primary School", grades);
+    public static HashMap<String, Object> singletonMap(
+            String key, String value
+    ) {
+        var firstPart = new HashMap<String, Object>();
+        firstPart.put(key, value);
+        return firstPart;
     }
 
-    public static HashMap<String, Object> tableContext() {
+    public static SchoolContext schoolContext(
+            String schoolName,
+            int nbGrades,
+            int nbClasses,
+            int nbStudents,
+            String studentName
+    ) {
+        return new SchoolContext(schoolName, IntStream.range(0, nbGrades)
+                .mapToObj(grade1 -> grade(grade1,
+                                          nbClasses,
+                                          nbStudents,
+                                          studentName))
+                .toList());
+    }
+
+    private static Grade grade(
+            int gradeNo, int nbClasses, int nbStudents, String studentName
+    ) {
+        return new Grade(gradeNo, IntStream.range(0, nbClasses)
+                .mapToObj(classroom1 -> classroom(classroom1,
+                                                  nbStudents,
+                                                  studentName))
+                .toList());
+    }
+
+    private static Classroom classroom(
+            int classroom, int nbStudents, String studentName
+    ) {
+        return new Classroom(classroom, IntStream.range(0, nbStudents)
+                .mapToObj(i -> student(i, studentName))
+                .toList());
+    }
+
+    private static Student student(int i, String studentName) {
+        return new Student(i, studentName + "·No" + i, 1 + i);
+    }
+
+    public static Map<String, Object> tableContext() {
         var context = new HashMap<String, Object>();
 
         var firstTable = new ArrayList<TableValue>();
@@ -137,9 +165,7 @@ public class Contexts {
     }
 
     public static DateContext nowContext() {
-        var now = new Date();
-        var context = new DateContext(now);
-        return context;
+        return new DateContext(new Date());
     }
 
     public static HashMap<String, Object> mapAndReflectiveContext() {
@@ -154,29 +180,42 @@ public class Contexts {
     }
 
     public static NullishContext nullishContext() {
-        return new NullishContext(
-                "Fullish1",
-                new SubContext(
-                        "Fullish2",
-                        List.of(
-                                "Fullish3",
-                                "Fullish4",
-                                "Fullish5"
-                        )
-                ),
-                null,
-                null
-        );
+        return new NullishContext("Fullish1",
+                                  new SubContext("Fullish2",
+                                                 List.of("Fullish3",
+                                                         "Fullish4",
+                                                         "Fullish5")),
+                                  null,
+                                  null);
     }
 
-    public record Role(String name, String actor) {
+    public static ImageContext imageContext(Image image) {
+        return new ImageContext(image);
     }
 
-    public record Characters(List<Role> characters) {
+    public static Show show(CharacterRecord... records) {
+        return new Show(stream(records).toList());
     }
 
-    public record DateContext(Date date) {
+    public static CharacterRecord character(
+            int index, String suffix, String characterName, String actorName
+    ) {
+        return new CharacterRecord(index, suffix, characterName, actorName);
     }
+
+    private static Characters roles(List<Role> characters) {
+        return new Characters(characters);
+    }
+
+    public static SpacyContext spacy() {
+        return new SpacyContext();
+    }
+
+    public record Role(String name, String actor) {}
+
+    public record Characters(List<Role> characters) {}
+
+    public record DateContext(Date date) {}
 
     public static class SpacyContext {
         private final String expressionWithLeadingAndTrailingSpace = " Expression ";
@@ -201,8 +240,7 @@ public class Contexts {
         }
     }
 
-    public record ImageContext(Image monalisa) {
-    }
+    public record ImageContext(Image monalisa) {}
 
     static class Container {
         public String value;
@@ -270,10 +308,12 @@ public class Contexts {
             if (obj == this) return true;
             if (obj == null || obj.getClass() != this.getClass()) return false;
             var that = (NullishContext) obj;
-            return Objects.equals(this.fullish_value, that.fullish_value) &&
-                   Objects.equals(this.fullish, that.fullish) &&
-                   Objects.equals(this.nullish_value, that.nullish_value) &&
-                   Objects.equals(this.nullish, that.nullish);
+            return Objects.equals(this.fullish_value,
+                                  that.fullish_value) && Objects.equals(this.fullish,
+                                                                        that.fullish) && Objects.equals(
+                    this.nullish_value,
+                    that.nullish_value) && Objects.equals(this.nullish,
+                                                          that.nullish);
         }
 
         @Override
@@ -283,11 +323,7 @@ public class Contexts {
 
         @Override
         public String toString() {
-            return "NullishContext[" +
-                   "fullish_value=" + fullish_value + ", " +
-                   "fullish=" + fullish + ", " +
-                   "nullish_value=" + nullish_value + ", " +
-                   "nullish=" + nullish + ']';
+            return "NullishContext[" + "fullish_value=" + fullish_value + ", " + "fullish=" + fullish + ", " + "nullish_value=" + nullish_value + ", " + "nullish=" + nullish + ']';
         }
 
     }
@@ -300,8 +336,7 @@ public class Contexts {
         }
 
         public SubContext(
-                String value,
-                List<String> li
+                String value, List<String> li
         ) {
             this.value = value;
             this.li = li;
@@ -328,8 +363,9 @@ public class Contexts {
             if (obj == this) return true;
             if (obj == null || obj.getClass() != this.getClass()) return false;
             var that = (SubContext) obj;
-            return Objects.equals(this.value, that.value) &&
-                   Objects.equals(this.li, that.li);
+            return Objects.equals(this.value,
+                                  that.value) && Objects.equals(this.li,
+                                                                that.li);
         }
 
         @Override
@@ -339,16 +375,14 @@ public class Contexts {
 
         @Override
         public String toString() {
-            return "SubContext[" +
-                   "value=" + value + ", " +
-                   "li=" + li + ']';
+            return "SubContext[" + "value=" + value + ", " + "li=" + li + ']';
         }
 
     }
 
     record SchoolContext(String schoolName, List<Grade> grades) {}
 
-    record Grade(int number, List<AClass> classes) {}
+    record Grade(int number, List<Classroom> classes) {}
 
     public record Show(List<CharacterRecord> characters) {}
 
@@ -357,7 +391,7 @@ public class Contexts {
     public record Character(String name, String actor) {}
 
 
-    public record AClass(int number, List<Student> students) {}
+    public record Classroom(int number, List<Student> students) {}
 
     record Student(int number, String name, int age) {}
 
@@ -371,8 +405,7 @@ public class Contexts {
 
     public record Name(String name) {}
 
-    public static class EmptyContext {
-    }
+    public static class EmptyContext {}
 
     public record Context(CustomType name) {}
 
