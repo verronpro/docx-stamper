@@ -11,8 +11,8 @@ import org.docx4j.wml.*;
  * @author joseph
  * @version $Id: $Id
  */
-public abstract class BaseDocumentWalker extends DocumentWalker {
-
+public abstract class BaseDocumentWalker
+        extends DocumentWalker {
     /**
      * Creates a new document walker that walks through the given document.
      *
@@ -46,31 +46,41 @@ public abstract class BaseDocumentWalker extends DocumentWalker {
 
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void onTableCell(Tc tableCell) {
 
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void onTableRow(Tr tableRow) {
 
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void onCommentRangeStart(CommentRangeStart commentRangeStart) {
 
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void onCommentRangeEnd(CommentRangeEnd commentRangeEnd) {
 
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void onCommentReference(R.CommentReference commentReference) {
 

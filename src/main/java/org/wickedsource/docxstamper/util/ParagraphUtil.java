@@ -13,25 +13,25 @@ import org.wickedsource.docxstamper.api.DocxStamperException;
  * @version $Id: $Id
  */
 public class ParagraphUtil {
+    private static final ObjectFactory objectFactory = Context.getWmlObjectFactory();
 
     private ParagraphUtil() {
         throw new DocxStamperException("Utility class shouldn't be instantiated");
     }
 
-	private static final ObjectFactory objectFactory = Context.getWmlObjectFactory();
-
-	/**
-	 * Creates a new paragraph.
-	 *
-	 * @param texts the text of this paragraph. If more than one text is specified each text will be placed within its own Run.
-	 * @return a new paragraph containing the given text.
-	 */
-	public static P create(String... texts) {
-		P p = objectFactory.createP();
-		for (String text : texts) {
-			R r = RunUtil.create(text, p);
-			p.getContent().add(r);
-		}
-		return p;
-	}
+    /**
+     * Creates a new paragraph.
+     *
+     * @param texts the text of this paragraph. If more than one text is specified each text will be placed within its own Run.
+     * @return a new paragraph containing the given text.
+     */
+    public static P create(String... texts) {
+        P p = objectFactory.createP();
+        for (String text : texts) {
+            R r = RunUtil.create(text, p);
+            p.getContent()
+                    .add(r);
+        }
+        return p;
+    }
 }

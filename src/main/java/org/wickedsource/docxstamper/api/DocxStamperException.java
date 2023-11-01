@@ -6,7 +6,8 @@ package org.wickedsource.docxstamper.api;
  * @author joseph
  * @version $Id: $Id
  */
-public class DocxStamperException extends RuntimeException {
+public class DocxStamperException
+        extends RuntimeException {
 
     /**
      * <p>Constructor for DocxStamperException.</p>

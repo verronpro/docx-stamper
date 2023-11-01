@@ -8,10 +8,10 @@ package org.wickedsource.docxstamper.processor.table;
  * @version $Id: $Id
  */
 public interface ITableResolver {
-	/**
-	 * Resolves the given table by manipulating the given table in the template
-	 *
-	 * @param table the table to resolve.
-	 */
-	void resolveTable(StampTable table);
+    /**
+     * Resolves the given table by manipulating the given table in the template
+     *
+     * @param table the table to resolve.
+     */
+    void resolveTable(StampTable table);
 }

@@ -21,7 +21,6 @@ import java.io.InputStream;
  * </p>
  */
 public class Image {
-
     private final byte[] imageBytes;
     private Integer maxWidth;
 

@@ -71,7 +71,9 @@ public class CommentProcessorRegistry {
      * @param expressionContext the context root object
      * @param <T>               a T class
      */
-    public <T> void runProcessors(final WordprocessingMLPackage document, final T expressionContext) {
+    public <T> void runProcessors(
+            final WordprocessingMLPackage document, final T expressionContext
+    ) {
         final Map<BigInteger, CommentWrapper> comments = CommentUtil.getComments(
                 document);
         final List<CommentWrapper> proceedComments = new ArrayList<>();
@@ -79,16 +81,20 @@ public class CommentProcessorRegistry {
         new BaseCoordinatesWalker() {
             @Override
             protected void onRun(R run, P paragraph) {
-                runProcessorsOnRunComment(document, comments, expressionContext,
-                                          paragraph, run)
-                        .ifPresent(proceedComments::add);
+                runProcessorsOnRunComment(document,
+                                          comments,
+                                          expressionContext,
+                                          paragraph,
+                                          run).ifPresent(proceedComments::add);
             }
 
             @Override
             protected void onParagraph(P paragraph) {
-                runProcessorsOnParagraphComment(document, comments,
-                                                expressionContext, paragraph)
-                        .ifPresent(proceedComments::add);
+                runProcessorsOnParagraphComment(document,
+                                                comments,
+                                                expressionContext,
+                                                paragraph).ifPresent(
+                        proceedComments::add);
                 runProcessorsOnInlineContent(expressionContext, paragraph);
             }
 
@@ -110,9 +116,12 @@ public class CommentProcessorRegistry {
             R run
     ) {
         var comment = CommentUtil.getCommentAround(run, document);
-        return comment.flatMap(
-                c -> runCommentProcessors(comments, expressionContext, c,
-                                          paragraph, run, document));
+        return comment.flatMap(c -> runCommentProcessors(comments,
+                                                         expressionContext,
+                                                         c,
+                                                         paragraph,
+                                                         run
+        ));
     }
 
     /**
@@ -132,12 +141,13 @@ public class CommentProcessorRegistry {
             T expressionContext,
             P paragraph
     ) {
-        return CommentUtil
-                .getCommentFor(paragraph, document)
+        return CommentUtil.getCommentFor(paragraph, document)
                 .flatMap(c -> this.runCommentProcessors(comments,
-                                                        expressionContext, c,
-                                                        paragraph, null,
-                                                        document));
+                                                        expressionContext,
+                                                        c,
+                                                        paragraph,
+                                                        null
+                ));
     }
 
     /**
@@ -149,8 +159,7 @@ public class CommentProcessorRegistry {
      * @param <T>               type of the context root object
      */
     private <T> void runProcessorsOnInlineContent(
-            T expressionContext,
-            P paragraph
+            T expressionContext, P paragraph
     ) {
         ParagraphWrapper paragraphWrapper = new ParagraphWrapper(paragraph);
         List<String> processorExpressions = findProcessorExpressions(
@@ -168,7 +177,8 @@ public class CommentProcessorRegistry {
                 expressionResolver.resolveExpression(strippedExpression,
                                                      expressionContext);
                 placeholderReplacer.replace(paragraphWrapper,
-                                            processorExpression, "");
+                                            processorExpression,
+                                            "");
                 logger.debug(
                         "Processor expression '{}' has been successfully processed by a comment processor.",
                         processorExpression);
@@ -189,8 +199,7 @@ public class CommentProcessorRegistry {
             T expressionContext,
             @NonNull Comments.Comment comment,
             P paragraph,
-            R run,
-            WordprocessingMLPackage document
+            R run
     ) {
         CommentWrapper commentWrapper = comments.get(comment.getId());
 

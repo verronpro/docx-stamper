@@ -19,42 +19,46 @@ import java.util.Objects;
  * @author joseph
  * @version $Id: $Id
  */
-public class MergeSameStyleRuns implements PreProcessor {
-
+public class MergeSameStyleRuns
+        implements PreProcessor {
     /**
      * {@inheritDoc}
      */
-	@Override
-	public void process(WordprocessingMLPackage document) {
-		var mainDocumentPart = document.getMainDocumentPart();
-		List<List<R>> similarStyleConcurrentRuns = new ArrayList<>();
-		TraversalUtilVisitor<R> visitor = new TraversalUtilVisitor<>() {
-			@Override
-			public void apply(R element, Object parent, List<Object> siblings) {
-				RPr rPr = element.getRPr();
-				int currentIndex = siblings.indexOf(element);
-				List<R> similarStyleConcurrentRun = siblings
-						.stream()
-						.skip(currentIndex)
-						.takeWhile(o -> o instanceof R run && Objects.equals(run.getRPr(), rPr))
-						.map(R.class::cast)
-						.toList();
+    @Override
+    public void process(WordprocessingMLPackage document) {
+        var mainDocumentPart = document.getMainDocumentPart();
+        List<List<R>> similarStyleConcurrentRuns = new ArrayList<>();
+        TraversalUtilVisitor<R> visitor = new TraversalUtilVisitor<>() {
+            @Override
+            public void apply(R element, Object parent, List<Object> siblings) {
+                RPr rPr = element.getRPr();
+                int currentIndex = siblings.indexOf(element);
+                List<R> similarStyleConcurrentRun = siblings
+                        .stream()
+                        .skip(currentIndex)
+                        .takeWhile(o -> o instanceof R run && Objects.equals(run.getRPr(),
+                                                                             rPr))
+                        .map(R.class::cast)
+                        .toList();
 
-				if (similarStyleConcurrentRun.size() > 1)
-					similarStyleConcurrentRuns.add(similarStyleConcurrentRun);
-			}
-		};
-		TraversalUtil.visit(mainDocumentPart, visitor);
-		for (List<R> similarStyleConcurrentRun : similarStyleConcurrentRuns) {
-			R firstRun = similarStyleConcurrentRun.get(0);
-			var firstRunContent = new LinkedHashSet<>(firstRun.getContent());
-			var firstRunParentContent = ((ContentAccessor) firstRun.getParent()).getContent();
-			for (R r : similarStyleConcurrentRun.subList(1, similarStyleConcurrentRun.size())) {
-				firstRunParentContent.remove(r);
-				firstRunContent.addAll(r.getContent());
-			}
-			firstRun.getContent().clear();
-			firstRun.getContent().addAll(firstRunContent);
-		}
-	}
+                if (similarStyleConcurrentRun.size() > 1)
+                    similarStyleConcurrentRuns.add(similarStyleConcurrentRun);
+            }
+        };
+        TraversalUtil.visit(mainDocumentPart, visitor);
+        for (List<R> similarStyleConcurrentRun : similarStyleConcurrentRuns) {
+            R firstRun = similarStyleConcurrentRun.get(0);
+            var firstRunContent = new LinkedHashSet<>(firstRun.getContent());
+            var firstRunParentContent = ((ContentAccessor) firstRun.getParent()).getContent();
+            for (R r : similarStyleConcurrentRun.subList(1,
+                                                         similarStyleConcurrentRun.size())) {
+                firstRunParentContent.remove(r);
+                firstRunContent.addAll(r.getContent());
+            }
+            firstRun.getContent()
+                    .clear();
+            firstRun.getContent()
+                    .addAll(firstRunContent);
+        }
+    }
 }

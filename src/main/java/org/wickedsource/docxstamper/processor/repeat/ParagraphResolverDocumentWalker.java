@@ -13,10 +13,11 @@ import org.wickedsource.docxstamper.util.walk.BaseDocumentWalker;
  * @author joseph
  * @version $Id: $Id
  */
-public class ParagraphResolverDocumentWalker extends BaseDocumentWalker {
-	private final Object expressionContext;
-	private final WordprocessingMLPackage document;
-	private final PlaceholderReplacer placeholderReplacer;
+public class ParagraphResolverDocumentWalker
+        extends BaseDocumentWalker {
+    private final Object expressionContext;
+    private final WordprocessingMLPackage document;
+    private final PlaceholderReplacer placeholderReplacer;
 
     /**
      * <p>Constructor for ParagraphResolverDocumentWalker.</p>
@@ -26,18 +27,25 @@ public class ParagraphResolverDocumentWalker extends BaseDocumentWalker {
      * @param document          The document to walk through
      * @param replacer          The placeholder replacer to use for resolving
      */
-	public ParagraphResolverDocumentWalker(Tr rowClone, Object expressionContext, WordprocessingMLPackage document, PlaceholderReplacer replacer) {
-		super(rowClone);
-		this.expressionContext = expressionContext;
-		this.document = document;
-		this.placeholderReplacer = replacer;
+    public ParagraphResolverDocumentWalker(
+            Tr rowClone,
+            Object expressionContext,
+            WordprocessingMLPackage document,
+            PlaceholderReplacer replacer
+    ) {
+        super(rowClone);
+        this.expressionContext = expressionContext;
+        this.document = document;
+        this.placeholderReplacer = replacer;
     }
 
     /**
      * {@inheritDoc}
      */
-	@Override
-	protected void onParagraph(P paragraph) {
-		placeholderReplacer.resolveExpressionsForParagraph(paragraph, expressionContext, document);
-	}
+    @Override
+    protected void onParagraph(P paragraph) {
+        placeholderReplacer.resolveExpressionsForParagraph(paragraph,
+                                                           expressionContext,
+                                                           document);
+    }
 }

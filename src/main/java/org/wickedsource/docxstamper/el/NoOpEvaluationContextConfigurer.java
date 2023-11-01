@@ -9,7 +9,8 @@ import org.wickedsource.docxstamper.api.EvaluationContextConfigurer;
  * @author joseph
  * @version $Id: $Id
  */
-public class NoOpEvaluationContextConfigurer implements EvaluationContextConfigurer {
+public class NoOpEvaluationContextConfigurer
+        implements EvaluationContextConfigurer {
     /**
      * {@inheritDoc}
      */

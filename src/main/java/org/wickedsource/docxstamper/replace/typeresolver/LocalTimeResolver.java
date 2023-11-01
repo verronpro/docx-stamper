@@ -9,14 +9,15 @@ import java.time.format.DateTimeFormatter;
  * @author joseph
  * @version $Id: $Id
  */
-public class LocalTimeResolver extends AbstractToTextResolver<LocalTime> {
-	private final DateTimeFormatter formatter;
+public class LocalTimeResolver
+        extends AbstractToTextResolver<LocalTime> {
+    private final DateTimeFormatter formatter;
 
     /**
      * Uses {@link java.time.format.DateTimeFormatter#ISO_LOCAL_TIME} for formatting.
      */
-	public LocalTimeResolver() {
-		this(DateTimeFormatter.ISO_LOCAL_TIME);
+    public LocalTimeResolver() {
+        this(DateTimeFormatter.ISO_LOCAL_TIME);
     }
 
     /**
@@ -24,15 +25,15 @@ public class LocalTimeResolver extends AbstractToTextResolver<LocalTime> {
      *
      * @param formatter a date time pattern as specified by {@link java.time.format.DateTimeFormatter#ofPattern(String)}
      */
-	public LocalTimeResolver(DateTimeFormatter formatter) {
-		this.formatter = formatter;
+    public LocalTimeResolver(DateTimeFormatter formatter) {
+        this.formatter = formatter;
     }
 
     /**
      * {@inheritDoc}
      */
-	@Override
-	protected String resolveStringForObject(LocalTime localTime) {
-		return localTime.format(formatter);
-	}
+    @Override
+    protected String resolveStringForObject(LocalTime localTime) {
+        return localTime.format(formatter);
+    }
 }

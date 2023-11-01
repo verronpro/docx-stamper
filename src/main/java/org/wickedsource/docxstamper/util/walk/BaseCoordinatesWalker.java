@@ -9,19 +9,19 @@ import org.docx4j.wml.R;
  * @author joseph
  * @version $Id: $Id
  */
-public abstract class BaseCoordinatesWalker extends CoordinatesWalker {
+public abstract class BaseCoordinatesWalker
+        extends CoordinatesWalker {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void onRun(R run, P paragraph) {
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void onRun(R run, P paragraph) {
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void onParagraph(P paragraph) {
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void onParagraph(P paragraph) {
+    }
 }

@@ -30,8 +30,7 @@ public class StampTable {
      * @param records the lines that the table should contains
      */
     public StampTable(
-            List<String> headers,
-            List<List<String>> records
+            List<String> headers, List<List<String>> records
     ) {
         this.headers = headers;
         this.records = records;
@@ -43,7 +42,8 @@ public class StampTable {
      * @return a {@link org.wickedsource.docxstamper.processor.table.StampTable} object
      */
     public static StampTable empty() {
-        return new StampTable(singletonList("placeholder"), singletonList(singletonList("placeholder")));
+        return new StampTable(singletonList("placeholder"),
+                              singletonList(singletonList("placeholder")));
     }
 
     /**

@@ -18,7 +18,6 @@ import java.util.List;
  * @version $Id: $Id
  */
 public interface IParagraphRepeatProcessor {
-
     /**
      * May be called to mark a paragraph to be copied once for each element in the passed-in list.
      * Within each copy of the row, all expressions are evaluated against one of the objects in the list.

@@ -7,7 +7,6 @@ package org.wickedsource.docxstamper.processor.displayif;
  * @version $Id: $Id
  */
 public interface IDisplayIfProcessor {
-
     /**
      * May be called to delete the commented paragraph or not, depending on the given boolean condition.
      *

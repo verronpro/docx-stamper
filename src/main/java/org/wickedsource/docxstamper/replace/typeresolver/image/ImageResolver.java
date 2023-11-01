@@ -21,42 +21,77 @@ import static org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstract
  * @author joseph
  * @version $Id: $Id
  */
-public class ImageResolver implements ITypeResolver<Image> {
+public class ImageResolver
+        implements ITypeResolver<Image> {
+    private static final Random random = new Random();
 
-	private static final Random random = new Random();
+    /**
+     * Creates a run containing the given image.
+     *
+     * @param maxWidth      max width of the image
+     * @param abstractImage the image
+     * @return the run containing the image
+     */
+    public static R createRunWithImage(
+            Integer maxWidth,
+            BinaryPartAbstractImage abstractImage
+    ) {
+        // creating random ids assuming they are unique
+        // id must not be too large, otherwise Word cannot open the document
+        int id1 = random.nextInt(100000);
+        int id2 = random.nextInt(100000);
+        var filenameHint = "dummyFileName";
+        var altText = "dummyAltText";
 
-	/**
-	 * Creates a run containing the given image.
-	 *
-	 * @param maxWidth      max width of the image
-	 * @param abstractImage the image
-	 * @return the run containing the image
-	 */
-	public static R createRunWithImage(
-			Integer maxWidth,
-			BinaryPartAbstractImage abstractImage
-	) {
-		// creating random ids assuming they are unique
-		// id must not be too large, otherwise Word cannot open the document
-		int id1 = random.nextInt(100000);
-		int id2 = random.nextInt(100000);
-		var filenameHint = "dummyFileName";
-		var altText = "dummyAltText";
+        Inline inline = tryCreateImageInline(filenameHint,
+                                             altText,
+                                             maxWidth,
+                                             abstractImage,
+                                             id1,
+                                             id2);
 
-		Inline inline = tryCreateImageInline(filenameHint, altText, maxWidth, abstractImage, id1, id2);
+        // Now add the inline in w:p/w:r/w:drawing
+        ObjectFactory factory = new ObjectFactory();
+        R run = factory.createR();
+        Drawing drawing = factory.createDrawing();
+        run.getContent()
+                .add(drawing);
+        drawing.getAnchorOrInline()
+                .add(inline);
 
-		// Now add the inline in w:p/w:r/w:drawing
-		ObjectFactory factory = new ObjectFactory();
-		R run = factory.createR();
-		Drawing drawing = factory.createDrawing();
-		run.getContent().add(drawing);
-		drawing.getAnchorOrInline().add(inline);
+        return run;
 
-		return run;
+    }
 
-	}
+    private static Inline tryCreateImageInline(
+            String filenameHint,
+            String altText,
+            Integer maxWidth,
+            BinaryPartAbstractImage abstractImage,
+            int id1,
+            int id2
+    ) {
+        try {
+            return maxWidth == null
+                    ? abstractImage.createImageInline(filenameHint,
+                                                      altText,
+                                                      id1,
+                                                      id2,
+                                                      false)
+                    : abstractImage.createImageInline(filenameHint,
+                                                      altText,
+                                                      id1,
+                                                      id2,
+                                                      false,
+                                                      maxWidth);
+        } catch (Exception e) {
+            throw new DocxStamperException(e);
+        }
+    }
 
-	/** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public R resolve(WordprocessingMLPackage document, Image image) {
         try {
@@ -67,18 +102,10 @@ public class ImageResolver implements ITypeResolver<Image> {
                     createImagePart(document, image.getImageBytes())
             );
         } catch (Exception e) {
-            throw new DocxStamperException("Error while adding image to document!", e);
+            throw new DocxStamperException(
+                    "Error while adding image to document!",
+                    e);
         }
     }
-
-	private static Inline tryCreateImageInline(String filenameHint, String altText, Integer maxWidth, BinaryPartAbstractImage abstractImage, int id1, int id2) {
-		try {
-			return maxWidth == null
-					? abstractImage.createImageInline(filenameHint, altText, id1, id2, false)
-					: abstractImage.createImageInline(filenameHint, altText, id1, id2, false, maxWidth);
-		} catch (Exception e) {
-			throw new DocxStamperException(e);
-		}
-	}
 
 }

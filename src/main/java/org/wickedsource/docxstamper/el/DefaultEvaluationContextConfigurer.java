@@ -17,18 +17,21 @@ import java.util.List;
  * @author joseph
  * @version $Id: $Id
  */
-public class DefaultEvaluationContextConfigurer implements EvaluationContextConfigurer {
+public class DefaultEvaluationContextConfigurer
+        implements EvaluationContextConfigurer {
     /**
      * {@inheritDoc}
      */
     @Override
     public void configureEvaluationContext(StandardEvaluationContext context) {
         TypeLocator typeLocator = typeName -> {
-            throw new SpelEvaluationException(SpelMessage.TYPE_NOT_FOUND, typeName);
+            throw new SpelEvaluationException(SpelMessage.TYPE_NOT_FOUND,
+                                              typeName);
         };
         context.setPropertyAccessors(List.of(DataBindingPropertyAccessor.forReadWriteAccess()));
         context.setConstructorResolvers(Collections.emptyList());
-        context.setMethodResolvers(new ArrayList<>(List.of(DataBindingMethodResolver.forInstanceMethodInvocation())));
+        context.setMethodResolvers(new ArrayList<>(List.of(
+                DataBindingMethodResolver.forInstanceMethodInvocation())));
         context.setBeanResolver(null);
         context.setTypeLocator(typeLocator);
         context.setTypeConverter(new StandardTypeConverter());

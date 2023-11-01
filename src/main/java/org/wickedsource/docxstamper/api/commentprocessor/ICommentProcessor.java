@@ -34,47 +34,46 @@ import org.wickedsource.docxstamper.util.CommentWrapper;
  * @version $Id: $Id
  */
 public interface ICommentProcessor {
+    /**
+     * This method is called after all comments in the .docx template have been passed to the comment processor.
+     * All manipulations of the .docx document SHOULD BE done in this method. If certain manipulations are already done
+     * within in the custom methods of a comment processor, the ongoing iteration over the paragraphs in the document
+     * may be disturbed.
+     *
+     * @param document The Word document that can be manipulated by using the DOCX4J api.
+     */
+    void commitChanges(WordprocessingMLPackage document);
 
-	/**
-	 * This method is called after all comments in the .docx template have been passed to the comment processor.
-	 * All manipulations of the .docx document SHOULD BE done in this method. If certain manipulations are already done
-	 * within in the custom methods of a comment processor, the ongoing iteration over the paragraphs in the document
-	 * may be disturbed.
-	 *
-	 * @param document The Word document that can be manipulated by using the DOCX4J api.
-	 */
-	void commitChanges(WordprocessingMLPackage document);
+    /**
+     * Passes the paragraph that is currently being processed (i.e. the paragraph that is commented in the
+     * .docx template. This method is always called BEFORE the custom methods of the custom comment processor interface
+     * are called.
+     *
+     * @param paragraph coordinates of the currently processed paragraph within the template.
+     */
+    void setParagraph(P paragraph);
 
-	/**
-	 * Passes the paragraph that is currently being processed (i.e. the paragraph that is commented in the
-	 * .docx template. This method is always called BEFORE the custom methods of the custom comment processor interface
-	 * are called.
-	 *
-	 * @param paragraph coordinates of the currently processed paragraph within the template.
-	 */
-	void setParagraph(P paragraph);
+    /**
+     * Passes the run that is currently being processed (i.e. the run that is commented in the
+     * .docx template. This method is always called BEFORE the custom methods of the custom comment processor interface
+     * are called.
+     *
+     * @param run coordinates of the currently processed run within the template.
+     */
+    void setCurrentRun(R run);
 
-	/**
-	 * Passes the run that is currently being processed (i.e. the run that is commented in the
-	 * .docx template. This method is always called BEFORE the custom methods of the custom comment processor interface
-	 * are called.
-	 *
-	 * @param run coordinates of the currently processed run within the template.
-	 */
-	void setCurrentRun(R run);
+    /**
+     * Passes the comment range wrapper that is currently being processed
+     * (i.e. the start and end of comment that in the .docx template).
+     * This method is always called BEFORE the custom methods of the custom comment
+     * processor interface are called.
+     *
+     * @param commentWrapper of the currently processed comment within the template.
+     */
+    void setCurrentCommentWrapper(CommentWrapper commentWrapper);
 
-	/**
-	 * Passes the comment range wrapper that is currently being processed
-	 * (i.e. the start and end of comment that in the .docx template).
-	 * This method is always called BEFORE the custom methods of the custom comment
-	 * processor interface are called.
-	 *
-	 * @param commentWrapper of the currently processed comment within the template.
-	 */
-	void setCurrentCommentWrapper(CommentWrapper commentWrapper);
-
-	/**
-	 * Resets all state in the comment processor so that it can be re-used in another stamping process.
-	 */
-	void reset();
+    /**
+     * Resets all state in the comment processor so that it can be re-used in another stamping process.
+     */
+    void reset();
 }

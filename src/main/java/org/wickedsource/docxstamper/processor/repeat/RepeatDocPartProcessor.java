@@ -39,10 +39,11 @@ import static org.wickedsource.docxstamper.util.DocumentUtil.walkObjectsAndImpor
  * @author joseph
  * @version $Id: $Id
  */
-public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRepeatDocPartProcessor {
+public class RepeatDocPartProcessor
+        extends BaseCommentProcessor
+        implements IRepeatDocPartProcessor {
     private static final ThreadFactory threadFactory = Executors.defaultThreadFactory();
     private static final ObjectFactory objectFactory = Context.getWmlObjectFactory();
-
     private final OpcStamper<WordprocessingMLPackage> stamper;
     private final Map<CommentWrapper, List<Object>> contexts = new HashMap<>();
     private final Supplier<? extends List<?>> nullSupplier;

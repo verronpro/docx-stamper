@@ -7,12 +7,13 @@ package org.wickedsource.docxstamper.replace.typeresolver;
  * @author joseph
  * @version $Id: $Id
  */
-public class FallbackResolver extends AbstractToTextResolver<Object> {
+public class FallbackResolver
+        extends AbstractToTextResolver<Object> {
     /**
      * {@inheritDoc}
      */
-	@Override
-	protected String resolveStringForObject(Object object) {
-		return object != null ? String.valueOf(object) : "";
-	}
+    @Override
+    protected String resolveStringForObject(Object object) {
+        return object != null ? String.valueOf(object) : "";
+    }
 }

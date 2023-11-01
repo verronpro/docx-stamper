@@ -16,12 +16,11 @@ import java.util.function.Predicate;
  * @version $Id: $Id
  */
 public class TableCellUtil {
+    private static final ObjectFactory objectFactory = new ObjectFactory();
 
     private TableCellUtil() {
         throw new DocxStamperException("Utility class shouldn't be instantiated");
     }
-
-	private static final ObjectFactory objectFactory = new ObjectFactory();
 
     /**
      * Checks if a table cell contains a paragraph or a table
@@ -29,22 +28,24 @@ public class TableCellUtil {
      * @param cell the table cell
      * @return true if the table cell contains a paragraph or a table, false otherwise
      */
-	public static boolean hasNoParagraphOrTable(Tc cell) {
-		Predicate<Object> isP = P.class::isInstance;
-		Predicate<Object> isTbl = e -> e instanceof JAXBElement<?> jaxbElement && jaxbElement.getValue() instanceof Tbl;
-		return cell.getContent()
-				   .stream()
-				   .noneMatch(isP.or(isTbl));
+    public static boolean hasNoParagraphOrTable(Tc cell) {
+        Predicate<Object> isP = P.class::isInstance;
+        Predicate<Object> isTbl = e -> e instanceof JAXBElement<?> jaxbElement && jaxbElement.getValue() instanceof Tbl;
+        return cell.getContent()
+                .stream()
+                .noneMatch(isP.or(isTbl));
     }
 
     /**
      * Checks if a table cell contains a paragraph
      *
      * @param cell the table cell
-	 */
-	public static void addEmptyParagraph(Tc cell) {
-		P paragraph = objectFactory.createP();
-		paragraph.getContent().add(objectFactory.createR());
-		cell.getContent().add(paragraph);
-	}
+     */
+    public static void addEmptyParagraph(Tc cell) {
+        P paragraph = objectFactory.createP();
+        paragraph.getContent()
+                .add(objectFactory.createR());
+        cell.getContent()
+                .add(paragraph);
+    }
 }

@@ -19,5 +19,5 @@ public interface PreProcessor {
      *
      * @param document the document to process.
      */
-	void process(WordprocessingMLPackage document);
+    void process(WordprocessingMLPackage document);
 }

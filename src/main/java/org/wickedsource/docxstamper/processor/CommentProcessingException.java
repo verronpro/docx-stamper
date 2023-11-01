@@ -12,8 +12,8 @@ import static org.docx4j.TextUtils.getText;
  * @author joseph
  * @version $Id: $Id
  */
-public class CommentProcessingException extends DocxStamperException {
-
+public class CommentProcessingException
+        extends DocxStamperException {
     /**
      * <p>Constructor for CommentProcessingException.</p>
      *

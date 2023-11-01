@@ -20,93 +20,100 @@ import pro.verron.msofficestamper.OpcStamper;
  * @version $Id: $Id
  */
 public class CommentProcessorFactory {
-	private final DocxStamperConfiguration configuration;
+    private final DocxStamperConfiguration configuration;
 
-	/**
-	 * Creates a new CommentProcessorFactory.
-	 *
-	 * @param configuration the configuration to use for the created processors.
-	 */
-	public CommentProcessorFactory(DocxStamperConfiguration configuration) {
-		this.configuration = configuration;
-	}
+    /**
+     * Creates a new CommentProcessorFactory.
+     *
+     * @param configuration the configuration to use for the created processors.
+     */
+    public CommentProcessorFactory(DocxStamperConfiguration configuration) {
+        this.configuration = configuration;
+    }
 
-	/**
-	 * Creates a new CommentProcessorFactory with default configuration.
-	 *
-	 * @param pr a {@link PlaceholderReplacer} object
-	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
-	 */
-	public ICommentProcessor repeatParagraph(PlaceholderReplacer pr) {
-		return configuration
-				.nullReplacementValue()
-				.map(nullReplacementValue -> ParagraphRepeatProcessor.newInstance(pr, nullReplacementValue))
-				.orElseGet(() -> ParagraphRepeatProcessor.newInstance(pr));
-	}
+    /**
+     * Creates a new CommentProcessorFactory with default configuration.
+     *
+     * @param pr a {@link PlaceholderReplacer} object
+     * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
+     */
+    public ICommentProcessor repeatParagraph(PlaceholderReplacer pr) {
+        return configuration.nullReplacementValue()
+                .map(nullReplacementValue -> ParagraphRepeatProcessor.newInstance(
+                        pr,
+                        nullReplacementValue))
+                .orElseGet(() -> ParagraphRepeatProcessor.newInstance(pr));
+    }
 
-	/**
-	 * Creates a new CommentProcessorFactory with default configuration.
-	 *
-	 * @param pr a {@link PlaceholderReplacer} object
-	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
-	 */
-	public ICommentProcessor repeatDocPart(PlaceholderReplacer pr) {
-		return configuration
-				.nullReplacementValue()
-				.map(nullReplacementValue -> RepeatDocPartProcessor.newInstance(pr, getStamper(), nullReplacementValue))
-				.orElseGet(() -> RepeatDocPartProcessor.newInstance(pr, getStamper()));
-	}
+    /**
+     * Creates a new CommentProcessorFactory with default configuration.
+     *
+     * @param pr a {@link PlaceholderReplacer} object
+     * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
+     */
+    public ICommentProcessor repeatDocPart(PlaceholderReplacer pr) {
+        return configuration.nullReplacementValue()
+                .map(nullReplacementValue -> RepeatDocPartProcessor.newInstance(
+                        pr,
+                        getStamper(),
+                        nullReplacementValue))
+                .orElseGet(() -> RepeatDocPartProcessor.newInstance(pr,
+                                                                    getStamper()));
+    }
 
-	private OpcStamper<WordprocessingMLPackage> getStamper() {
-		return (template, context, output) -> new DocxStamper<>(configuration).stamp(template, context, output);
-	}
+    private OpcStamper<WordprocessingMLPackage> getStamper() {
+        return (template, context, output) -> new DocxStamper<>(configuration).stamp(
+                template,
+                context,
+                output);
+    }
 
-	/**
-	 * Creates a new CommentProcessorFactory with default configuration.
-	 *
-	 * @param pr a {@link PlaceholderReplacer} object
-	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
-	 */
-	public ICommentProcessor repeat(PlaceholderReplacer pr) {
-		return configuration
-				.nullReplacementValue()
-				.map(nullReplacementValue -> RepeatProcessor.newInstanceWithNullReplacement(pr))
-				.orElseGet(() -> RepeatProcessor.newInstance(pr));
-	}
+    /**
+     * Creates a new CommentProcessorFactory with default configuration.
+     *
+     * @param pr a {@link PlaceholderReplacer} object
+     * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
+     */
+    public ICommentProcessor repeat(PlaceholderReplacer pr) {
+        return configuration.nullReplacementValue()
+                .map(nullReplacementValue -> RepeatProcessor.newInstanceWithNullReplacement(
+                        pr))
+                .orElseGet(() -> RepeatProcessor.newInstance(pr));
+    }
 
-	/**
-	 * Creates a new CommentProcessorFactory with default configuration.
-	 *
-	 * @param pr a {@link PlaceholderReplacer} object
-	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
-	 */
-	public ICommentProcessor tableResolver(PlaceholderReplacer pr) {
-		return configuration
-				.nullReplacementValue()
-				.map(nullReplacementValue -> TableResolver.newInstance(pr, nullReplacementValue))
-				.orElseGet(() -> TableResolver.newInstance(pr));
-	}
+    /**
+     * Creates a new CommentProcessorFactory with default configuration.
+     *
+     * @param pr a {@link PlaceholderReplacer} object
+     * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
+     */
+    public ICommentProcessor tableResolver(PlaceholderReplacer pr) {
+        return configuration.nullReplacementValue()
+                .map(nullReplacementValue -> TableResolver.newInstance(pr,
+                                                                       nullReplacementValue))
+                .orElseGet(() -> TableResolver.newInstance(pr));
+    }
 
-	/**
-	 * Creates a new CommentProcessorFactory with default configuration.
-	 *
-	 * @param pr a {@link PlaceholderReplacer} object
-	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
-	 */
-	public ICommentProcessor displayIf(PlaceholderReplacer pr) {
-		return DisplayIfProcessor.newInstance(pr);
-	}
+    /**
+     * Creates a new CommentProcessorFactory with default configuration.
+     *
+     * @param pr a {@link PlaceholderReplacer} object
+     * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
+     */
+    public ICommentProcessor displayIf(PlaceholderReplacer pr) {
+        return DisplayIfProcessor.newInstance(pr);
+    }
 
-	/**
-	 * Creates a new CommentProcessorFactory with default configuration.
-	 *
-	 * @param pr a {@link PlaceholderReplacer} object
-	 * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
-	 */
-	public ICommentProcessor replaceWith(PlaceholderReplacer pr) {
-		return configuration
-				.nullReplacementValue()
-				.map(nullReplacementValue -> ReplaceWithProcessor.newInstance(pr, nullReplacementValue))
-				.orElseGet(() -> ReplaceWithProcessor.newInstance(pr));
-	}
+    /**
+     * Creates a new CommentProcessorFactory with default configuration.
+     *
+     * @param pr a {@link PlaceholderReplacer} object
+     * @return a {@link org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor} object
+     */
+    public ICommentProcessor replaceWith(PlaceholderReplacer pr) {
+        return configuration.nullReplacementValue()
+                .map(nullReplacementValue -> ReplaceWithProcessor.newInstance(pr,
+                                                                              nullReplacementValue))
+                .orElseGet(() -> ReplaceWithProcessor.newInstance(pr));
+    }
 }

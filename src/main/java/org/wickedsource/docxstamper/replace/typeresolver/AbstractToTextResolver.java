@@ -13,30 +13,30 @@ import org.wickedsource.docxstamper.util.RunUtil;
  * @author joseph
  * @version $Id: $Id
  */
-public abstract class AbstractToTextResolver<S> implements ITypeResolver<S> {
+public abstract class AbstractToTextResolver<S>
+        implements ITypeResolver<S> {
+    /**
+     * Default constructor.
+     */
+    protected AbstractToTextResolver() {
+    }
 
-	/**
-	 * Default constructor.
-	 */
-	protected AbstractToTextResolver() {
-	}
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Creates a Run of text from the resolved String.
+     */
+    @Override
+    public R resolve(WordprocessingMLPackage document, S expressionResult) {
+        String text = resolveStringForObject(expressionResult);
+        return RunUtil.create(text);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * Creates a Run of text from the resolved String.
-	 */
-	@Override
-	public R resolve(WordprocessingMLPackage document, S expressionResult) {
-		String text = resolveStringForObject(expressionResult);
-		return RunUtil.create(text);
-	}
-
-	/**
-	 * Resolves the String for the given object.
-	 *
-	 * @param object the object to resolve the String for.
-	 * @return the String for the given object.
-	 */
-	protected abstract String resolveStringForObject(S object);
+    /**
+     * Resolves the String for the given object.
+     *
+     * @param object the object to resolve the String for.
+     * @return the String for the given object.
+     */
+    protected abstract String resolveStringForObject(S object);
 }

@@ -33,10 +33,10 @@ public class ExpressionResolver {
     }
 
     public static String cleanExpression(String expression) {
-        if (DEFAULT_MATCHER.match(expression))
-            return DEFAULT_MATCHER.strip(expression);
-        if (SECONDARY_MATCHER.match(expression))
-            return SECONDARY_MATCHER.strip(expression);
+        if (DEFAULT_MATCHER.match(expression)) return DEFAULT_MATCHER.strip(
+                expression);
+        if (SECONDARY_MATCHER.match(expression)) return SECONDARY_MATCHER.strip(
+                expression);
         return expression;
     }
 
