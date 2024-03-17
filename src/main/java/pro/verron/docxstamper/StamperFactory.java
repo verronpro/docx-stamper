@@ -1,44 +1,15 @@
 package pro.verron.docxstamper;
 
-import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.wickedsource.docxstamper.DocxStamper;
-import org.wickedsource.docxstamper.DocxStamperConfiguration;
-import org.wickedsource.docxstamper.preprocessor.MergeSameStyleRuns;
-import org.wickedsource.docxstamper.preprocessor.RemoveProofErrors;
+import pro.verron.docxstamper.preset.OpcStampers;
 
 /**
- * Main class of the docx-stamper library.
- * <p>
- * This class can be used to create "stampers" that will open .docx templates
- * to create a .docx document filled with custom data at runtime.
- *
- * @author Joseph Verron
- * @version ${version}
- * @since 1.6.4
+ * @deprecated since 1.6.8, This class has been deprecated in the effort
+ * of the library modularization.
+ * It is recommended to use the
+ * {@link pro.verron.docxstamper.core.CommentUtil} class instead.
+ * This class will be removed in the future releases of the module.
  */
-public class StamperFactory {
-
-	/**
-	 * Creates a new DocxStamper with the default configuration.
-	 * Also adds the {@link RemoveProofErrors} and {@link MergeSameStyleRuns} preprocessors.
-	 *
-	 * @return a new DocxStamper
-	 */
-	public OpcStamper<WordprocessingMLPackage> newDocxStamper() {
-		DocxStamperConfiguration configuration = new DocxStamperConfiguration();
-		configuration.addPreprocessor(new RemoveProofErrors());
-		configuration.addPreprocessor(new MergeSameStyleRuns());
-		return new DocxStamper<>(configuration);
-	}
-
-	/**
-	 * Creates a new DocxStamper with the default configuration.
-	 * Does not add any preprocessors.
-	 *
-	 * @return a new DocxStamper
-	 */
-	public OpcStamper<WordprocessingMLPackage> nopreprocessingDocxStamper() {
-		DocxStamperConfiguration configuration = new DocxStamperConfiguration();
-		return new DocxStamper<>(configuration);
-	}
+@Deprecated(since = "1.6.8", forRemoval = true)
+public class StamperFactory
+        extends OpcStampers {
 }

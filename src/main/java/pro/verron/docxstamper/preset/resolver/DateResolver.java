@@ -1,6 +1,7 @@
 package pro.verron.docxstamper.preset.resolver;
 
 import pro.verron.docxstamper.api.ObjectResolver;
+import pro.verron.docxstamper.api.StringResolver;
 
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;

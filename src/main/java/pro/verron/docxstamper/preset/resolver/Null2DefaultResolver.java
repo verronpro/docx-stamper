@@ -10,16 +10,21 @@ import pro.verron.docxstamper.api.ObjectResolver;
  * {@link ObjectResolver} interface
  * that resolves null objects by creating a run with a default text value.
  *
+ * @deprecated will not be removed, but will be made package-private
+ *
  * @author Joseph Verron
  * @version ${version}
  * @since 1.6.7
  */
+
+@Deprecated(since = "1.6.7")
 public class Null2DefaultResolver
         implements ObjectResolver {
 
     private final String text;
 
-    /* package */ Null2DefaultResolver(String text) {
+    /* package */
+    public Null2DefaultResolver(String text) {
         this.text = text;
     }
 
@@ -31,7 +36,7 @@ public class Null2DefaultResolver
     @Override
     public R resolve(
             WordprocessingMLPackage document,
-            String placeholder,
+            String expression,
             Object object
     ) {
         return RunUtil.create(text);

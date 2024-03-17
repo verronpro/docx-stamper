@@ -6,15 +6,15 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.*;
 import org.jvnet.jaxb2_commons.ppp.Child;
 import org.wickedsource.docxstamper.api.DocxStamperException;
-import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
-import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
-import org.wickedsource.docxstamper.util.CommentWrapper;
 import org.wickedsource.docxstamper.util.DocumentUtil;
 import org.wickedsource.docxstamper.util.ParagraphUtil;
 import org.wickedsource.docxstamper.util.SectionUtil;
-import pro.verron.docxstamper.OpcStamper;
-import pro.verron.docxstamper.utils.ProcessorExceptionHandler;
+import pro.verron.docxstamper.api.Comment;
+import pro.verron.docxstamper.api.CommentProcessor;
+import pro.verron.docxstamper.api.OpcStamper;
+import pro.verron.docxstamper.api.ParagraphPlaceholderReplacer;
+import pro.verron.docxstamper.core.PlaceholderReplacer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -22,8 +22,10 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -42,16 +44,18 @@ import static org.wickedsource.docxstamper.util.DocumentUtil.walkObjectsAndImpor
  * @version ${version}
  * @since 1.3.0
  */
-public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRepeatDocPartProcessor {
+public class RepeatDocPartProcessor
+        extends BaseCommentProcessor
+        implements IRepeatDocPartProcessor {
     private static final ThreadFactory threadFactory = Executors.defaultThreadFactory();
     private static final ObjectFactory objectFactory = Context.getWmlObjectFactory();
 
     private final OpcStamper<WordprocessingMLPackage> stamper;
-    private final Map<CommentWrapper, List<Object>> contexts = new HashMap<>();
+    private final Map<Comment, List<Object>> contexts = new HashMap<>();
     private final Supplier<? extends List<?>> nullSupplier;
 
     private RepeatDocPartProcessor(
-            PlaceholderReplacer placeholderReplacer,
+            ParagraphPlaceholderReplacer placeholderReplacer,
             OpcStamper<WordprocessingMLPackage> stamper,
             Supplier<? extends List<?>> nullSupplier
     ) {
@@ -63,12 +67,13 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     /**
      * <p>newInstance.</p>
      *
-     * @param pr                   the placeholder replacer
+     * @param pr                   the placeholderReplacer
      * @param stamper              the stamper
-     * @param nullReplacementValue the value to use when the placeholder is null
+     * @param nullReplacementValue the value to use when the expression
+     *                             resolves to null
      * @return a new instance of this processor
      */
-    public static ICommentProcessor newInstance(
+    public static CommentProcessor newInstance(
             PlaceholderReplacer pr,
             OpcStamper<WordprocessingMLPackage> stamper,
             String nullReplacementValue
@@ -81,12 +86,12 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
     /**
      * <p>newInstance.</p>
      *
-     * @param pr      the placeholder replacer
+     * @param pr      the placeholderReplacer
      * @param stamper the stamper
      * @return a new instance of this processor
      */
-    public static ICommentProcessor newInstance(
-            PlaceholderReplacer pr,
+    public static CommentProcessor newInstance(
+            ParagraphPlaceholderReplacer pr,
             OpcStamper<WordprocessingMLPackage> stamper
     ) {
         return new RepeatDocPartProcessor(pr, stamper, Collections::emptyList);
@@ -157,11 +162,11 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         if (contexts == null)
             contexts = Collections.emptyList();
 
-        CommentWrapper currentCommentWrapper = getCurrentCommentWrapper();
-        List<Object> repeatElements = currentCommentWrapper.getRepeatElements();
+        Comment currentComment = getCurrentCommentWrapper();
+        List<Object> repeatElements = currentComment.getRepeatElements();
 
         if (!repeatElements.isEmpty()) {
-            this.contexts.put(currentCommentWrapper, contexts);
+            this.contexts.put(currentComment, contexts);
         }
     }
 
@@ -216,16 +221,18 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         return subDocuments;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void commitChanges(WordprocessingMLPackage document) {
-        for (Entry<CommentWrapper, List<Object>> entry : this.contexts.entrySet()) {
-            CommentWrapper commentWrapper = entry.getKey();
+        for (Entry<Comment, List<Object>> entry : this.contexts.entrySet()) {
+            Comment comment = entry.getKey();
             List<Object> expressionContexts = entry.getValue();
             ContentAccessor gcp = Objects.requireNonNull(
-                    commentWrapper.getParent());
-            List<Object> repeatElements = commentWrapper.getRepeatElements();
-            WordprocessingMLPackage subTemplate = commentWrapper.tryBuildingSubtemplate(
+                    comment.getParent());
+            List<Object> repeatElements = comment.getRepeatElements();
+            WordprocessingMLPackage subTemplate = comment.tryBuildingSubtemplate(
                     document);
             SectPr previousSectionBreak = SectionUtil.getPreviousSectionBreakIfPresent(
                     repeatElements.get(0), gcp);
@@ -292,9 +299,116 @@ public class RepeatDocPartProcessor extends BaseCommentProcessor implements IRep
         stamper.stamp(template, context, outputStream);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void reset() {
         contexts.clear();
+    }
+
+    /**
+     * A functional interface representing runnable task able to throw an exception.
+     * It extends the {@link Runnable} interface and provides default implementation
+     * of the {@link Runnable#run()} method handling the exception by rethrowing it
+     * wrapped inside a {@link DocxStamperException}.
+     *
+     * @author Joseph Verron
+     * @version ${version}
+     * @since 1.6.6
+     */
+    interface ThrowingRunnable
+            extends Runnable {
+
+        /**
+         * Executes the runnable task, handling any exception by throwing it wrapped
+         * inside a {@link DocxStamperException}.
+         */
+        default void run() {
+            try {
+                throwingRun();
+            } catch (Exception e) {
+                throw new DocxStamperException(e);
+            }
+        }
+
+        /**
+         * Executes the runnable task
+         *
+         * @throws Exception if an exception occurs executing the task
+         */
+        void throwingRun() throws Exception;
+    }
+
+    /**
+     * This class is responsible for capturing and handling uncaught exceptions
+     * that occur in a thread.
+     * It implements the {@link Thread.UncaughtExceptionHandler} interface and can
+     * be assigned to a thread using the
+     * {@link Thread#setUncaughtExceptionHandler(Thread.UncaughtExceptionHandler)} method.
+     * When an exception occurs in the thread,
+     * the {@link ProcessorExceptionHandler#uncaughtException(Thread, Throwable)}
+     * method will be called.
+     * This class provides the following features:
+     * 1. Capturing and storing the uncaught exception.
+     * 2. Executing a list of routines when an exception occurs.
+     * 3. Providing access to the captured exception, if any.
+     * Example usage:
+     * <code>
+     * ProcessorExceptionHandler exceptionHandler = new
+     * ProcessorExceptionHandler(){};
+     * thread.setUncaughtExceptionHandler(exceptionHandler);
+     * </code>
+     *
+     * @author Joseph Verron
+     * @version ${version}
+     * @see Thread.UncaughtExceptionHandler
+     * @since 1.6.6
+     */
+    static class ProcessorExceptionHandler
+            implements Thread.UncaughtExceptionHandler {
+        private final AtomicReference<Throwable> exception;
+        private final List<Runnable> onException;
+
+        /**
+         * Constructs a new instance for managing thread's uncaught exceptions.
+         * Once set to a thread, it retains the exception information and performs specified routines.
+         */
+        public ProcessorExceptionHandler() {
+            this.exception = new AtomicReference<>();
+            this.onException = new CopyOnWriteArrayList<>();
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * Captures and stores an uncaught exception from a thread run
+         * and executes all defined routines on occurrence of the exception.
+         */
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            exception.set(e);
+            onException.forEach(Runnable::run);
+        }
+
+        /**
+         * Adds a routine to the list of routines that should be run
+         * when an exception occurs.
+         *
+         * @param runnable The runnable routine to be added
+         */
+        public void onException(ThrowingRunnable runnable) {
+            onException.add(runnable);
+        }
+
+        /**
+         * Returns the captured exception if present.
+         *
+         * @return an {@link Optional} containing the captured exception,
+         * or an {@link Optional#empty()} if no exception was captured
+         */
+        public Optional<Throwable> exception() {
+            return Optional.ofNullable(exception.get());
+        }
     }
 }

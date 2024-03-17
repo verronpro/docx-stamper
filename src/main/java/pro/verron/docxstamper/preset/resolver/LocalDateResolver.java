@@ -1,5 +1,7 @@
 package pro.verron.docxstamper.preset.resolver;
 
+import pro.verron.docxstamper.api.StringResolver;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 

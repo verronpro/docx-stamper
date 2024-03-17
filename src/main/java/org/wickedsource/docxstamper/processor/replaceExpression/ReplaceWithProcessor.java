@@ -3,10 +3,11 @@ package org.wickedsource.docxstamper.processor.replaceExpression;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.wml.R;
 import org.wickedsource.docxstamper.api.DocxStamperException;
-import org.wickedsource.docxstamper.api.commentprocessor.ICommentProcessor;
 import org.wickedsource.docxstamper.processor.BaseCommentProcessor;
-import org.wickedsource.docxstamper.replace.PlaceholderReplacer;
 import org.wickedsource.docxstamper.util.RunUtil;
+import pro.verron.docxstamper.api.CommentProcessor;
+import pro.verron.docxstamper.api.ParagraphPlaceholderReplacer;
+import pro.verron.docxstamper.core.PlaceholderReplacer;
 
 import java.util.List;
 import java.util.function.Function;
@@ -29,7 +30,7 @@ public class ReplaceWithProcessor
     private final Function<R, List<Object>> nullSupplier;
 
     private ReplaceWithProcessor(
-            PlaceholderReplacer placeholderReplacer,
+            ParagraphPlaceholderReplacer placeholderReplacer,
             Function<R, List<Object>> nullSupplier
     ) {
         super(placeholderReplacer);
@@ -43,7 +44,7 @@ public class ReplaceWithProcessor
      * @param nullReplacementValue a {@link String} object
      * @return the processor
      */
-    public static ICommentProcessor newInstance(
+    public static CommentProcessor newInstance(
             PlaceholderReplacer pr,
             String nullReplacementValue
     ) {
@@ -58,7 +59,7 @@ public class ReplaceWithProcessor
      * @param pr the placeholder replacer to use
      * @return the processor
      */
-    public static ICommentProcessor newInstance(PlaceholderReplacer pr) {
+    public static CommentProcessor newInstance(ParagraphPlaceholderReplacer pr) {
         return new ReplaceWithProcessor(pr, R::getContent);
     }
 
