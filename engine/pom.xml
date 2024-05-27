@@ -3,17 +3,13 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>pro.verron.office-stamper</groupId>
-        <artifactId>office-stamper</artifactId>
-        <version>2.1-SNAPSHOT</version>
-    </parent>
 
+    <groupId>pro.verron.office-stamper</groupId>
     <artifactId>engine</artifactId>
+    <version>2.1-SNAPSHOT</version>
 
     <description>
-        Docx-stamper is a Java template engine for docx documents.
-        This is a fork from org.wickedsource.docx-stamper
+        Office-stamper is a Java template engine for docx documents, forked from org.wickedsource.docx-stamper
     </description>
     <url>https://github.com/verronpro/docx-stamper</url>
     <properties>
@@ -119,14 +115,9 @@
 
     <developers>
         <developer>
-            <email>ynaciri@gmail.com</email>
-            <name>Youssouf Naciri</name>
-            <url>https://youssouf.naciri.fr</url>
-        </developer>
-        <developer>
             <email>joseph@verron.pro</email>
-            <name>Joseph Verron</name>
-            <url>https://verron.pro</url>
+            <name>Caring Coder</name>
+            <url>https://github.com/caring-coder</url>
         </developer>
     </developers>
 
