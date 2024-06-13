@@ -80,7 +80,8 @@ public class DefaultTests {
                 mapAccessorAndReflectivePropertyAccessorTest_shouldResolveMapAndPropertyPlaceholders(),
                 nullPointerResolutionTest_testWithDefaultSpel(),
                 nullPointerResolutionTest_testWithCustomSpel(),
-                customCommentProcessor());
+                customCommentProcessor(),
+                controls());
     }
 
     private static Arguments tabulations() {
@@ -89,8 +90,8 @@ public class DefaultTests {
                 name("Homer Simpson"),
                 getResource(Path.of("TabsIndentationTest.docx")),
                 """
-                        ❬❬Tab❘lang=en-US❭❬|TAB|❘lang=en-US❭❬Homer Simpson❘lang=en-US❭❘lang=en-US❭
-                        ❬❬Space❘lang=en-US❭❬ ❘lang=en-US❭❬Homer Simpson❘lang=en-US❭❘lang=en-US❭""");
+                        Tab|TAB|Homer Simpson
+                        Space Homer Simpson""");
     }
 
     private static Arguments whitespaces() {
@@ -99,8 +100,8 @@ public class DefaultTests {
                 name("Homer Simpson"),
                 getResource(Path.of("TabsIndentationTest.docx")),
                 """
-                        ❬❬Tab❘lang=en-US❭❬|TAB|❘lang=en-US❭❬Homer Simpson❘lang=en-US❭❘lang=en-US❭
-                        ❬❬Space❘lang=en-US❭❬ ❘lang=en-US❭❬Homer Simpson❘lang=en-US❭❘lang=en-US❭""");
+                        Tab|TAB|Homer Simpson
+                        Space Homer Simpson""");
     }
 
     private static Arguments ternary() {
@@ -239,7 +240,7 @@ public class DefaultTests {
 
     private static Arguments repeatDocPartWithImageTestShouldImportImageDataInTheMainDocument() {
         var context = Map.of("units", Stream.of(getImage(Path.of("butterfly" +
-                                                            ".png")),
+                                                                 ".png")),
                                                     getImage(Path.of("map.jpg")))
                                             .map(image -> Map.of("coverImage", image))
                                             .map(map -> Map.of("productionFacility", map))
@@ -271,11 +272,10 @@ public class DefaultTests {
         return of(
                 "repeatDocPartWithImagesInSourceTestshouldReplicateImageFromTheMainDocumentInTheSubTemplate",
                 OfficeStamperConfigurations.standard()
-                                           .setEvaluationContextConfigurer(
-                                                   (ctx) -> ctx.addPropertyAccessor(new MapAccessor())),
+                                           .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor())),
                 Contexts.subDocPartContext(),
                 getResource(Path.of("RepeatDocPartWithImagesInSourceTest" +
-                        ".docx")),
+                                    ".docx")),
                 """
                         This is not repeated
                         This should be repeated : first doc part
@@ -285,14 +285,6 @@ public class DefaultTests {
                         rId13:image/png:193.6kB:sha1=t8UNAmo7yJgZJk9g7pLLIb3AvCA=:cy=$d:5760720
                         This should be repeated too
                         This is not repeated""");
-    }
-
-    private static Image getImage(Path path) {
-        try {
-            return new Image(getResource(path));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private static Arguments repeatDocPartTest() {
@@ -526,7 +518,7 @@ public class DefaultTests {
 
         var config = OfficeStamperConfigurations.standard()
                                                 .setEvaluationContextConfigurer(
-                                                        (ctx) -> ctx.addPropertyAccessor(new MapAccessor()));
+                                                        ctx -> ctx.addPropertyAccessor(new MapAccessor()));
 
         return arguments(
                 "RepeatDocPartAndCommentProcessorsIsolationTest_repeatDocPartShouldNotUseSameCommentProcessorInstancesForSubtemplate",
@@ -599,7 +591,7 @@ public class DefaultTests {
                 Map.of("repeatValues",
                         List.of(new Name("Homer"), new Name("Marge"))),
                 getResource(Path.of("ChangingPageLayoutInRepeatDocPartTest" +
-                        ".docx")),
+                                    ".docx")),
                 """
                         First page is portrait.
                                                 
@@ -757,7 +749,7 @@ public class DefaultTests {
     private static Arguments conditionalDisplayOfTableRowsTest() {
         var context = new Contexts.Name("Homer");
         var template = getResource(Path.of("ConditionalDisplayOfTableRowsTest" +
-                ".docx"));
+                                           ".docx"));
         var expected = """
                 ❬Conditional Display of Table Rows❘spacing={after=120,before=240}❭
                 ❬❬This paragraph stays untouched.❘lang=de-DE❭❘lang=de-DE❭
@@ -801,7 +793,7 @@ public class DefaultTests {
     private static Arguments conditionalDisplayOfTableTest() {
         var context = new Contexts.Name("Homer");
         var template = getResource(Path.of("ConditionalDisplayOfTablesTest" +
-                ".docx"));
+                                           ".docx"));
         var expected = """
                 ❬Conditional Display of Tables❘spacing={after=120,before=240}❭
                 ❬❬This paragraph stays untouched.❘lang=de-DE❭❘lang=de-DE❭
@@ -863,8 +855,6 @@ public class DefaultTests {
                 expected);
     }
 
-
-
     private static Arguments expressionReplacementInGlobalParagraphsTest() {
         var context = new Contexts.Name("Homer Simpson");
         var template = getResource(
@@ -886,7 +876,7 @@ public class DefaultTests {
     private static Arguments expressionReplacementInTablesTest() {
         var context = new Contexts.Name("Bart Simpson");
         var template = getResource(Path.of("ExpressionReplacementInTablesTest" +
-                ".docx"));
+                                           ".docx"));
 
         var expected = """
                 ❬Expression Replacement in Tables❘spacing={after=120,before=240}❭
@@ -983,7 +973,7 @@ public class DefaultTests {
      */
     private static Arguments imageReplacementInGlobalParagraphsTest() {
         var context = new Contexts.ImageContext(getImage(Path.of("monalisa" +
-                ".jpg")));
+                                                                 ".jpg")));
         var template = getResource(Path.of(
                 "ImageReplacementInGlobalParagraphsTest.docx"));
         var expected = """
@@ -1000,7 +990,7 @@ public class DefaultTests {
 
     private static Arguments imageReplacementInGlobalParagraphsTestWithMaxWidth() {
         var context = new Contexts.ImageContext(getImage(Path.of("monalisa" +
-                        ".jpg"),
+                                                                 ".jpg"),
                 1000));
         var template = getResource(Path.of(
                 "ImageReplacementInGlobalParagraphsTest.docx"));
@@ -1016,18 +1006,10 @@ public class DefaultTests {
                 expected);
     }
 
-    private static Image getImage(Path path, int size) {
-        try {
-            return new Image(getResource(path), size);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static Arguments leaveEmptyOnExpressionErrorTest() {
         var context = new Contexts.Name("Homer Simpson");
         var template = getResource(Path.of("LeaveEmptyOnExpressionErrorTest" +
-                ".docx"));
+                                           ".docx"));
         var expected = """
                 Leave me empty .
                 ❬❘u=single❭""";
@@ -1047,10 +1029,10 @@ public class DefaultTests {
         var context = new Contexts.Name(null);
         var template = getResource(Path.of("LineBreakReplacementTest.docx"));
         var expected = """
-                ❬❬Line Break Replacement❘lang=en-US❭❘lang=en-US❭
-                ❬❬This paragraph is untouched.❘lang=en-US❭❘lang=en-US❭
-                ❬This paragraph should be ❬|BR(null)|❘lang=en-US❭ split in ❬|BR(null)|❘lang=en-US❭❬ three❘lang=en-US❭❬ lines.❘lang=en-US❭❘lang=en-US❭
-                ❬❬This paragraph is untouched.❘lang=en-US❭❘lang=en-US❭""";
+                Line Break Replacement
+                This paragraph is untouched.
+                This paragraph should be |BR(null)| split in |BR(null)| three lines.
+                This paragraph is untouched.""";
         return arguments("lineBreakReplacementTest",
                 config,
                 context,
@@ -1173,6 +1155,34 @@ public class DefaultTests {
                         Visited
                         This paragraph is untouched.
                         Visited""");
+    }
+
+    private static Arguments controls() {
+        return of("From controls should be replaced as well",
+                OfficeStamperConfigurations.standard(),
+                name("Homer"),
+                getResource(Path.of("form-controls.docx")),
+                """
+                        Expression Replacement in Form Controls
+                        A form control where the expression to be replaced is within a paragraph under the <w:sdtContent> element and hence replaced:
+                        Homer
+                        A form control within a paragraph. The expression to be replaced is not within a paragraph under the <w:sdtContent> element and hence not replaced:Homer""");
+    }
+
+    private static Image getImage(Path path) {
+        try {
+            return new Image(getResource(path));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Image getImage(Path path, int size) {
+        try {
+            return new Image(getResource(path), size);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @MethodSource("tests")
