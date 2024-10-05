@@ -4,12 +4,14 @@ import jakarta.xml.bind.JAXBElement;
 import org.docx4j.wml.*;
 import pro.verron.officestamper.api.Paragraph;
 import pro.verron.officestamper.api.Placeholder;
+import pro.verron.officestamper.utils.WmlFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Objects;
 
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -18,8 +20,8 @@ import static java.util.stream.Collectors.joining;
  * runs a word or a string of words is spread.</p>
  * <p>This class aggregates multiple runs so they can be treated as a single text, no matter how many runs the text
  * spans.
- * Call {@link #add(R, int)} to add all runs that should be aggregated. Then, call
- * methods to modify the aggregated text. Finally, call {@link #asString()} to get the modified text.
+ * Create a {@link StandardParagraph} then, call methods to modify the aggregated text.
+ * Finally, call {@link #asString()} to get the modified text.
  *
  * @author Joseph Verron
  * @author Tom Hombergs
@@ -29,70 +31,55 @@ import static java.util.stream.Collectors.joining;
 public class StandardParagraph
         implements Paragraph {
 
-    private final List<IndexedRun> runs = new ArrayList<>();
+    private List<IndexedRun> runs;
     private final List<Object> contents;
-    private final PPr paragraphPr;
-    private final P paragraph;
-    private int currentPosition = 0;
+    private final P p;
+
+    private StandardParagraph(List<Object> paragraphContent, P p) {
+        this.contents = paragraphContent;
+        this.p = p;
+        this.runs = initializeRunList(contents);
+    }
+
+
+    /**
+     * Calculates the runs of the paragraph.
+     * This method is called automatically by the constructor, but can also be
+     * called manually to recalculate the runs after a modification to the paragraph was done.
+     */
+    private static List<IndexedRun> initializeRunList(List<Object> objects) {
+        int currentLength = 0;
+        var runList = new ArrayList<IndexedRun>(objects.size());
+        for (int i = 0; i < objects.size(); i++) {
+            Object object = objects.get(i);
+            if (object instanceof R run) {
+                int nextLength = currentLength + RunUtil.getLength(run);
+                runList.add(new IndexedRun(currentLength, nextLength, i, run));
+                currentLength = nextLength;
+            }
+        }
+        return runList;
+    }
 
     /**
      * Constructs a new ParagraphWrapper for the given paragraph.
-     *
-     * @param paragraph the paragraph to wrap.
      */
-    public StandardParagraph(P paragraph) {
-        this.paragraph = paragraph;
-        this.contents = this.paragraph.getContent();
-        this.paragraphPr = paragraph.getPPr();
-        recalculateRuns();
+    public static StandardParagraph from(P paragraph) {
+        return new StandardParagraph(paragraph.getContent(), paragraph);
     }
 
     /**
-     * Recalculates the runs of the paragraph. This method is called automatically by the constructor, but can also be
-     * called manually to recalculate the runs after a modification to the paragraph was done.
-     */
-    private void recalculateRuns() {
-        currentPosition = 0;
-        this.runs.clear();
-        add(0, contents);
-    }
-
-    private int add(int index, List<Object> objects) {
-        for (Object object : objects)
-            index = add(index, object);
-        return index;
-    }
-
-    private int add(int index, Object object) {
-        if (object instanceof R r)
-            return add(r, index);
-        else if (object instanceof SdtRun sdtRun)
-            return add(index, sdtRun);
-        else if (object instanceof JAXBElement<?> jaxbElement)
-            return add(index, jaxbElement.getValue());
-        else
-            return index + 1;
-    }
-
-    private int add(int index, SdtRun sdtRun) {
-        return add(index, sdtRun.getSdtContent());
-    }
-
-    private int add(int index, SdtContent sdtContent) {
-        return this.add(index, sdtContent.getContent());
-    }
-
-    /**
-     * Adds a run to the aggregation.
+     * Constructs a StandardParagraph from a given CTSdtContentRun paragraph.
      *
-     * @param run the run to add.
+     * @param paragraph a CTSdtContentRun object representing the content run of the paragraph
+     * @return a new instance of StandardParagraph based on the provided CTSdtContentRun
      */
-    private int add(R run, int index) {
-        int endPosition = currentPosition + RunUtil.getLength(run);
-        runs.add(new IndexedRun(currentPosition, endPosition, index, run));
-        currentPosition = endPosition;
-        return index + 1;
+    public static StandardParagraph from(CTSdtContentRun paragraph) {
+        var p = WmlFactory.newParagraph(paragraph.getContent());
+        p.setParent(paragraph.getParent());
+        return new StandardParagraph(paragraph.getContent(), p);
     }
+
 
     /**
      * Replaces the given expression with the replacement object within
@@ -111,7 +98,7 @@ public class StandardParagraph
             replaceWithBr(placeholder, br);
         }
         else {
-            throw new AssertionError("replacement must be a R");
+            throw new AssertionError("Replacement must be a R or Br, but was a " + replacement.getClass());
         }
     }
 
@@ -126,6 +113,35 @@ public class StandardParagraph
                    .map(IndexedRun::run)
                    .map(RunUtil::getText)
                    .collect(joining());
+    }
+
+    /**
+     * Retrieves the content of the paragraph.
+     *
+     * @return a list of objects representing the content of the paragraph
+     */
+    @Override public List<Object> paragraphContent() {
+        return contents;
+    }
+
+    /**
+     * Retrieves the P object associated with this StandardParagraph.
+     *
+     * @return the P object of this paragraph.
+     * @deprecated Not recommended, as will be replaced by other API
+     */
+    @Deprecated(since = "2.6", forRemoval = true)
+    @Override public P getP() {
+        return p;
+    }
+
+    /**
+     * Retrieves the parent object of the current paragraph.
+     *
+     * @return the parent object of the paragraph.
+     */
+    @Override public Object parent() {
+        return p.getParent();
     }
 
     private void replaceWithRun(Placeholder placeholder, R replacement) {
@@ -153,45 +169,52 @@ public class StandardParagraph
             replacement.setRPr(run.getPr());
 
             if (expressionSpansCompleteRun) {
-                contents.remove(run.run());
-                contents.add(run.indexInParent(), replacement);
-                recalculateRuns();
+                contents.set(run.indexInParent(), replacement);
             }
             else if (expressionAtStartOfRun) {
                 run.replace(matchStartIndex, matchEndIndex, "");
                 contents.add(run.indexInParent(), replacement);
-                recalculateRuns();
             }
             else if (expressionAtEndOfRun) {
                 run.replace(matchStartIndex, matchEndIndex, "");
                 contents.add(run.indexInParent() + 1, replacement);
-                recalculateRuns();
             }
             else if (expressionWithinRun) {
                 int startIndex = run.indexOf(full);
                 int endIndex = startIndex + full.length();
-                R run1 = RunUtil.create(run.substring(0, startIndex), paragraphPr);
-                R run2 = RunUtil.create(run.substring(endIndex), paragraphPr);
-                contents.add(run.indexInParent(), run2);
-                contents.add(run.indexInParent(), replacement);
-                contents.add(run.indexInParent(), run1);
-                contents.remove(run.run());
-                recalculateRuns();
+                var newStartRun = RunUtil.create(run.substring(0, startIndex),
+                        run.run()
+                           .getRPr());
+                var newEndRun = RunUtil.create(run.substring(endIndex),
+                        run.run()
+                           .getRPr());
+                contents.remove(run.indexInParent());
+                contents.addAll(run.indexInParent(), List.of(newStartRun, replacement, newEndRun));
             }
         }
         else {
             IndexedRun firstRun = affectedRuns.get(0);
             IndexedRun lastRun = affectedRuns.get(affectedRuns.size() - 1);
-            List<Object> firstRunSiblings;
             replacement.setRPr(firstRun.getPr());
             removeExpression(firstRun, matchStartIndex, matchEndIndex, lastRun, affectedRuns);
-            firstRunSiblings = firstRun.isIn(paragraph)
-                    ? this.contents
-                    : firstRun.parent()
-                              .getContent();
             // add replacement run between first and last run
-            firstRunSiblings.add(firstRun.indexInParent() + 1, replacement);
-            recalculateRuns();
+            contents.add(firstRun.indexInParent() + 1, replacement);
+        }
+        this.runs = initializeRunList(contents);
+    }
+
+    private void replaceWithBr(Placeholder placeholder, Br br) {
+        for (IndexedRun indexedRun : runs) {
+            var runContentIterator = indexedRun.run()
+                                               .getContent()
+                                               .listIterator();
+            while (runContentIterator.hasNext()) {
+                Object element = runContentIterator.next();
+                if (element instanceof JAXBElement<?> jaxbElement)
+                    element = jaxbElement.getValue();
+                if (element instanceof Text text)
+                    replaceWithBr(placeholder, br, text, runContentIterator);
+            }
         }
     }
 
@@ -202,7 +225,7 @@ public class StandardParagraph
             IndexedRun lastRun,
             List<IndexedRun> affectedRuns
     ) {
-        // remove the expression from first run
+        // remove the expression from the first run
         firstRun.replace(matchStartIndex, matchEndIndex, "");
         // remove all runs between first and last
         for (IndexedRun run : affectedRuns) {
@@ -211,38 +234,23 @@ public class StandardParagraph
                 contents.remove(run.run());
             }
         }
-        // remove the expression from last run
+        // remove the expression from the last run
         lastRun.replace(matchStartIndex, matchEndIndex, "");
     }
 
-    private void replaceWithBr(Placeholder placeholder, Br br) {
-        for (IndexedRun indexedRun : runs) {
-            var run = indexedRun.run();
-            var content = run.getContent();
-            var iterator = content.listIterator();
-            while (iterator.hasNext()) {
-                Object element = iterator.next();
-                if (element instanceof JAXBElement<?> jaxbElement) {
-                    element = jaxbElement.getValue();
-                }
-                if (element instanceof Text text) {
-                    var value = text.getValue();
-                    if (value.contains(placeholder.expression())) {
-                        iterator.remove();
-                        var iterator1 = Arrays.stream(value.split(placeholder.expression()))
-
-                                              .iterator();
-                        while (iterator1.hasNext()) {
-                            var next = iterator1.next();
-                            var text1 = new Text();
-                            text1.setValue(next);
-                            iterator.add(text1);
-                            if (iterator1.hasNext())
-                                iterator.add(br);
-                        }
-                    }
-                }
-            }
+    private static void replaceWithBr(
+            Placeholder placeholder,
+            Br br,
+            Text text,
+            ListIterator<Object> runContentIterator
+    ) {
+        var value = text.getValue();
+        runContentIterator.remove();
+        var runLinebreakIterator = stream(value.split(placeholder.expression())).iterator();
+        while (runLinebreakIterator.hasNext()) {
+            var subText = WmlFactory.newText(runLinebreakIterator.next());
+            runContentIterator.add(subText);
+            if (runLinebreakIterator.hasNext()) runContentIterator.add(br);
         }
     }
 

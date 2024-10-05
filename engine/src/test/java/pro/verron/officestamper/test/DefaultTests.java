@@ -8,7 +8,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.spel.SpelParserConfiguration;
 import pro.verron.officestamper.api.OfficeStamperConfiguration;
-import pro.verron.officestamper.preset.*;
+import pro.verron.officestamper.preset.EvaluationContextConfigurers;
+import pro.verron.officestamper.preset.ExceptionResolvers;
+import pro.verron.officestamper.preset.OfficeStamperConfigurations;
+import pro.verron.officestamper.preset.Resolvers;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -764,7 +767,7 @@ import static pro.verron.officestamper.test.TestUtils.*;
 
     private static Arguments changingPageLayoutTest_shouldKeepSectionBreakOrientationInRepeatParagraphWithoutSectionBreakInsideComment() {
         return arguments(
-                "changingPageLayoutTest_shouldKeepSectionBreakOrientationInRepeatParagraphWithoutSectionBreakInsideComment",
+                "In multiple layouts, keeps section orientations outside RepeatParagraph comments",
                 OfficeStamperConfigurations.standard()
                                            .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor())),
                 Map.of("repeatValues", List.of(new Name("Homer"), new Name("Marge"))),
@@ -772,7 +775,7 @@ import static pro.verron.officestamper.test.TestUtils.*;
                 """
                         First page is landscape.
                         
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=11906,orient=LANDSCAPE,w=16838}❭
                         Second page is portrait, layout change should survive to repeatParagraph processor (Homer).
                         
                         Without a section break changing the layout in between, but a page break instead.<break page>
@@ -781,7 +784,7 @@ import static pro.verron.officestamper.test.TestUtils.*;
                         
                         Without a section break changing the layout in between, but a page break instead.<break page>
                         
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
                         Fourth page is set to landscape again.
                         """);
     }
@@ -792,23 +795,23 @@ import static pro.verron.officestamper.test.TestUtils.*;
         var expected = """
                 First page is landscape.
                 
-                ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
+                ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=11906,orient=LANDSCAPE,w=16838}❭
                 Second page is portrait, layout change should survive to repeatParagraph processor (Homer).
                 
-                ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
-                ❬With a page break changing the layout in between.❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
+                ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
+                ❬With a page break changing the layout in between.❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=11906,orient=LANDSCAPE,w=16838}❭
                 Second page is portrait, layout change should survive to repeatParagraph processor (Marge).
                 
-                ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
+                ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
                 With a page break changing the layout in between.
-                ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
+                ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=11906,orient=LANDSCAPE,w=16838}❭
                 Fourth page is set to portrait again.
                 """;
 
         var config = OfficeStamperConfigurations.standard()
                                                 .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));
         return arguments(
-                "changingPageLayoutTest_shouldKeepSectionBreakOrientationInRepeatParagraphWithSectionBreakInsideComment",
+                "In multiple layouts, keeps section orientations inside RepeatParagraph comments",
                 config,
                 context,
                 template,
@@ -817,7 +820,7 @@ import static pro.verron.officestamper.test.TestUtils.*;
 
     private static Arguments changingPageLayoutTest_shouldKeepPageBreakOrientationInRepeatDocPartWithSectionBreaksInsideComment() {
         return arguments(
-                "changingPageLayoutTest_shouldKeepPageBreakOrientationInRepeatDocPartWithSectionBreaksInsideComment",
+                "In multiple layouts, keeps section orientations outside RepeatDocPart comments",
                 OfficeStamperConfigurations.standard()
                                            .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor())),
                 Map.of("repeatValues", List.of(new Name("Homer"), new Name("Marge"))),
@@ -825,16 +828,16 @@ import static pro.verron.officestamper.test.TestUtils.*;
                 """
                         First page is portrait.
                         
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
                         Second page is landscape, layout change should survive to repeatDocPart (Homer).
                         
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
-                        ❬With a break setting the layout to portrait in between.❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=11906,orient=LANDSCAPE,w=16838}❭
+                        ❬With a break setting the layout to portrait in between.❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
                         Second page is landscape, layout change should survive to repeatDocPart (Marge).
                         
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
-                        ❬With a break setting the layout to portrait in between.❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=11906,orient=LANDSCAPE,w=16838}❭
+                        ❬With a break setting the layout to portrait in between.❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
                         Fourth page is set to landscape again.
                         """);
     }
@@ -852,7 +855,7 @@ import static pro.verron.officestamper.test.TestUtils.*;
 
     private static Arguments changingPageLayoutTest_shouldKeepPageBreakOrientationInRepeatDocPartWithSectionBreaksInsideCommentAndTableAsLastElement() {
         return arguments(
-                "changingPageLayoutTest_shouldKeepPageBreakOrientationInRepeatDocPartWithSectionBreaksInsideCommentAndTableAsLastElement",
+                "In multiple layouts, keeps section orientations inside RepeatDocPart comments with a table as last element",
                 OfficeStamperConfigurations.standard()
                                            .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor())),
                 Map.of("repeatValues", List.of(new Name("Homer"), new Name("Marge"))),
@@ -860,35 +863,35 @@ import static pro.verron.officestamper.test.TestUtils.*;
                 """
                         First page is portrait.
                         
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
                         Second page is landscape, layout change should survive to repeatDocPart (Homer).
                         
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=11906,orient=LANDSCAPE,w=16838}❭
                         With a break setting the layout to portrait in between.
                         |===
                         |
                         
                         
                         |===
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
                         Second page is landscape, layout change should survive to repeatDocPart (Marge).
                         
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=11906,orient=LANDSCAPE,w=16838}❭
                         With a break setting the layout to portrait in between.
                         |===
                         |
                         
                         
                         |===
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
                         Fourth page is set to landscape again.
                         """);
     }
 
     private static Arguments changingPageLayoutTest_shouldKeepPageBreakOrientationInRepeatDocPartWithoutSectionBreaksInsideComment() {
         return arguments(
-                "changingPageLayoutTest_shouldKeepPageBreakOrientationInRepeatDocPartWithoutSectionBreaksInsideComment",
+                "In multiple layouts, keeps section orientation outside RepeatDocPart comment",
                 OfficeStamperConfigurations.standard()
                                            .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor())),
                 Map.of("repeatValues", List.of(new Name("Homer"), new Name("Marge"))),
@@ -896,7 +899,7 @@ import static pro.verron.officestamper.test.TestUtils.*;
                 """
                         First page is landscape.
                         
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=11906,orient=landscape,w=16838}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=11906,orient=LANDSCAPE,w=16838}❭
                         Second page is portrait, layout change should survive to repeatDocPart (Homer).
                         <break page>
                         
@@ -905,7 +908,7 @@ import static pro.verron.officestamper.test.TestUtils.*;
                         <break page>
                         
                         Without a break changing the layout in between (page break should be repeated).
-                        ❬❘docGrid=xxx,eGHdrFtrReferences=xxx,pgMar=xxx,pgSz={h=16838,w=11906}❭
+                        ❬❘docGrid={linePitch=360},pgMar={bottom=1418,footer=709,gutter=0,header=709,left=1418,right=1418,top=1418},pgSz={h=16838,w=11906}❭
                         Fourth page is set to landscape again.
                         """);
     }
@@ -1256,13 +1259,13 @@ import static pro.verron.officestamper.test.TestUtils.*;
      * <p>testDateInstantiationAndResolution.</p>
      */
     private static Arguments imageReplacementInGlobalParagraphsTest() {
-        var context = new Contexts.ImageContext(getImage(Path.of("monalisa" + ".jpg")));
+        var context = new Contexts.ImageContext(getImage(Path.of("monalisa.jpg")));
         var template = getResource(Path.of("ImageReplacementInGlobalParagraphsTest.docx"));
         var expected = """
-                ❬Image Replacement in global paragraphs❘spacing={after=120,before=240}❭
-                ❬❬This paragraph is untouched.❘lang=de-DE❭❘lang=de-DE❭
-                ❬In this paragraph, an image of Mona Lisa is inserted: ❬/word/media/document_image_rId4.jpeg:rId4:image/jpeg:8.8kB:sha1=XMpVtDbetKjZTkPhy598GdJQM/4=:cy=$d:1276350❘lang=de-DE❭.❘lang=de-DE❭
-                ❬This paragraph has the image ❬/word/media/document_image_rId5.jpeg:rId5:image/jpeg:8.8kB:sha1=XMpVtDbetKjZTkPhy598GdJQM/4=:cy=$d:1276350❘lang=de-DE❭ in the middle.❘lang=de-DE,spacing={after=140,before=0}❭
+                Image Replacement in global paragraphs
+                This paragraph is untouched.
+                In this paragraph, an image of Mona Lisa is inserted: /word/media/document_image_rId6.jpeg:rId6:image/jpeg:8.8kB:sha1=XMpVtDbetKjZTkPhy598GdJQM/4=:cy=$d:1276350.
+                This paragraph has the image /word/media/document_image_rId7.jpeg:rId7:image/jpeg:8.8kB:sha1=XMpVtDbetKjZTkPhy598GdJQM/4=:cy=$d:1276350 in the middle.
                 """;
         return arguments("imageReplacementInGlobalParagraphsTest",
                 OfficeStamperConfigurations.standard(),
@@ -1272,13 +1275,13 @@ import static pro.verron.officestamper.test.TestUtils.*;
     }
 
     private static Arguments imageReplacementInGlobalParagraphsTestWithMaxWidth() {
-        var context = new Contexts.ImageContext(getImage(Path.of("monalisa" + ".jpg"), 1000));
+        var context = new Contexts.ImageContext(getImage(Path.of("monalisa.jpg"), 1000));
         var template = getResource(Path.of("ImageReplacementInGlobalParagraphsTest.docx"));
         var expected = """
-                ❬Image Replacement in global paragraphs❘spacing={after=120,before=240}❭
-                ❬❬This paragraph is untouched.❘lang=de-DE❭❘lang=de-DE❭
-                ❬In this paragraph, an image of Mona Lisa is inserted: ❬/word/media/document_image_rId4.jpeg:rId4:image/jpeg:8.8kB:sha1=XMpVtDbetKjZTkPhy598GdJQM/4=:cy=$d:635000❘lang=de-DE❭.❘lang=de-DE❭
-                ❬This paragraph has the image ❬/word/media/document_image_rId5.jpeg:rId5:image/jpeg:8.8kB:sha1=XMpVtDbetKjZTkPhy598GdJQM/4=:cy=$d:635000❘lang=de-DE❭ in the middle.❘lang=de-DE,spacing={after=140,before=0}❭
+                Image Replacement in global paragraphs
+                This paragraph is untouched.
+                In this paragraph, an image of Mona Lisa is inserted: /word/media/document_image_rId6.jpeg:rId6:image/jpeg:8.8kB:sha1=XMpVtDbetKjZTkPhy598GdJQM/4=:cy=$d:635000.
+                This paragraph has the image /word/media/document_image_rId7.jpeg:rId7:image/jpeg:8.8kB:sha1=XMpVtDbetKjZTkPhy598GdJQM/4=:cy=$d:635000 in the middle.
                 """;
         return arguments("imageReplacementInGlobalParagraphsTestWithMaxWidth",
                 OfficeStamperConfigurations.standard(),
@@ -1349,7 +1352,7 @@ import static pro.verron.officestamper.test.TestUtils.*;
                                                 .setExceptionResolver(ExceptionResolvers.defaulting(defaultValue))
                                                 .setEvaluationContextConfigurer(ctx -> ctx.addPropertyAccessor(new MapAccessor()));
 
-        return arguments("mapAccessorAndReflectivePropertyAccessorTest_shouldResolveMapAndPropertyPlaceholders",
+        return arguments("Should be able to stamp from a Map<String, Object> context",
                 config,
                 context,
                 template,
@@ -1441,9 +1444,7 @@ import static pro.verron.officestamper.test.TestUtils.*;
                         """);
     }
 
-    @MethodSource("tests") @ParameterizedTest(name = "{0}") void features(
-            String ignoredName, OfficeStamperConfiguration config, Object context, InputStream template, String expected
-    ) {
+    @MethodSource("tests") @ParameterizedTest(name = "{0}") void features(String ignoredName, OfficeStamperConfiguration config, Object context, InputStream template, String expected) {
         var stamper = new TestDocxStamper<>(config);
         var actual = stamper.stampAndLoadAndExtract(template, context);
         assertEquals(expected, actual);
